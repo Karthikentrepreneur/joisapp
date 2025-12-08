@@ -1,0 +1,9 @@
+{
+  "name": "EduNexus - Smart School Management",
+  "description": "A comprehensive, real-time school management platform integrating academics, safety, transport, and administration with AI-driven insights.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
