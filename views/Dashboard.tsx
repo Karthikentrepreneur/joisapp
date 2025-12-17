@@ -374,7 +374,7 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       {/* Salary Slip Modal */}
       {showPayslip && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-           <div id="payslip-modal-content" className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+           <div id="payslip-modal-content" className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto print:overflow-visible">
               {/* This section is printed */}
               <div className="p-6 md:p-8 border-b border-slate-200 flex justify-between items-start relative">
                  <div className="flex items-center gap-4 flex-col md:flex-row text-center md:text-left w-full md:w-auto">
@@ -395,7 +395,7 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                  </button>
               </div>
 
-              <div className="p-6 md:p-8 space-y-8 bg-slate-50/50">
+              <div className="p-6 md:p-8 space-y-8 bg-slate-50/50 print:bg-white">
                  <div className="text-center">
                     <h3 className="text-lg font-bold text-slate-800 border-b-2 border-slate-200 inline-block px-4 pb-1">SALARY SLIP</h3>
                     <p className="text-sm text-slate-500 mt-1">For the month of March, 2024</p>
@@ -457,16 +457,20 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                     </div>
                  </div>
 
-                 <div className="flex justify-between items-center p-4 bg-emerald-50 border border-emerald-100 rounded-lg">
-                    <span className="font-bold text-emerald-800 text-lg">NET PAY</span>
-                    <span className="font-black text-emerald-700 text-2xl">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
+                 <div className="flex justify-between items-center p-4 bg-emerald-50 border border-emerald-100 rounded-lg print:bg-white print:border-slate-200">
+                    <span className="font-bold text-emerald-800 text-lg print:text-slate-800">NET PAY</span>
+                    <span className="font-black text-emerald-700 text-2xl print:text-slate-900">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
                  </div>
                  
-                 <div className="flex flex-col md:flex-row justify-between pt-12 text-sm gap-8 md:gap-0">
+                 <div className="flex flex-col md:flex-row justify-between pt-12 text-sm gap-8 md:gap-0 break-inside-avoid">
                     <div className="text-center flex flex-col items-center flex-1">
                        <div className="h-20 flex items-end justify-center mb-1 w-full">
                           {adminStaff?.signature ? (
-                            <img src={adminStaff.signature} alt="Employer Signature" className="max-h-16 object-contain mix-blend-multiply" />
+                            <img 
+                                src={adminStaff.signature} 
+                                alt="Employer Signature" 
+                                className="max-h-16 w-auto object-contain block" 
+                            />
                           ) : (
                             <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
                           )}
@@ -478,7 +482,11 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                     <div className="text-center flex flex-col items-center flex-1">
                        <div className="h-20 flex items-end justify-center mb-1 w-full">
                          {currentTeacher?.signature ? (
-                           <img src={currentTeacher.signature} alt="Employee Signature" className="max-h-16 object-contain mix-blend-multiply" />
+                           <img 
+                                src={currentTeacher.signature} 
+                                alt="Employee Signature" 
+                                className="max-h-16 w-auto object-contain block" 
+                           />
                          ) : (
                            <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
                          )}

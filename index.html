@@ -50,14 +50,19 @@
           overflow: visible;
           border: none;
           background: white;
+          color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         .no-print {
           display: none !important;
         }
-        /* Ensure background graphics print */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
+        
+        /* Force image display for signatures */
+        img {
+          display: block !important;
+          visibility: visible !important;
+          max-width: 100% !important;
         }
       }
     </style>
