@@ -1,7 +1,7 @@
-import React from 'react';
-import { UserRole, View } from '../types';
-import { getMyChild, getMyChildHomework, getMyChildInvoices, mockStudents, mockStaff } from '../data/mockData';
-import { Users, AlertTriangle, Calendar, Clock, DollarSign, BookOpen, Bus, Star, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { UserRole, View, LeaveRequest } from '../types';
+import { getMyChild, getMyChildHomework, getMyChildInvoices, mockStudents, mockStaff, mockLeaveRequests } from '../data/mockData';
+import { Users, AlertTriangle, Calendar, Clock, DollarSign, BookOpen, Bus, Star, CheckCircle, CalendarPlus, X, Check } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -20,13 +20,21 @@ const schoolData = [
 
 export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate }) => {
   // Render different dashboards based on role
-  if (role === UserRole.PARENT) {
-    return <ParentDashboard onNavigate={onNavigate} />;
-  } else if (role === UserRole.TEACHER) {
-    return <TeacherDashboard onNavigate={onNavigate} />;
-  } else {
-    return <AdminDashboard onNavigate={onNavigate} />;
-  }
+  const renderContent = () => {
+    if (role === UserRole.PARENT) {
+      return <ParentDashboard onNavigate={onNavigate} />;
+    } else if (role === UserRole.TEACHER) {
+      return <TeacherDashboard onNavigate={onNavigate} />;
+    } else {
+      return <AdminDashboard onNavigate={onNavigate} />;
+    }
+  };
+
+  return (
+    <div className="h-full overflow-y-auto scroll-smooth">
+      {renderContent()}
+    </div>
+  );
 };
 
 /* --- PARENT DASHBOARD (Child Specific) --- */
@@ -36,10 +44,45 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
   const invoices = getMyChildInvoices();
   const pendingFee = invoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + i.amount, 0);
 
+  // Leave Request State
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveStartDate, setLeaveStartDate] = useState('');
+  const [leaveEndDate, setLeaveEndDate] = useState('');
+  const [leaveReason, setLeaveReason] = useState('');
+  // Local state for demo purposes to show immediate update
+  const [myLeaveRequests, setMyLeaveRequests] = useState<LeaveRequest[]>([]); 
+
+  const handleLeaveSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!child) return;
+    
+    const newRequest: LeaveRequest = {
+      id: `LR-${Date.now()}`,
+      studentId: child.id,
+      studentName: child.name,
+      parentId: child.parentId,
+      startDate: leaveStartDate,
+      endDate: leaveEndDate,
+      reason: leaveReason,
+      status: 'Pending',
+      requestDate: new Date().toISOString().split('T')[0]
+    };
+
+    setMyLeaveRequests([newRequest, ...myLeaveRequests]);
+    // In a real app, this would push to backend. For now we push to mock (but we only see local state in this view)
+    mockLeaveRequests.push(newRequest);
+    
+    setShowLeaveModal(false);
+    setLeaveStartDate('');
+    setLeaveEndDate('');
+    setLeaveReason('');
+    alert("Leave request submitted successfully!");
+  };
+
   if (!child) return <div className="p-8">No student linked to this account.</div>;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 pb-12 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-gradient-to-r from-blue-600 to-blue-500 rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="z-10 relative">
            <h1 className="text-2xl md:text-3xl font-bold mb-2">Good Morning, {child.parentName.split(' ')[0]}! ☀️</h1>
@@ -102,24 +145,26 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
             )}
          </div>
 
-         {/* Grade Card */}
+         {/* Request Leave Card */}
          <div 
-            onClick={() => onNavigate(View.ACADEMICS)}
+            onClick={() => setShowLeaveModal(true)}
             className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
          >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <Star className="w-16 h-16 text-blue-500" />
+               <CalendarPlus className="w-16 h-16 text-purple-500" />
             </div>
-            <p className="text-slate-500 text-sm font-medium mb-1">Class</p>
-            <h3 className="text-3xl font-black text-slate-800">{child.grade}-{child.section}</h3>
-            <p className="text-xs text-blue-500 font-bold mt-2 bg-blue-50 inline-block px-2 py-1 rounded-lg">View Report</p>
+            <p className="text-slate-500 text-sm font-medium mb-1">Leave</p>
+            <h3 className="text-3xl font-black text-slate-800">Request</h3>
+            <p className="text-xs text-purple-500 font-bold mt-2 bg-purple-50 inline-block px-2 py-1 rounded-lg">Apply Now</p>
          </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Child's Timetable */}
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-           <h3 className="font-bold text-lg text-slate-800 mb-4">Today's Schedule</h3>
+           <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg text-slate-800">Today's Schedule</h3>
+           </div>
            <div className="space-y-4">
               {[
                 { time: '09:00 AM', subject: 'Maths', icon: '📐', color: 'bg-blue-100 text-blue-600' },
@@ -143,27 +188,87 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
            </div>
         </div>
 
-        {/* Notices */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm" onClick={() => onNavigate(View.COMMUNICATION)}>
-           <h3 className="font-bold text-lg text-slate-800 mb-4 cursor-pointer hover:text-blue-600">School Notices</h3>
-           <div className="space-y-4">
-              <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 cursor-pointer hover:bg-rose-100 transition-colors">
-                 <div className="flex justify-between items-start mb-1">
-                    <span className="text-[10px] font-bold bg-white text-rose-500 px-2 py-0.5 rounded-full shadow-sm">Urgent</span>
-                    <span className="text-[10px] text-rose-400">Today</span>
-                 </div>
-                 <p className="text-sm font-semibold text-rose-800 mt-2">Bus Route 5 delayed by 15 mins due to traffic.</p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors">
-                 <div className="flex justify-between items-start mb-1">
-                    <span className="text-[10px] font-bold bg-white text-blue-500 px-2 py-0.5 rounded-full shadow-sm">Event</span>
-                    <span className="text-[10px] text-blue-400">Tomorrow</span>
-                 </div>
-                 <p className="text-sm font-semibold text-blue-800 mt-2">Annual Science Fair registration closes tomorrow.</p>
-              </div>
+        {/* Recent Leave Requests List */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+           <h3 className="font-bold text-lg text-slate-800 mb-4">Your Leave Requests</h3>
+           <div className="space-y-3">
+              {myLeaveRequests.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-sm">No recent requests</div>
+              ) : (
+                myLeaveRequests.map((req) => (
+                  <div key={req.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                     <div className="flex justify-between items-start mb-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          req.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                          req.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {req.status}
+                        </span>
+                        <span className="text-[10px] text-slate-400">Req: {req.requestDate}</span>
+                     </div>
+                     <p className="text-sm font-semibold text-slate-800">{req.startDate} to {req.endDate}</p>
+                     <p className="text-xs text-slate-500 truncate">{req.reason}</p>
+                  </div>
+                ))
+              )}
            </div>
         </div>
       </div>
+
+      {/* Leave Request Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-xl font-bold text-slate-800">Request Leave</h3>
+                 <button onClick={() => setShowLeaveModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-6 h-6" />
+                 </button>
+              </div>
+              
+              <form onSubmit={handleLeaveSubmit} className="space-y-4">
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={leaveStartDate}
+                      onChange={(e) => setLeaveStartDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={leaveEndDate}
+                      onChange={(e) => setLeaveEndDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Reason</label>
+                    <textarea 
+                      required
+                      value={leaveReason}
+                      onChange={(e) => setLeaveReason(e.target.value)}
+                      placeholder="Reason for leave..."
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                    ></textarea>
+                 </div>
+
+                 <button 
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg mt-4"
+                 >
+                    Submit Request
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -171,7 +276,7 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
 /* --- TEACHER DASHBOARD --- */
 const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
             <h1 className="text-2xl font-bold text-slate-800">Class 5-A Overview</h1>
@@ -253,8 +358,22 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
 
 /* --- ADMIN DASHBOARD --- */
 const AdminDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+
+  const handleLeaveAction = (id: string, action: 'Approved' | 'Rejected') => {
+    // Update local state to reflect change
+    setLeaveRequests(prev => prev.map(req => 
+      req.id === id ? { ...req, status: action } : req
+    ));
+    // In real app, update backend here
+    const req = mockLeaveRequests.find(r => r.id === id);
+    if (req) req.status = action;
+  };
+
+  const pendingLeaves = leaveRequests.filter(r => r.status === 'Pending');
+
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Admin Overview</h1>
@@ -295,32 +414,80 @@ const AdminDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =>
             </div>
          </div>
 
-         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-            <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-               <button 
-                 onClick={() => onNavigate(View.STUDENTS)}
-                 className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-3"
-               >
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Users className="w-4 h-4" /></div>
-                  <span className="text-sm font-medium text-slate-700">Admit New Student</span>
-               </button>
-               <button 
-                 onClick={() => onNavigate(View.FEES)}
-                 className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-yellow-200 transition-all flex items-center gap-3"
-               >
-                  <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600"><DollarSign className="w-4 h-4" /></div>
-                  <span className="text-sm font-medium text-slate-700">Generate Fee Invoices</span>
-               </button>
-               <button 
-                 onClick={() => onNavigate(View.ACADEMICS)}
-                 className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-pink-200 transition-all flex items-center gap-3"
-               >
-                  <div className="p-2 bg-pink-100 rounded-lg text-pink-600"><Calendar className="w-4 h-4" /></div>
-                  <span className="text-sm font-medium text-slate-700">Update Timetable</span>
-               </button>
+         <div className="space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => onNavigate(View.STUDENTS)}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-3"
+                  >
+                      <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Users className="w-4 h-4" /></div>
+                      <span className="text-sm font-medium text-slate-700">Admit New Student</span>
+                  </button>
+                  <button 
+                    onClick={() => onNavigate(View.FEES)}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-yellow-200 transition-all flex items-center gap-3"
+                  >
+                      <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600"><DollarSign className="w-4 h-4" /></div>
+                      <span className="text-sm font-medium text-slate-700">Generate Fee Invoices</span>
+                  </button>
+                  <button 
+                    onClick={() => onNavigate(View.ACADEMICS)}
+                    className="w-full text-left p-3 rounded-lg hover:bg-slate-50 border border-slate-100 hover:border-pink-200 transition-all flex items-center gap-3"
+                  >
+                      <div className="p-2 bg-pink-100 rounded-lg text-pink-600"><Calendar className="w-4 h-4" /></div>
+                      <span className="text-sm font-medium text-slate-700">Update Timetable</span>
+                  </button>
+                </div>
             </div>
          </div>
+      </div>
+      
+      {/* Admin Leave Approvals Section */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+         <div className="flex justify-between items-center mb-4">
+             <h3 className="font-bold text-slate-800">Pending Leave Approvals</h3>
+             <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded-full">{pendingLeaves.length} Pending</span>
+         </div>
+         {pendingLeaves.length === 0 ? (
+           <p className="text-slate-400 text-sm py-4">No pending leave requests.</p>
+         ) : (
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingLeaves.map(req => (
+                <div key={req.id} className="border border-slate-200 rounded-xl p-4 hover:border-blue-200 transition-colors bg-slate-50">
+                   <div className="flex justify-between items-start mb-2">
+                      <div>
+                         <h4 className="font-bold text-slate-800">{req.studentName}</h4>
+                         <p className="text-xs text-slate-500">ID: {req.studentId}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-400">{req.requestDate}</span>
+                   </div>
+                   <div className="mb-3">
+                      <p className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        {req.startDate} <span className="text-slate-400">to</span> {req.endDate}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1 italic">"{req.reason}"</p>
+                   </div>
+                   <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={() => handleLeaveAction(req.id, 'Approved')}
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-1"
+                      >
+                         <Check className="w-3 h-3" /> Approve
+                      </button>
+                      <button 
+                        onClick={() => handleLeaveAction(req.id, 'Rejected')}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-1"
+                      >
+                         <X className="w-3 h-3" /> Reject
+                      </button>
+                   </div>
+                </div>
+              ))}
+           </div>
+         )}
       </div>
     </div>
   );

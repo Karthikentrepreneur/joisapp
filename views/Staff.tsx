@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { mockStaff } from '../data/mockData';
-import { Search, Plus, Phone, Mail, MoreHorizontal, UserCheck } from 'lucide-react';
+import { Search, Plus, Phone, Mail } from 'lucide-react';
 
 export const Staff: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,7 +11,7 @@ export const Staff: React.FC = () => {
   );
 
   return (
-    <div className="p-4 md:p-6 h-[calc(100vh-64px)] flex flex-col animate-in fade-in duration-500">
+    <div className="h-full overflow-y-auto p-4 md:p-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Staff Management</h2>
@@ -23,17 +23,17 @@ export const Staff: React.FC = () => {
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 flex items-center gap-4">
-        <Search className="w-5 h-5 text-slate-400" />
+        <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
         <input 
             type="text" 
             placeholder="Search by name or role..." 
-            className="flex-1 outline-none text-sm text-slate-700"
+            className="flex-1 outline-none text-sm text-slate-700 min-w-0"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
         {filteredStaff.map(staff => (
           <div key={staff.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-2 ${staff.role === 'Teacher' ? 'bg-blue-500' : staff.role === 'Admin' ? 'bg-purple-500' : 'bg-orange-500'}`}></div>

@@ -4,7 +4,7 @@ import { FileText, Download, Printer, Plus } from 'lucide-react';
 
 export const Documents: React.FC = () => {
   return (
-    <div className="p-4 md:p-6 h-[calc(100vh-64px)] flex flex-col animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 h-full overflow-y-auto flex flex-col animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Documents & Certificates</h2>

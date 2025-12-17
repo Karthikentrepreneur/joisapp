@@ -15,7 +15,7 @@ export const Academics: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'timetable' | 'homework' | 'results'>('timetable');
 
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 h-full overflow-y-auto pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
            <h2 className="text-2xl font-bold text-slate-800">Academics</h2>

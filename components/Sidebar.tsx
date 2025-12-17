@@ -7,7 +7,6 @@ import {
   ShieldCheck, 
   CreditCard, 
   MessageSquare, 
-  Bot,
   CalendarCheck,
   Users,
   FileText,
@@ -26,14 +25,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeVie
     { view: View.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.TRANSPORT] },
     { view: View.STUDENTS, label: 'Students', icon: Users, roles: [UserRole.ADMIN, UserRole.TEACHER] },
     { view: View.STAFF, label: 'Staff Directory', icon: Briefcase, roles: [UserRole.ADMIN] },
-    { view: View.ACADEMICS, label: 'Academics & Homework', icon: GraduationCap, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
+    { view: View.ACADEMICS, label: 'Academics', icon: GraduationCap, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
     { view: View.ATTENDANCE, label: 'Attendance', icon: CalendarCheck, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
     { view: View.FEES, label: 'Fees & Finance', icon: CreditCard, roles: [UserRole.ADMIN, UserRole.PARENT] },
     { view: View.TRANSPORT, label: 'Transport & GPS', icon: Bus, roles: [UserRole.ADMIN, UserRole.PARENT, UserRole.TRANSPORT] },
     { view: View.SAFETY, label: 'Safety & CCTV', icon: ShieldCheck, roles: [UserRole.ADMIN, UserRole.TRANSPORT] },
     { view: View.COMMUNICATION, label: 'Communication', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
     { view: View.DOCUMENTS, label: 'Documents', icon: FileText, roles: [UserRole.ADMIN, UserRole.PARENT] },
-    { view: View.AI_ASSISTANT, label: 'AI Assistant', icon: Bot, roles: [UserRole.ADMIN, UserRole.TEACHER] },
   ];
 
   const filteredItems = menuItems.filter(item => item.roles.includes(role));
@@ -74,22 +72,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeVie
           </button>
         ))}
       </nav>
-
-      <div className="p-4 border-t border-slate-100">
-        <div className="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-4 text-white shadow-md">
-          <div className="flex items-center gap-2 mb-2">
-            <Bot className="w-5 h-5" />
-            <h4 className="font-bold text-sm">Need Help?</h4>
-          </div>
-          <p className="text-xs text-pink-100 mb-3 leading-relaxed">Ask our AI to draft notices or check reports.</p>
-          <button 
-            onClick={() => onChangeView(View.AI_ASSISTANT)}
-            className="w-full bg-white/20 hover:bg-white/30 text-xs font-bold py-2.5 rounded-xl transition-colors"
-          >
-            Start Chat
-          </button>
-        </div>
-      </div>
     </aside>
   );
 };

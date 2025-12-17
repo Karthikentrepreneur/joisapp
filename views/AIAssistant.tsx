@@ -40,8 +40,8 @@ export const AIAssistant: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] p-6 flex flex-col md:flex-row gap-6 animate-in slide-in-from-right duration-300">
-       <div className="w-full md:w-1/3 space-y-4">
+    <div className="h-full p-4 md:p-6 flex flex-col md:flex-row gap-6 animate-in slide-in-from-right duration-300">
+       <div className="hidden md:block w-full md:w-1/3 space-y-4">
           <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg">
              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
                <Sparkles className="w-6 h-6 text-white" />
@@ -64,7 +64,7 @@ export const AIAssistant: React.FC = () => {
           </div>
        </div>
 
-       <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+       <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full">
          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -85,7 +85,7 @@ export const AIAssistant: React.FC = () => {
                  <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${msg.role === 'user' ? 'bg-slate-200' : 'bg-indigo-100'}`}>
                     {msg.role === 'user' ? <User className="w-4 h-4 text-slate-600" /> : <Bot className="w-4 h-4 text-indigo-600" />}
                  </div>
-                 <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                    msg.role === 'user' 
                      ? 'bg-blue-600 text-white rounded-tr-none shadow-md' 
                      : 'bg-slate-100 text-slate-800 rounded-tl-none'

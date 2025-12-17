@@ -21,7 +21,7 @@ export const Transport: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 md:p-6 h-[calc(100vh-64px)] flex flex-col gap-6 animate-in fade-in zoom-in duration-300 overflow-y-auto">
+    <div className="p-4 md:p-6 h-full flex flex-col gap-6 animate-in fade-in zoom-in duration-300 overflow-y-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Live Fleet Tracking</h2>
@@ -33,7 +33,7 @@ export const Transport: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 flex-1">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
         {/* Sidebar List */}
         <div className="w-full lg:w-1/3 space-y-4 lg:overflow-y-auto lg:h-full order-2 lg:order-1">
           {buses.map((bus) => (

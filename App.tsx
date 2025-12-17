@@ -43,9 +43,9 @@ function App() {
       case View.AI_ASSISTANT:
         return <AIAssistant />;
       case View.FEES:
-        return <Fees />;
+        return <Fees role={role} />;
       case View.ATTENDANCE:
-        return <Attendance />;
+        return <Attendance role={role} />;
       case View.COMMUNICATION:
         return <Communication />;
       case View.DOCUMENTS:
@@ -84,7 +84,7 @@ function App() {
           toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
         />
         
-        <main className="flex-1 overflow-y-auto scroll-smooth">
+        <main className="flex-1 overflow-hidden relative">
           {renderView()}
         </main>
       </div>

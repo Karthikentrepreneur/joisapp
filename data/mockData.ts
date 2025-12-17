@@ -1,4 +1,4 @@
-import { Student, Invoice, Notice, ChatMessage, Staff, Homework, Certificate } from '../types';
+import { Student, Invoice, Notice, ChatMessage, Staff, Homework, Certificate, LeaveRequest } from '../types';
 
 // Mock User Session (Simulating a logged-in Parent)
 export const CURRENT_USER_ID = 'USR-PARENT-01'; // Jane Doe
@@ -45,6 +45,10 @@ export const mockChats: ChatMessage[] = [
 
 export const mockCertificates: Certificate[] = [
   { id: 'CERT-001', type: 'Bonafide', studentName: 'Emma Thompson', issueDate: '2024-01-15', status: 'Generated' },
+];
+
+export const mockLeaveRequests: LeaveRequest[] = [
+  { id: 'LR-001', studentId: 'ST-2024-002', studentName: 'Liam Wilson', parentId: 'USR-PARENT-02', startDate: '2024-04-05', endDate: '2024-04-06', reason: 'Family function out of town.', status: 'Pending', requestDate: '2024-04-01' },
 ];
 
 // Helper to simulate "Database Query" for the logged-in parent

@@ -112,3 +112,15 @@ export interface Certificate {
   issueDate: string;
   status: 'Generated' | 'Pending';
 }
+
+export interface LeaveRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  parentId: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  requestDate: string;
+}
