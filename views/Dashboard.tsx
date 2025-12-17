@@ -276,12 +276,12 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
 /* --- TEACHER DASHBOARD --- */
 const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const [showPayslip, setShowPayslip] = useState(false);
-  const currentTeacher = mockStaff.find(s => s.role === 'Teacher') || mockStaff[0]; // Simulation
-  const adminStaff = mockStaff.find(s => s.role === 'Admin') || mockStaff[2]; // Find an admin for signature
+  
+  // Dynamically retrieve staff on render to ensure we get updated signatures
+  const currentTeacher = mockStaff.find(s => s.role === 'Teacher') || mockStaff[0]; 
+  const adminStaff = mockStaff.find(s => s.role === 'Admin') || mockStaff[2]; 
 
   const handleDownloadPdf = () => {
-    // Uses the native browser print which supports "Save as PDF"
-    // The CSS @media print block in index.html ensures only the payslip prints
     window.print();
   };
 
@@ -384,7 +384,7 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                       className="h-16 w-auto object-contain"
                     />
                     <div>
-                       <h2 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Junior Odyssey Int. School</h2>
+                       <h2 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Junior Odyssey International School</h2>
                        <p className="text-sm text-slate-500">1/13, MR Radha Street, Pudupakkam,</p>
                        <p className="text-sm text-slate-500">OMR Near SIPCOT Siruseri, Chennai – 603103.</p>
                     </div>
@@ -463,23 +463,29 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                  </div>
                  
                  <div className="flex flex-col md:flex-row justify-between pt-12 text-sm gap-8 md:gap-0">
-                    <div className="text-center flex flex-col items-center">
-                       {adminStaff?.signature ? (
-                         <img src={adminStaff.signature} alt="Employer Signature" className="h-12 object-contain mb-1 mix-blend-multiply" />
-                       ) : (
-                         <div className="h-12"></div>
-                       )}
-                       <div className="w-32 border-b border-slate-300 mb-2"></div>
-                       <p className="text-slate-500">Employer Signature</p>
+                    <div className="text-center flex flex-col items-center flex-1">
+                       <div className="h-20 flex items-end justify-center mb-1 w-full">
+                          {adminStaff?.signature ? (
+                            <img src={adminStaff.signature} alt="Employer Signature" className="max-h-16 object-contain mix-blend-multiply" />
+                          ) : (
+                            <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
+                          )}
+                       </div>
+                       <div className="w-40 border-b border-slate-300 mb-2"></div>
+                       <p className="text-slate-500 font-bold">Employer Signature</p>
+                       <p className="text-xs text-slate-400">{adminStaff.name}</p>
                     </div>
-                    <div className="text-center flex flex-col items-center">
-                       {currentTeacher?.signature ? (
-                         <img src={currentTeacher.signature} alt="Employee Signature" className="h-12 object-contain mb-1 mix-blend-multiply" />
-                       ) : (
-                         <div className="h-12"></div>
-                       )}
-                       <div className="w-32 border-b border-slate-300 mb-2"></div>
-                       <p className="text-slate-500">Employee Signature</p>
+                    <div className="text-center flex flex-col items-center flex-1">
+                       <div className="h-20 flex items-end justify-center mb-1 w-full">
+                         {currentTeacher?.signature ? (
+                           <img src={currentTeacher.signature} alt="Employee Signature" className="max-h-16 object-contain mix-blend-multiply" />
+                         ) : (
+                           <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
+                         )}
+                       </div>
+                       <div className="w-40 border-b border-slate-300 mb-2"></div>
+                       <p className="text-slate-500 font-bold">Employee Signature</p>
+                       <p className="text-xs text-slate-400">{currentTeacher.name}</p>
                     </div>
                  </div>
               </div>

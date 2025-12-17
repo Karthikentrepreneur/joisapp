@@ -28,6 +28,10 @@
 
       /* Print Styles for PDF Generation */
       @media print {
+        @page {
+          size: A4;
+          margin: 0;
+        }
         body * {
           visibility: hidden;
         }
@@ -40,10 +44,12 @@
           top: 0;
           width: 100%;
           margin: 0;
-          padding: 20px;
+          padding: 40px;
           box-shadow: none;
           max-height: none;
           overflow: visible;
+          border: none;
+          background: white;
         }
         .no-print {
           display: none !important;

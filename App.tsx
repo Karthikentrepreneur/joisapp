@@ -25,14 +25,14 @@ const DEFAULT_PERMISSIONS = {
   ],
   [UserRole.TEACHER]: [
     View.DASHBOARD, View.STUDENTS, View.ACADEMICS, View.ATTENDANCE, 
-    View.LEAVE, View.COMMUNICATION
+    View.LEAVE, View.COMMUNICATION, View.SETTINGS
   ],
   [UserRole.PARENT]: [
     View.DASHBOARD, View.ACADEMICS, View.ATTENDANCE, View.LEAVE, View.FEES, 
-    View.TRANSPORT, View.COMMUNICATION, View.DOCUMENTS
+    View.TRANSPORT, View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
   ],
   [UserRole.TRANSPORT]: [
-    View.DASHBOARD, View.TRANSPORT, View.SAFETY
+    View.DASHBOARD, View.TRANSPORT, View.SAFETY, View.SETTINGS
   ]
 };
 
@@ -77,7 +77,7 @@ function App() {
       case View.DOCUMENTS:
         return <Documents />;
       case View.SETTINGS:
-        return <Settings permissions={permissions} setPermissions={setPermissions} />;
+        return <Settings role={role} permissions={permissions} setPermissions={setPermissions} />;
       default:
         return <Dashboard role={role} onNavigate={setCurrentView} />;
     }
