@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, permissions
           title="Go to Dashboard"
         >
           <img 
-            src="https://www.joischools.com/assets/school-logo-DyJSNuS_.jpeg" 
+            src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
             alt="Junior Odyssey International School" 
             className="w-28 h-auto mb-3 object-contain"
           />
@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, permissions
       
       <div className="p-4 border-t border-slate-100">
          <div className="text-[10px] text-slate-400 text-center">
-            v2.4.0 • EduNexus Systems
+            v2.4.1 • EduNexus Systems
          </div>
       </div>
     </aside>

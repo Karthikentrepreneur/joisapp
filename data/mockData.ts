@@ -12,10 +12,70 @@ export const mockStudents: Student[] = [
 ];
 
 export const mockStaff: Staff[] = [
-  { id: 'TCH-001', name: 'Sarah Johnson', role: 'Teacher', subject: 'Mathematics', classAssigned: '5-A', phone: '555-0101', email: 'sarah.j@juniorodyssey.edu', status: 'Active', image: 'https://picsum.photos/seed/sarah/200/200' },
-  { id: 'TCH-002', name: 'Michael Brown', role: 'Teacher', subject: 'Science', classAssigned: '5-B', phone: '555-0102', email: 'm.brown@juniorodyssey.edu', status: 'Active', image: 'https://picsum.photos/seed/mike/200/200' },
-  { id: 'ADM-001', name: 'Robert Principal', role: 'Admin', phone: '555-9999', email: 'admin@juniorodyssey.edu', status: 'Active', image: 'https://picsum.photos/seed/rob/200/200' },
-  { id: 'DRV-001', name: 'John Driver', role: 'Driver', phone: '555-3333', email: 'transport@juniorodyssey.edu', status: 'Active', image: 'https://picsum.photos/seed/john/200/200' },
+  { 
+    id: 'TCH-001', 
+    name: 'Sarah Johnson', 
+    role: 'Teacher', 
+    subject: 'Mathematics', 
+    classAssigned: '5-A', 
+    phone: '555-0101', 
+    email: 'sarah.j@juniorodyssey.edu', 
+    status: 'Active', 
+    image: 'https://picsum.photos/seed/sarah/200/200',
+    salaryDetails: {
+      basic: 45000,
+      allowances: 8000,
+      deductions: 3500,
+      net: 49500
+    }
+  },
+  { 
+    id: 'TCH-002', 
+    name: 'Michael Brown', 
+    role: 'Teacher', 
+    subject: 'Science', 
+    classAssigned: '5-B', 
+    phone: '555-0102', 
+    email: 'm.brown@juniorodyssey.edu', 
+    status: 'Active', 
+    image: 'https://picsum.photos/seed/mike/200/200',
+    salaryDetails: {
+      basic: 42000,
+      allowances: 7000,
+      deductions: 3000,
+      net: 46000
+    }
+  },
+  { 
+    id: 'ADM-001', 
+    name: 'Robert Principal', 
+    role: 'Admin', 
+    phone: '555-9999', 
+    email: 'admin@juniorodyssey.edu', 
+    status: 'Active', 
+    image: 'https://picsum.photos/seed/rob/200/200',
+    salaryDetails: {
+      basic: 85000,
+      allowances: 15000,
+      deductions: 8000,
+      net: 92000
+    }
+  },
+  { 
+    id: 'DRV-001', 
+    name: 'John Driver', 
+    role: 'Driver', 
+    phone: '555-3333', 
+    email: 'transport@juniorodyssey.edu', 
+    status: 'Active', 
+    image: 'https://picsum.photos/seed/john/200/200',
+    salaryDetails: {
+      basic: 25000,
+      allowances: 3000,
+      deductions: 1500,
+      net: 26500
+    }
+  },
 ];
 
 export const mockInvoices: Invoice[] = [

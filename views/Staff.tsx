@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { mockStaff } from '../data/mockData';
-import { Search, Plus, Phone, Mail, X, Save } from 'lucide-react';
+import { Search, Plus, Phone, Mail, X, Save, DollarSign } from 'lucide-react';
 import { UserRole, Staff as StaffType } from '../types';
 
 interface StaffProps {
@@ -13,13 +13,16 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   // New Staff Form State
-  const [newStaff, setNewStaff] = useState<Partial<StaffType>>({
+  const [newStaff, setNewStaff] = useState<Partial<StaffType> & { basicSalary: number, allowances: number, deductions: number }>({
     name: '',
     role: 'Teacher',
     email: '',
     phone: '',
     status: 'Active',
-    classAssigned: ''
+    classAssigned: '',
+    basicSalary: 0,
+    allowances: 0,
+    deductions: 0
   });
 
   const filteredStaff = staffList.filter(s => 
@@ -37,7 +40,13 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
       phone: newStaff.phone || '',
       status: 'Active',
       classAssigned: newStaff.role === 'Teacher' ? newStaff.classAssigned : undefined,
-      image: `https://picsum.photos/seed/${newStaff.name}staff/200/200`
+      image: `https://picsum.photos/seed/${newStaff.name}staff/200/200`,
+      salaryDetails: {
+        basic: newStaff.basicSalary,
+        allowances: newStaff.allowances,
+        deductions: newStaff.deductions,
+        net: newStaff.basicSalary + newStaff.allowances - newStaff.deductions
+      }
     };
     
     setStaffList([...staffList, createdStaff]);
@@ -48,9 +57,14 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
       email: '',
       phone: '',
       status: 'Active',
-      classAssigned: ''
+      classAssigned: '',
+      basicSalary: 0,
+      allowances: 0,
+      deductions: 0
     });
   };
+
+  const netSalary = (newStaff.basicSalary || 0) + (newStaff.allowances || 0) - (newStaff.deductions || 0);
 
   return (
     <div className="h-full overflow-y-auto p-4 md:p-6 animate-in fade-in duration-500">
@@ -108,6 +122,14 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
                     </div>
                     <span className="truncate">{staff.email}</span>
                  </div>
+                 {staff.salaryDetails && role === UserRole.ADMIN && (
+                   <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                         <DollarSign className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium text-emerald-600">₹{staff.salaryDetails.net.toLocaleString('en-IN')}/mo</span>
+                   </div>
+                 )}
               </div>
             </div>
             <div className="bg-slate-50 p-3 flex justify-center border-t border-slate-100">
@@ -120,7 +142,7 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
       {/* Create Staff Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl">
+           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex justify-between items-center mb-6">
                  <h3 className="text-xl font-bold text-slate-800">Add Staff Member</h3>
                  <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -128,39 +150,75 @@ export const Staff: React.FC<StaffProps> = ({ role }) => {
                  </button>
               </div>
               
-              <form onSubmit={handleCreateStaff} className="space-y-4">
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                    <input required type="text" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
-                 </div>
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                    <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value as any})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white">
-                        <option value="Teacher">Teacher</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Driver">Driver</option>
-                        <option value="Clerk">Clerk</option>
-                    </select>
-                 </div>
-                 {newStaff.role === 'Teacher' && (
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Class</label>
-                        <input type="text" value={newStaff.classAssigned} onChange={e => setNewStaff({...newStaff, classAssigned: e.target.value})} placeholder="e.g. 5-A" className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
-                    </div>
-                 )}
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                    <input required type="email" value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
-                 </div>
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                    <input required type="tel" value={newStaff.phone} onChange={e => setNewStaff({...newStaff, phone: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+              <form onSubmit={handleCreateStaff} className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-4">
+                     <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Personal Details</h4>
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                        <input required type="text" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                        <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value as any})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white">
+                            <option value="Teacher">Teacher</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Clerk">Clerk</option>
+                        </select>
+                     </div>
+                     {newStaff.role === 'Teacher' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Class</label>
+                            <input type="text" value={newStaff.classAssigned} onChange={e => setNewStaff({...newStaff, classAssigned: e.target.value})} placeholder="e.g. 5-A" className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                        </div>
+                     )}
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input required type="email" value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                        <input required type="tel" value={newStaff.phone} onChange={e => setNewStaff({...newStaff, phone: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                     </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Salary & Compensation</h4>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Basic Salary (Monthly)</label>
+                            <div className="relative">
+                               <span className="absolute left-3 top-2 text-slate-400">₹</span>
+                               <input required type="number" min="0" value={newStaff.basicSalary || ''} onChange={e => setNewStaff({...newStaff, basicSalary: Number(e.target.value)})} className="w-full pl-7 pr-4 py-2 border border-slate-200 rounded-lg text-sm" placeholder="0" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Allowances (HRA, TA, etc.)</label>
+                            <div className="relative">
+                               <span className="absolute left-3 top-2 text-slate-400">₹</span>
+                               <input required type="number" min="0" value={newStaff.allowances || ''} onChange={e => setNewStaff({...newStaff, allowances: Number(e.target.value)})} className="w-full pl-7 pr-4 py-2 border border-slate-200 rounded-lg text-sm" placeholder="0" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Deductions (Tax, PF)</label>
+                            <div className="relative">
+                               <span className="absolute left-3 top-2 text-slate-400">₹</span>
+                               <input required type="number" min="0" value={newStaff.deductions || ''} onChange={e => setNewStaff({...newStaff, deductions: Number(e.target.value)})} className="w-full pl-7 pr-4 py-2 border border-slate-200 rounded-lg text-sm" placeholder="0" />
+                            </div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                           <span className="font-bold text-slate-700 text-sm">Net Pay</span>
+                           <span className="font-black text-emerald-600 text-lg">₹{netSalary.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                   </div>
                  </div>
 
-                 <div className="pt-4 mt-2 flex justify-end gap-3">
+                 <div className="pt-4 mt-2 border-t border-slate-100 flex justify-end gap-3">
                     <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-50">Cancel</button>
                     <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-md flex items-center gap-2">
-                       <Save className="w-4 h-4" /> Add Staff
+                       <Save className="w-4 h-4" /> Create Staff
                     </button>
                  </div>
               </form>

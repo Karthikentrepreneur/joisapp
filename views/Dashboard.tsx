@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserRole, View, LeaveRequest } from '../types';
 import { getMyChild, getMyChildHomework, getMyChildInvoices, mockStudents, mockStaff, mockLeaveRequests } from '../data/mockData';
-import { Users, AlertTriangle, Calendar, Clock, DollarSign, BookOpen, Bus, Star, CheckCircle, CalendarPlus, X, Check } from 'lucide-react';
+import { Users, AlertTriangle, Calendar, Clock, DollarSign, BookOpen, Bus, Star, CheckCircle, CalendarPlus, X, Check, FileText, Download, Printer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -275,6 +275,9 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
 
 /* --- TEACHER DASHBOARD --- */
 const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+  const [showPayslip, setShowPayslip] = useState(false);
+  const currentTeacher = mockStaff.find(s => s.role === 'Teacher') || mockStaff[0]; // Simulation
+
   return (
     <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -282,12 +285,20 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
             <h1 className="text-2xl font-bold text-slate-800">Class 5-A Overview</h1>
             <p className="text-slate-500">You have 2 pending tasks today.</p>
          </div>
-         <button 
-           onClick={() => onNavigate(View.ACADEMICS)}
-           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2 w-full md:w-auto justify-center"
-         >
-            <Calendar className="w-4 h-4" /> View Schedule
-         </button>
+         <div className="flex gap-2 w-full md:w-auto">
+            <button 
+              onClick={() => setShowPayslip(true)}
+              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2 justify-center flex-1 md:flex-none"
+            >
+               <FileText className="w-4 h-4" /> My Payslip
+            </button>
+            <button 
+              onClick={() => onNavigate(View.ACADEMICS)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2 justify-center flex-1 md:flex-none"
+            >
+               <Calendar className="w-4 h-4" /> View Schedule
+            </button>
+         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -352,6 +363,117 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
            </ResponsiveContainer>
          </div>
       </div>
+
+      {/* Salary Slip Modal */}
+      {showPayslip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8 border-b border-slate-200 flex justify-between items-start">
+                 <div className="flex items-center gap-4">
+                    <img 
+                      src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
+                      alt="Logo" 
+                      className="h-16 w-auto object-contain"
+                    />
+                    <div>
+                       <h2 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Junior Odyssey Int. School</h2>
+                       <p className="text-sm text-slate-500">123 Education Lane, Knowledge City</p>
+                       <p className="text-sm text-slate-500">Phone: +1 234 567 8900</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setShowPayslip(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-6 h-6" />
+                 </button>
+              </div>
+
+              <div className="p-8 space-y-8 bg-slate-50/50">
+                 <div className="text-center">
+                    <h3 className="text-lg font-bold text-slate-800 border-b-2 border-slate-200 inline-block px-4 pb-1">SALARY SLIP</h3>
+                    <p className="text-sm text-slate-500 mt-1">For the month of March, 2024</p>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm">
+                    <div>
+                       <p className="text-slate-500 mb-1">Employee Name</p>
+                       <p className="font-bold text-slate-800">{currentTeacher.name}</p>
+                    </div>
+                    <div>
+                       <p className="text-slate-500 mb-1">Designation</p>
+                       <p className="font-bold text-slate-800">{currentTeacher.role}</p>
+                    </div>
+                    <div>
+                       <p className="text-slate-500 mb-1">Employee ID</p>
+                       <p className="font-bold text-slate-800">{currentTeacher.id}</p>
+                    </div>
+                    <div>
+                       <p className="text-slate-500 mb-1">Pay Date</p>
+                       <p className="font-bold text-slate-800">31 March, 2024</p>
+                    </div>
+                 </div>
+
+                 <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50">
+                       <div className="p-3 font-bold text-slate-700 border-r border-slate-200">Earnings</div>
+                       <div className="p-3 font-bold text-slate-700">Deductions</div>
+                    </div>
+                    <div className="grid grid-cols-2">
+                       <div className="border-r border-slate-200 p-4 space-y-2">
+                          <div className="flex justify-between text-sm">
+                             <span className="text-slate-600">Basic Salary</span>
+                             <span className="font-medium">₹{currentTeacher.salaryDetails?.basic?.toLocaleString() || '0'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                             <span className="text-slate-600">Allowances (HRA/DA)</span>
+                             <span className="font-medium">₹{currentTeacher.salaryDetails?.allowances?.toLocaleString() || '0'}</span>
+                          </div>
+                       </div>
+                       <div className="p-4 space-y-2">
+                          <div className="flex justify-between text-sm">
+                             <span className="text-slate-600">Tax / PF</span>
+                             <span className="font-medium">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                          </div>
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 border-t border-slate-200 bg-slate-50">
+                       <div className="p-3 border-r border-slate-200 flex justify-between items-center">
+                          <span className="font-bold text-slate-700">Total Earnings</span>
+                          <span className="font-bold text-slate-800">₹{((currentTeacher.salaryDetails?.basic || 0) + (currentTeacher.salaryDetails?.allowances || 0)).toLocaleString()}</span>
+                       </div>
+                       <div className="p-3 flex justify-between items-center">
+                          <span className="font-bold text-slate-700">Total Deductions</span>
+                          <span className="font-bold text-slate-800">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="flex justify-between items-center p-4 bg-emerald-50 border border-emerald-100 rounded-lg">
+                    <span className="font-bold text-emerald-800 text-lg">NET PAY</span>
+                    <span className="font-black text-emerald-700 text-2xl">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
+                 </div>
+                 
+                 <div className="flex justify-between pt-12 text-sm">
+                    <div className="text-center">
+                       <div className="w-32 border-b border-slate-300 mb-2"></div>
+                       <p className="text-slate-500">Employer Signature</p>
+                    </div>
+                    <div className="text-center">
+                       <div className="w-32 border-b border-slate-300 mb-2"></div>
+                       <p className="text-slate-500">Employee Signature</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-white">
+                 <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">
+                    <Printer className="w-4 h-4" /> Print
+                 </button>
+                 <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm">
+                    <Download className="w-4 h-4" /> Download PDF
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

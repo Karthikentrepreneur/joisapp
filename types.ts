@@ -47,6 +47,12 @@ export interface Staff {
   email: string;
   status: 'Active' | 'On Leave';
   image: string;
+  salaryDetails?: {
+    basic: number;
+    allowances: number;
+    deductions: number;
+    net: number;
+  };
 }
 
 export interface Notice {
