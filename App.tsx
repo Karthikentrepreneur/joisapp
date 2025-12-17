@@ -12,18 +12,42 @@ import { Attendance } from './views/Attendance';
 import { Communication } from './views/Communication';
 import { Staff } from './views/Staff';
 import { Documents } from './views/Documents';
+import { Settings } from './views/Settings';
+import { Leave } from './views/Leave';
 import { UserRole, View } from './types';
+
+// Default configuration for role-based access
+const DEFAULT_PERMISSIONS = {
+  [UserRole.ADMIN]: [
+    View.DASHBOARD, View.STUDENTS, View.STAFF, View.ACADEMICS, 
+    View.ATTENDANCE, View.LEAVE, View.FEES, View.TRANSPORT, View.SAFETY, 
+    View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
+  ],
+  [UserRole.TEACHER]: [
+    View.DASHBOARD, View.STUDENTS, View.ACADEMICS, View.ATTENDANCE, 
+    View.LEAVE, View.COMMUNICATION
+  ],
+  [UserRole.PARENT]: [
+    View.DASHBOARD, View.ACADEMICS, View.ATTENDANCE, View.LEAVE, View.FEES, 
+    View.TRANSPORT, View.COMMUNICATION, View.DOCUMENTS
+  ],
+  [UserRole.TRANSPORT]: [
+    View.DASHBOARD, View.TRANSPORT, View.SAFETY
+  ]
+};
 
 function App() {
   const [role, setRole] = useState<UserRole>(UserRole.ADMIN);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [permissions, setPermissions] = useState<Record<UserRole, View[]>>(DEFAULT_PERMISSIONS);
 
   // Reset view when role changes if the current view isn't accessible
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
-    // Simple logic to reset to dashboard on role switch for safety
-    setCurrentView(View.DASHBOARD);
+    if (!permissions[newRole].includes(currentView)) {
+      setCurrentView(View.DASHBOARD);
+    }
   };
 
   const renderView = () => {
@@ -31,9 +55,9 @@ function App() {
       case View.DASHBOARD:
         return <Dashboard role={role} onNavigate={setCurrentView} />;
       case View.STUDENTS:
-        return <Students />;
+        return <Students role={role} />;
       case View.STAFF:
-        return <Staff />;
+        return <Staff role={role} />;
       case View.TRANSPORT:
         return <Transport />;
       case View.SAFETY:
@@ -46,10 +70,14 @@ function App() {
         return <Fees role={role} />;
       case View.ATTENDANCE:
         return <Attendance role={role} />;
+      case View.LEAVE:
+        return <Leave role={role} />;
       case View.COMMUNICATION:
         return <Communication />;
       case View.DOCUMENTS:
         return <Documents />;
+      case View.SETTINGS:
+        return <Settings permissions={permissions} setPermissions={setPermissions} />;
       default:
         return <Dashboard role={role} onNavigate={setCurrentView} />;
     }
@@ -70,6 +98,7 @@ function App() {
         <Sidebar 
           currentView={currentView} 
           role={role} 
+          permissions={permissions}
           onChangeView={(view) => {
             setCurrentView(view);
             setIsMobileMenuOpen(false);

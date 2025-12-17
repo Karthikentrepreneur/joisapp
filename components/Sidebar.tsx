@@ -10,31 +10,39 @@ import {
   CalendarCheck,
   Users,
   FileText,
-  Briefcase
+  Briefcase,
+  Settings,
+  CalendarDays
 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: View;
   role: UserRole;
+  permissions: Record<UserRole, View[]>;
   onChangeView: (view: View) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, permissions, onChangeView }) => {
   
-  const menuItems = [
-    { view: View.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.TRANSPORT] },
-    { view: View.STUDENTS, label: 'Students', icon: Users, roles: [UserRole.ADMIN, UserRole.TEACHER] },
-    { view: View.STAFF, label: 'Staff Directory', icon: Briefcase, roles: [UserRole.ADMIN] },
-    { view: View.ACADEMICS, label: 'Academics', icon: GraduationCap, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
-    { view: View.ATTENDANCE, label: 'Attendance', icon: CalendarCheck, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
-    { view: View.FEES, label: 'Fees & Finance', icon: CreditCard, roles: [UserRole.ADMIN, UserRole.PARENT] },
-    { view: View.TRANSPORT, label: 'Transport & GPS', icon: Bus, roles: [UserRole.ADMIN, UserRole.PARENT, UserRole.TRANSPORT] },
-    { view: View.SAFETY, label: 'Safety & CCTV', icon: ShieldCheck, roles: [UserRole.ADMIN, UserRole.TRANSPORT] },
-    { view: View.COMMUNICATION, label: 'Communication', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT] },
-    { view: View.DOCUMENTS, label: 'Documents', icon: FileText, roles: [UserRole.ADMIN, UserRole.PARENT] },
+  const allMenuItems = [
+    { view: View.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+    { view: View.STUDENTS, label: 'Students', icon: Users },
+    { view: View.STAFF, label: 'Staff Directory', icon: Briefcase },
+    { view: View.ACADEMICS, label: 'Academics', icon: GraduationCap },
+    { view: View.ATTENDANCE, label: 'Attendance', icon: CalendarCheck },
+    { view: View.LEAVE, label: 'Leave Management', icon: CalendarDays },
+    { view: View.FEES, label: 'Fees & Finance', icon: CreditCard },
+    { view: View.TRANSPORT, label: 'Transport & GPS', icon: Bus },
+    { view: View.SAFETY, label: 'Safety & CCTV', icon: ShieldCheck },
+    { view: View.COMMUNICATION, label: 'Communication', icon: MessageSquare },
+    { view: View.DOCUMENTS, label: 'Documents', icon: FileText },
+    // Removed AI Assistant from menu items
+    { view: View.SETTINGS, label: 'Settings', icon: Settings },
   ];
 
-  const filteredItems = menuItems.filter(item => item.roles.includes(role));
+  // Filter items based on the permissions object for the current role
+  const allowedViews = permissions[role] || [];
+  const filteredItems = allMenuItems.filter(item => allowedViews.includes(item.view));
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 h-full flex flex-col z-10 shadow-sm">
@@ -45,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeVie
           title="Go to Dashboard"
         >
           <img 
-            src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
+            src="https://www.joischools.com/assets/school-logo-DyJSNuS_.jpeg" 
             alt="Junior Odyssey International School" 
             className="w-28 h-auto mb-3 object-contain"
           />
@@ -72,6 +80,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeVie
           </button>
         ))}
       </nav>
+      
+      <div className="p-4 border-t border-slate-100">
+         <div className="text-[10px] text-slate-400 text-center">
+            v2.4.0 • EduNexus Systems
+         </div>
+      </div>
     </aside>
   );
 };

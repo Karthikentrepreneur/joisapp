@@ -1,14 +1,56 @@
 import React, { useState } from 'react';
 import { mockStaff } from '../data/mockData';
-import { Search, Plus, Phone, Mail } from 'lucide-react';
+import { Search, Plus, Phone, Mail, X, Save } from 'lucide-react';
+import { UserRole, Staff as StaffType } from '../types';
 
-export const Staff: React.FC = () => {
+interface StaffProps {
+  role?: UserRole;
+}
+
+export const Staff: React.FC<StaffProps> = ({ role }) => {
+  const [staffList, setStaffList] = useState<StaffType[]>(mockStaff);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const filteredStaff = mockStaff.filter(s => 
+  // New Staff Form State
+  const [newStaff, setNewStaff] = useState<Partial<StaffType>>({
+    name: '',
+    role: 'Teacher',
+    email: '',
+    phone: '',
+    status: 'Active',
+    classAssigned: ''
+  });
+
+  const filteredStaff = staffList.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleCreateStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    const createdStaff: StaffType = {
+      id: `EMP-${String(staffList.length + 1).padStart(3, '0')}`,
+      name: newStaff.name || 'Unknown',
+      role: newStaff.role as any,
+      email: newStaff.email || '',
+      phone: newStaff.phone || '',
+      status: 'Active',
+      classAssigned: newStaff.role === 'Teacher' ? newStaff.classAssigned : undefined,
+      image: `https://picsum.photos/seed/${newStaff.name}staff/200/200`
+    };
+    
+    setStaffList([...staffList, createdStaff]);
+    setShowAddModal(false);
+    setNewStaff({
+      name: '',
+      role: 'Teacher',
+      email: '',
+      phone: '',
+      status: 'Active',
+      classAssigned: ''
+    });
+  };
 
   return (
     <div className="h-full overflow-y-auto p-4 md:p-6 animate-in fade-in duration-500">
@@ -17,9 +59,14 @@ export const Staff: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-800">Staff Management</h2>
           <p className="text-slate-500">Directory of teachers, admins, and support staff.</p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2 transition-colors w-full md:w-auto justify-center">
-          <Plus className="w-4 h-4" /> Add Staff Member
-        </button>
+        {role === UserRole.ADMIN && (
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2 transition-colors w-full md:w-auto justify-center"
+          >
+            <Plus className="w-4 h-4" /> Add Staff Member
+          </button>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 flex items-center gap-4">
@@ -69,6 +116,57 @@ export const Staff: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Create Staff Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-xl font-bold text-slate-800">Add Staff Member</h3>
+                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-6 h-6" />
+                 </button>
+              </div>
+              
+              <form onSubmit={handleCreateStaff} className="space-y-4">
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                    <input required type="text" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                    <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value as any})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white">
+                        <option value="Teacher">Teacher</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Driver">Driver</option>
+                        <option value="Clerk">Clerk</option>
+                    </select>
+                 </div>
+                 {newStaff.role === 'Teacher' && (
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Class</label>
+                        <input type="text" value={newStaff.classAssigned} onChange={e => setNewStaff({...newStaff, classAssigned: e.target.value})} placeholder="e.g. 5-A" className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                    </div>
+                 )}
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input required type="email" value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                    <input required type="tel" value={newStaff.phone} onChange={e => setNewStaff({...newStaff, phone: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                 </div>
+
+                 <div className="pt-4 mt-2 flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-50">Cancel</button>
+                    <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-md flex items-center gap-2">
+                       <Save className="w-4 h-4" /> Add Staff
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

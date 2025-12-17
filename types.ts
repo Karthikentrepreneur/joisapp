@@ -16,7 +16,9 @@ export enum View {
   COMMUNICATION = 'Communication',
   AI_ASSISTANT = 'AI Assistant',
   STAFF = 'Staff Management',
-  DOCUMENTS = 'Documents & Certificates'
+  DOCUMENTS = 'Documents & Certificates',
+  SETTINGS = 'System Settings',
+  LEAVE = 'Leave Management'
 }
 
 export interface Student {
