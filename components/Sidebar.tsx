@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, onChangeVie
           title="Go to Dashboard"
         >
           <img 
-            src="https://www.joischools.com/assets/school-logo-DyJSNuS_.jpeg" 
+            src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
             alt="Junior Odyssey International School" 
             className="w-28 h-auto mb-3 object-contain"
           />
