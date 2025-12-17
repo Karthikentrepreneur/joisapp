@@ -371,143 +371,151 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
          </div>
       </div>
 
-      {/* Salary Slip Modal */}
+      {/* Salary Slip Modal - Restructured to match image */}
       {showPayslip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-           <div id="payslip-modal-content" className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto print:overflow-visible">
-              {/* This section is printed */}
-              <div className="p-6 md:p-8 border-b border-slate-200 flex justify-between items-start relative">
-                 <div className="flex items-center gap-4 flex-col md:flex-row text-center md:text-left w-full md:w-auto">
-                    <img 
-                      src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
-                      alt="Logo" 
-                      className="h-16 w-auto object-contain"
-                    />
-                    <div>
-                       <h2 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Junior Odyssey International School</h2>
-                       <p className="text-sm text-slate-500">1/13, MR Radha Street, Pudupakkam,</p>
-                       <p className="text-sm text-slate-500">OMR Near SIPCOT Siruseri, Chennai – 603103.</p>
-                    </div>
-                 </div>
-                 {/* Close button - hidden on print */}
-                 <button onClick={() => setShowPayslip(false)} className="text-slate-400 hover:text-slate-600 absolute top-4 right-4 md:static no-print">
-                    <X className="w-6 h-6" />
-                 </button>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:p-0">
+           <div id="payslip-modal-content" className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:w-full print:rounded-none">
+              
+              {/* Print Content Area */}
+              <div className="p-8 md:p-12 bg-white text-slate-900">
+                
+                {/* Header Section */}
+                <div className="flex flex-col items-center text-center mb-6">
+                   <img 
+                     src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
+                     alt="Logo" 
+                     className="h-16 w-auto mb-4" 
+                   />
+                   <h1 className="text-xl font-bold uppercase tracking-wide text-slate-800 leading-tight">
+                     Junior Odyssey International School
+                   </h1>
+                   <div className="text-xs text-slate-500 mt-1 leading-relaxed">
+                     <p>1/13, MR Radha Street, Pudupakkam,</p>
+                     <p>OMR Near SIPCOT Siruseri, Chennai – 603103.</p>
+                   </div>
+                </div>
 
-              <div className="p-6 md:p-8 space-y-8 bg-slate-50/50 print:bg-white">
-                 <div className="text-center">
-                    <h3 className="text-lg font-bold text-slate-800 border-b-2 border-slate-200 inline-block px-4 pb-1">SALARY SLIP</h3>
-                    <p className="text-sm text-slate-500 mt-1">For the month of March, 2024</p>
-                 </div>
+                <div className="w-full h-px bg-slate-300 mb-6"></div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-sm">
-                    <div>
-                       <p className="text-slate-500 mb-1">Employee Name</p>
-                       <p className="font-bold text-slate-800">{currentTeacher.name}</p>
-                    </div>
-                    <div>
-                       <p className="text-slate-500 mb-1">Designation</p>
-                       <p className="font-bold text-slate-800">{currentTeacher.role}</p>
-                    </div>
-                    <div>
-                       <p className="text-slate-500 mb-1">Employee ID</p>
-                       <p className="font-bold text-slate-800">{currentTeacher.id}</p>
-                    </div>
-                    <div>
-                       <p className="text-slate-500 mb-1">Pay Date</p>
-                       <p className="font-bold text-slate-800">31 March, 2024</p>
-                    </div>
-                 </div>
+                <div className="text-center mb-8">
+                   <h2 className="text-lg font-bold text-slate-800 uppercase inline-block border-b-2 border-slate-800 pb-1">
+                     Salary Slip
+                   </h2>
+                   <p className="text-xs text-slate-500 mt-2 font-medium">For the month of March, 2024</p>
+                </div>
 
-                 <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                    <div className="grid grid-cols-1 md:grid-cols-2">
-                       <div className="border-b md:border-b-0 md:border-r border-slate-200">
-                          <div className="p-3 font-bold text-slate-700 bg-slate-50 border-b border-slate-200">Earnings</div>
-                          <div className="p-4 space-y-2">
-                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-600">Basic Salary</span>
-                                <span className="font-medium">₹{currentTeacher.salaryDetails?.basic?.toLocaleString() || '0'}</span>
-                             </div>
-                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-600">Allowances (HRA/DA)</span>
-                                <span className="font-medium">₹{currentTeacher.salaryDetails?.allowances?.toLocaleString() || '0'}</span>
-                             </div>
-                          </div>
-                       </div>
-                       <div>
-                          <div className="p-3 font-bold text-slate-700 bg-slate-50 border-b border-slate-200">Deductions</div>
-                          <div className="p-4 space-y-2">
-                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-600">Tax / PF</span>
-                                <span className="font-medium">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 border-t border-slate-200 bg-slate-50">
-                       <div className="p-3 border-b md:border-b-0 md:border-r border-slate-200 flex justify-between items-center">
-                          <span className="font-bold text-slate-700">Total Earnings</span>
-                          <span className="font-bold text-slate-800">₹{((currentTeacher.salaryDetails?.basic || 0) + (currentTeacher.salaryDetails?.allowances || 0)).toLocaleString()}</span>
-                       </div>
-                       <div className="p-3 flex justify-between items-center">
-                          <span className="font-bold text-slate-700">Total Deductions</span>
-                          <span className="font-bold text-slate-800">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
-                       </div>
-                    </div>
-                 </div>
+                {/* Employee Details Section */}
+                <div className="mb-8 text-sm">
+                   <div className="grid grid-cols-1 gap-4">
+                      <div>
+                         <p className="text-slate-500 font-semibold mb-0.5 text-xs uppercase">Employee Name</p>
+                         <p className="font-bold text-slate-900 text-base">{currentTeacher.name}</p>
+                      </div>
+                      <div>
+                         <p className="text-slate-500 font-semibold mb-0.5 text-xs uppercase">Designation</p>
+                         <p className="font-bold text-slate-900 text-base">{currentTeacher.role}</p>
+                      </div>
+                      <div>
+                         <p className="text-slate-500 font-semibold mb-0.5 text-xs uppercase">Employee ID</p>
+                         <p className="font-bold text-slate-900 text-base">{currentTeacher.id}</p>
+                      </div>
+                      <div>
+                         <p className="text-slate-500 font-semibold mb-0.5 text-xs uppercase">Pay Date</p>
+                         <p className="font-bold text-slate-900 text-base">31 March, 2024</p>
+                      </div>
+                   </div>
+                </div>
 
-                 <div className="flex justify-between items-center p-4 bg-emerald-50 border border-emerald-100 rounded-lg print:bg-white print:border-slate-200">
-                    <span className="font-bold text-emerald-800 text-lg print:text-slate-800">NET PAY</span>
-                    <span className="font-black text-emerald-700 text-2xl print:text-slate-900">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
-                 </div>
-                 
-                 <div className="flex flex-col md:flex-row justify-between pt-12 text-sm gap-8 md:gap-0 break-inside-avoid">
-                    <div className="text-center flex flex-col items-center flex-1">
-                       <div className="h-20 flex items-end justify-center mb-1 w-full">
-                          {adminStaff?.signature ? (
+                {/* Financial Table */}
+                <div className="border border-slate-300 rounded-lg overflow-hidden mb-6 text-sm">
+                   {/* Earnings */}
+                   <div className="bg-slate-50 px-4 py-2 font-bold text-slate-800 border-b border-slate-300">Earnings</div>
+                   <div className="p-4 space-y-3 border-b border-slate-300">
+                      <div className="flex justify-between items-center">
+                         <span className="text-slate-600 font-medium">Basic Salary</span>
+                         <span className="font-bold text-slate-900">₹{currentTeacher.salaryDetails?.basic?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-slate-600 font-medium">Allowances (HRA/DA)</span>
+                         <span className="font-bold text-slate-900">₹{currentTeacher.salaryDetails?.allowances?.toLocaleString() || '0'}</span>
+                      </div>
+                   </div>
+
+                   {/* Deductions */}
+                   <div className="bg-slate-50 px-4 py-2 font-bold text-slate-800 border-b border-slate-300">Deductions</div>
+                   <div className="p-4 space-y-3 border-b border-slate-300">
+                      <div className="flex justify-between items-center">
+                         <span className="text-slate-600 font-medium">Tax / PF</span>
+                         <span className="font-bold text-slate-900">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                      </div>
+                   </div>
+
+                   {/* Totals within Table */}
+                   <div className="bg-slate-100/50 p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                         <span className="font-bold text-slate-800">Total Earnings</span>
+                         <span className="font-bold text-slate-900">₹{((currentTeacher.salaryDetails?.basic || 0) + (currentTeacher.salaryDetails?.allowances || 0)).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="font-bold text-slate-800">Total Deductions</span>
+                         <span className="font-bold text-slate-900">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Net Pay Box */}
+                <div className="border border-slate-300 rounded-lg p-5 flex justify-between items-center mb-16 bg-white">
+                   <span className="font-bold text-slate-800 text-xl uppercase tracking-tight">Net Pay</span>
+                   <span className="font-black text-slate-900 text-3xl">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
+                </div>
+
+                {/* Signatures */}
+                <div className="flex justify-between items-end mt-12 break-inside-avoid">
+                   <div className="flex flex-col items-center">
+                      <div className="h-20 flex items-end justify-center mb-2">
+                         {adminStaff?.signature && (
                             <img 
                                 src={adminStaff.signature} 
-                                alt="Employer Signature" 
-                                className="max-h-16 w-auto object-contain block" 
+                                alt="Signature" 
+                                className="h-16 w-32 object-contain" 
+                                style={{ display: 'block' }}
                             />
-                          ) : (
-                            <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
-                          )}
-                       </div>
-                       <div className="w-40 border-b border-slate-300 mb-2"></div>
-                       <p className="text-slate-500 font-bold">Employer Signature</p>
-                       <p className="text-xs text-slate-400">{adminStaff.name}</p>
-                    </div>
-                    <div className="text-center flex flex-col items-center flex-1">
-                       <div className="h-20 flex items-end justify-center mb-1 w-full">
-                         {currentTeacher?.signature ? (
-                           <img 
-                                src={currentTeacher.signature} 
-                                alt="Employee Signature" 
-                                className="max-h-16 w-auto object-contain block" 
-                           />
-                         ) : (
-                           <div className="text-xs text-slate-300 italic mb-2">[No Signature]</div>
                          )}
-                       </div>
-                       <div className="w-40 border-b border-slate-300 mb-2"></div>
-                       <p className="text-slate-500 font-bold">Employee Signature</p>
-                       <p className="text-xs text-slate-400">{currentTeacher.name}</p>
-                    </div>
-                 </div>
+                      </div>
+                      <div className="w-48 border-t border-slate-400 pt-2 text-center">
+                         <p className="font-bold text-slate-800 text-sm uppercase tracking-wide">Employer Signature</p>
+                      </div>
+                   </div>
+                   
+                   <div className="flex flex-col items-center">
+                      <div className="h-20 flex items-end justify-center mb-2">
+                         {currentTeacher?.signature && (
+                            <img 
+                                src={currentTeacher.signature} 
+                                alt="Signature" 
+                                className="h-16 w-32 object-contain"
+                                style={{ display: 'block' }}
+                            />
+                         )}
+                      </div>
+                      <div className="w-48 border-t border-slate-400 pt-2 text-center">
+                         <p className="font-bold text-slate-800 text-sm uppercase tracking-wide">Employee Signature</p>
+                      </div>
+                   </div>
+                </div>
+
               </div>
 
               {/* Action Buttons - hidden on print */}
-              <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3 bg-white no-print">
-                 <button className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium" onClick={() => window.print()}>
+              <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3 bg-white no-print rounded-b-xl">
+                 <button className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors" onClick={() => window.print()}>
                     <Printer className="w-4 h-4" /> Print
                  </button>
                  <button 
-                    onClick={handleDownloadPdf}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
+                    onClick={() => setShowPayslip(false)}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 font-medium shadow-sm transition-colors"
                  >
-                    <Download className="w-4 h-4" /> Download PDF
+                    Close
                  </button>
               </div>
            </div>
