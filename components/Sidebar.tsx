@@ -82,8 +82,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, permissions
       </nav>
       
       <div className="p-4 border-t border-slate-100">
-         <div className="text-[10px] text-slate-400 text-center">
-            v2.4.1 • EduNexus Systems
+         <div className="text-[10px] font-bold text-slate-500 text-center uppercase tracking-wide">
+            Junior Odyssey International School
          </div>
       </div>
     </aside>

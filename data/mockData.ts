@@ -11,6 +11,11 @@ export const mockStudents: Student[] = [
   { id: 'ST-2024-005', name: 'Ava Patel', grade: '6', section: 'C', attendance: 94, feesStatus: 'Paid', busRoute: 'R-03', image: 'https://picsum.photos/seed/ava/200/200', parentName: 'Priya Patel', parentId: 'USR-PARENT-05', parentPhone: '+1 234-567-8905', dob: '2012-06-18' },
 ];
 
+// A simple script-like signature data URI for valid-looking mock data
+const mockSig = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iNDAiPjxwYXRoIGQ9Ik0xMCwyMCBDMzAsNSAzMCwzNSA1MCwyMCBDNzAsNSA3MCwzNSA5MCwyMCBDMTEwLDUgMTEwLDM1IDEzMCwyMCIgc3Ryb2tlPSJibHVlIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz48L3N2Zz4=";
+const adminSig = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iNDAiPjxwYXRoIGQ9Ik0xMCwzMCBDMzAsMTAgMzAsNDAgNTAsMTAgQzkwLDQwIDExMCwxMCAxNDAsMzAiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==";
+
+
 export const mockStaff: Staff[] = [
   { 
     id: 'TCH-001', 
@@ -22,6 +27,7 @@ export const mockStaff: Staff[] = [
     email: 'sarah.j@juniorodyssey.edu', 
     status: 'Active', 
     image: 'https://picsum.photos/seed/sarah/200/200',
+    signature: mockSig,
     salaryDetails: {
       basic: 45000,
       allowances: 8000,
@@ -54,6 +60,7 @@ export const mockStaff: Staff[] = [
     email: 'admin@juniorodyssey.edu', 
     status: 'Active', 
     image: 'https://picsum.photos/seed/rob/200/200',
+    signature: adminSig,
     salaryDetails: {
       basic: 85000,
       allowances: 15000,

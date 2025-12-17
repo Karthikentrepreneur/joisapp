@@ -25,6 +25,35 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #94a3b8; 
       }
+
+      /* Print Styles for PDF Generation */
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #payslip-modal-content, #payslip-modal-content * {
+          visibility: visible;
+        }
+        #payslip-modal-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          margin: 0;
+          padding: 20px;
+          box-shadow: none;
+          max-height: none;
+          overflow: visible;
+        }
+        .no-print {
+          display: none !important;
+        }
+        /* Ensure background graphics print */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
     </style>
   <script type="importmap">
 {

@@ -277,6 +277,13 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
 const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const [showPayslip, setShowPayslip] = useState(false);
   const currentTeacher = mockStaff.find(s => s.role === 'Teacher') || mockStaff[0]; // Simulation
+  const adminStaff = mockStaff.find(s => s.role === 'Admin') || mockStaff[2]; // Find an admin for signature
+
+  const handleDownloadPdf = () => {
+    // Uses the native browser print which supports "Save as PDF"
+    // The CSS @media print block in index.html ensures only the payslip prints
+    window.print();
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6 animate-in fade-in duration-500 pb-12">
@@ -367,9 +374,10 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       {/* Salary Slip Modal */}
       {showPayslip && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-8 border-b border-slate-200 flex justify-between items-start">
-                 <div className="flex items-center gap-4">
+           <div id="payslip-modal-content" className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* This section is printed */}
+              <div className="p-6 md:p-8 border-b border-slate-200 flex justify-between items-start relative">
+                 <div className="flex items-center gap-4 flex-col md:flex-row text-center md:text-left w-full md:w-auto">
                     <img 
                       src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" 
                       alt="Logo" 
@@ -377,22 +385,23 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                     />
                     <div>
                        <h2 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Junior Odyssey Int. School</h2>
-                       <p className="text-sm text-slate-500">123 Education Lane, Knowledge City</p>
-                       <p className="text-sm text-slate-500">Phone: +1 234 567 8900</p>
+                       <p className="text-sm text-slate-500">1/13, MR Radha Street, Pudupakkam,</p>
+                       <p className="text-sm text-slate-500">OMR Near SIPCOT Siruseri, Chennai – 603103.</p>
                     </div>
                  </div>
-                 <button onClick={() => setShowPayslip(false)} className="text-slate-400 hover:text-slate-600">
+                 {/* Close button - hidden on print */}
+                 <button onClick={() => setShowPayslip(false)} className="text-slate-400 hover:text-slate-600 absolute top-4 right-4 md:static no-print">
                     <X className="w-6 h-6" />
                  </button>
               </div>
 
-              <div className="p-8 space-y-8 bg-slate-50/50">
+              <div className="p-6 md:p-8 space-y-8 bg-slate-50/50">
                  <div className="text-center">
                     <h3 className="text-lg font-bold text-slate-800 border-b-2 border-slate-200 inline-block px-4 pb-1">SALARY SLIP</h3>
                     <p className="text-sm text-slate-500 mt-1">For the month of March, 2024</p>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-sm">
                     <div>
                        <p className="text-slate-500 mb-1">Employee Name</p>
                        <p className="font-bold text-slate-800">{currentTeacher.name}</p>
@@ -412,30 +421,32 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                  </div>
 
                  <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                    <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50">
-                       <div className="p-3 font-bold text-slate-700 border-r border-slate-200">Earnings</div>
-                       <div className="p-3 font-bold text-slate-700">Deductions</div>
-                    </div>
-                    <div className="grid grid-cols-2">
-                       <div className="border-r border-slate-200 p-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                             <span className="text-slate-600">Basic Salary</span>
-                             <span className="font-medium">₹{currentTeacher.salaryDetails?.basic?.toLocaleString() || '0'}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                             <span className="text-slate-600">Allowances (HRA/DA)</span>
-                             <span className="font-medium">₹{currentTeacher.salaryDetails?.allowances?.toLocaleString() || '0'}</span>
-                          </div>
-                       </div>
-                       <div className="p-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                             <span className="text-slate-600">Tax / PF</span>
-                             <span className="font-medium">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                       <div className="border-b md:border-b-0 md:border-r border-slate-200">
+                          <div className="p-3 font-bold text-slate-700 bg-slate-50 border-b border-slate-200">Earnings</div>
+                          <div className="p-4 space-y-2">
+                             <div className="flex justify-between text-sm">
+                                <span className="text-slate-600">Basic Salary</span>
+                                <span className="font-medium">₹{currentTeacher.salaryDetails?.basic?.toLocaleString() || '0'}</span>
+                             </div>
+                             <div className="flex justify-between text-sm">
+                                <span className="text-slate-600">Allowances (HRA/DA)</span>
+                                <span className="font-medium">₹{currentTeacher.salaryDetails?.allowances?.toLocaleString() || '0'}</span>
+                             </div>
                           </div>
                        </div>
+                       <div>
+                          <div className="p-3 font-bold text-slate-700 bg-slate-50 border-b border-slate-200">Deductions</div>
+                          <div className="p-4 space-y-2">
+                             <div className="flex justify-between text-sm">
+                                <span className="text-slate-600">Tax / PF</span>
+                                <span className="font-medium">₹{currentTeacher.salaryDetails?.deductions?.toLocaleString() || '0'}</span>
+                             </div>
+                          </div>
+                       </div>
                     </div>
-                    <div className="grid grid-cols-2 border-t border-slate-200 bg-slate-50">
-                       <div className="p-3 border-r border-slate-200 flex justify-between items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 border-t border-slate-200 bg-slate-50">
+                       <div className="p-3 border-b md:border-b-0 md:border-r border-slate-200 flex justify-between items-center">
                           <span className="font-bold text-slate-700">Total Earnings</span>
                           <span className="font-bold text-slate-800">₹{((currentTeacher.salaryDetails?.basic || 0) + (currentTeacher.salaryDetails?.allowances || 0)).toLocaleString()}</span>
                        </div>
@@ -451,23 +462,37 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                     <span className="font-black text-emerald-700 text-2xl">₹{currentTeacher.salaryDetails?.net?.toLocaleString() || '0'}</span>
                  </div>
                  
-                 <div className="flex justify-between pt-12 text-sm">
-                    <div className="text-center">
+                 <div className="flex flex-col md:flex-row justify-between pt-12 text-sm gap-8 md:gap-0">
+                    <div className="text-center flex flex-col items-center">
+                       {adminStaff?.signature ? (
+                         <img src={adminStaff.signature} alt="Employer Signature" className="h-12 object-contain mb-1 mix-blend-multiply" />
+                       ) : (
+                         <div className="h-12"></div>
+                       )}
                        <div className="w-32 border-b border-slate-300 mb-2"></div>
                        <p className="text-slate-500">Employer Signature</p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center flex flex-col items-center">
+                       {currentTeacher?.signature ? (
+                         <img src={currentTeacher.signature} alt="Employee Signature" className="h-12 object-contain mb-1 mix-blend-multiply" />
+                       ) : (
+                         <div className="h-12"></div>
+                       )}
                        <div className="w-32 border-b border-slate-300 mb-2"></div>
                        <p className="text-slate-500">Employee Signature</p>
                     </div>
                  </div>
               </div>
 
-              <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-white">
-                 <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">
+              {/* Action Buttons - hidden on print */}
+              <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3 bg-white no-print">
+                 <button className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium" onClick={() => window.print()}>
                     <Printer className="w-4 h-4" /> Print
                  </button>
-                 <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm">
+                 <button 
+                    onClick={handleDownloadPdf}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
+                 >
                     <Download className="w-4 h-4" /> Download PDF
                  </button>
               </div>

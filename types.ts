@@ -47,6 +47,7 @@ export interface Staff {
   email: string;
   status: 'Active' | 'On Leave';
   image: string;
+  signature?: string; // URL or Base64 of signature
   salaryDetails?: {
     basic: number;
     allowances: number;
