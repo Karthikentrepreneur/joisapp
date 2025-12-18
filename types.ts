@@ -31,7 +31,6 @@ export interface Student {
   busRoute: string;
   image: string;
   parentName: string;
-  parentEmail: string; // Added parent email
   parentId: string; // Link to parent user
   parentPhone: string;
   dob: string;
