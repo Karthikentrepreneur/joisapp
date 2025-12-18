@@ -72,7 +72,7 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
         {role === UserRole.PARENT && (
           <button 
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2 w-full md:w-auto justify-center"
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2 w-full md:w-auto justify-center transition-all"
           >
             <Plus className="w-4 h-4" /> Apply for Leave
           </button>
@@ -141,7 +141,7 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
         </div>
       ) : (
         // Admin View
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[calc(100%-80px)]">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[calc(100%-80px)] overflow-hidden">
            <div className="border-b border-slate-200 flex">
               <button 
                  onClick={() => setActiveTab('pending')}
@@ -194,22 +194,22 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
                           <div className="bg-slate-50 rounded-lg p-3 mb-4 border border-slate-100">
                              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 mb-2">
                                 <Calendar className="w-4 h-4 text-slate-400" />
-                                {req.startDate} <span className="text-slate-400">to</span> {req.endDate}
+                                {req.startDate} <span className="text-slate-400 mx-1">to</span> {req.endDate}
                              </div>
-                             <p className="text-xs text-slate-600 italic">"{req.reason}"</p>
+                             <p className="text-xs text-slate-600 italic leading-relaxed">"{req.reason}"</p>
                           </div>
 
                           {req.status === 'Pending' && role === UserRole.ADMIN && (
                              <div className="flex gap-2">
                                 <button 
                                    onClick={() => handleAction(req.id, 'Approved')}
-                                   className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
+                                   className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1"
                                 >
                                    <Check className="w-3 h-3" /> Approve
                                 </button>
                                 <button 
                                    onClick={() => handleAction(req.id, 'Rejected')}
-                                   className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1"
+                                   className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1"
                                 >
                                    <X className="w-3 h-3" /> Reject
                                 </button>
@@ -228,7 +228,7 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
             <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-slate-800">Request Leave</h3>
+                  <h3 className="text-xl font-bold text-slate-800">Apply for Student Leave</h3>
                   <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
                      <X className="w-6 h-6" />
                   </button>
@@ -236,21 +236,21 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
                <form onSubmit={handleCreateRequest} className="space-y-4">
                   <div>
                      <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                     <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                     <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
                      <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                     <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl" />
+                     <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Reason</label>
-                     <textarea required value={reason} onChange={e => setReason(e.target.value)} placeholder="Please detail the reason for leave..." className="w-full px-4 py-2 border border-slate-200 rounded-xl h-24 resize-none"></textarea>
+                     <label className="block text-sm font-medium text-slate-700 mb-1">Reason for Leave</label>
+                     <textarea required value={reason} onChange={e => setReason(e.target.value)} placeholder="Please detail the reason for your child's leave..." className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white h-24 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                   </div>
                   <div className="bg-yellow-50 p-3 rounded-lg flex gap-2 text-xs text-yellow-800 border border-yellow-100">
                      <AlertCircle className="w-4 h-4 shrink-0" />
                      <p>Requests must be submitted at least 24 hours in advance unless it is a medical emergency.</p>
                   </div>
-                  <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors mt-2 shadow-lg">Submit Request</button>
+                  <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all mt-2 shadow-lg">Submit Request</button>
                </form>
             </div>
          </div>
