@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { BookOpen, Award, Clock, Plus, FileText, X, Save } from 'lucide-react';
+import { BookOpen, Award, Clock, Plus, FileText, X, Save, Pencil, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { mockHomework } from '../data/mockData';
 import { UserRole, Homework } from '../types';
+
+interface TimetableItem {
+  id: string;
+  time: string;
+  subject: string;
+  desc: string;
+  status: 'Current' | 'Upcoming' | 'Past';
+}
 
 interface AcademicsProps {
   role?: UserRole;
@@ -15,12 +23,24 @@ const performanceData = [
   { subject: 'Storytelling', score: 85 },
 ];
 
+const initialTimetable: TimetableItem[] = [
+  { id: '1', time: '9:00 AM', subject: 'Starting the Day with Smiles', desc: 'Circle time, greetings, settling in with morning songs and activities', status: 'Current' },
+  { id: '2', time: '10:45 - 11:10 AM', subject: 'Quick Bites Break', desc: 'Light snacks to recharge little learners', status: 'Upcoming' },
+  { id: '3', time: '12:30 PM', subject: 'Wrap-up Time (Play Group & Pre-KG)', desc: 'Storytime, reflection, and getting ready to go home', status: 'Upcoming' },
+  { id: '4', time: '12:30 PM', subject: 'Lunch Time (KG 1 & KG 2)', desc: 'Nutritious meals shared together in a happy, social setting', status: 'Upcoming' },
+  { id: '5', time: '1:00 PM', subject: 'Time to Head Home', desc: 'Saying goodbye, heading home with smiles and stories to share', status: 'Upcoming' },
+];
+
 export const Academics: React.FC<AcademicsProps> = ({ role }) => {
   const [activeTab, setActiveTab] = useState<'timetable' | 'homework' | 'results'>('timetable');
   const [homeworkList, setHomeworkList] = useState<Homework[]>(mockHomework);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [timetableItems, setTimetableItems] = useState<TimetableItem[]>(initialTimetable);
   
-  // Form State for new assignment
+  // Modals
+  const [showAddHWModal, setShowAddHWModal] = useState(false);
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
+  
+  // Homework Form State
   const [newHW, setNewHW] = useState<Partial<Homework>>({
     subject: 'Art',
     title: '',
@@ -30,7 +50,10 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
     status: 'Active'
   });
 
-  const isAdmin = role === UserRole.ADMIN;
+  // Timetable Form State
+  const [editingSlot, setEditingSlot] = useState<Partial<TimetableItem> | null>(null);
+
+  const canEdit = role === UserRole.ADMIN || role === UserRole.TEACHER;
   const preschoolGroups = ["Play Group", "Pre-KG", "KG 1", "KG 2"];
 
   const handleCreateAssignment = (e: React.FormEvent) => {
@@ -39,10 +62,10 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
       ...newHW,
       id: `HW-${Date.now()}`,
       section: 'A',
-      assignedBy: 'Admin',
+      assignedBy: role === UserRole.ADMIN ? 'Admin' : 'Teacher',
     } as Homework;
     setHomeworkList([created, ...homeworkList]);
-    setShowAddModal(false);
+    setShowAddHWModal(false);
     setNewHW({
       subject: 'Art',
       title: '',
@@ -51,6 +74,32 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
       dueDate: new Date().toISOString().split('T')[0],
       status: 'Active'
     });
+  };
+
+  const handleSaveTimetable = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlot) return;
+
+    if (editingSlot.id) {
+      // Edit
+      setTimetableItems(prev => prev.map(item => item.id === editingSlot.id ? (editingSlot as TimetableItem) : item));
+    } else {
+      // Create
+      const newItem: TimetableItem = {
+        ...editingSlot,
+        id: Date.now().toString(),
+        status: editingSlot.status || 'Upcoming'
+      } as TimetableItem;
+      setTimetableItems(prev => [...prev, newItem]);
+    }
+    setShowTimetableModal(false);
+    setEditingSlot(null);
+  };
+
+  const deleteTimetableSlot = (id: string) => {
+    if (confirm("Are you sure you want to remove this event from the schedule?")) {
+      setTimetableItems(prev => prev.filter(item => item.id !== id));
+    }
   };
 
   return (
@@ -74,51 +123,66 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
       </div>
 
       {activeTab === 'timetable' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
-          <div className="flex items-center justify-between mb-6 min-w-[500px]">
-             <h3 className="font-bold text-slate-800 flex items-center gap-2">
-               <Clock className="w-5 h-5 text-blue-500" /> A Day at JOIS Preschool
-             </h3>
-             <button className="text-sm text-blue-600 font-bold hover:underline">Download PDF</button>
-          </div>
-          <div className="space-y-4 relative min-w-[500px]">
-             <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
-             {[
-               { time: '9:00 AM', subject: 'Starting the Day with Smiles', desc: 'Circle time, greetings, settling in with morning songs and activities', status: 'Current' },
-               { time: '10:45 - 11:10 AM', subject: 'Quick Bites Break', desc: 'Light snacks to recharge little learners', status: 'Upcoming' },
-               { time: '12:30 PM', subject: 'Wrap-up Time (Play Group & Pre-KG)', desc: 'Storytime, reflection, and getting ready to go home', status: 'Upcoming' },
-               { time: '12:30 PM', subject: 'Lunch Time (KG 1 & KG 2)', desc: 'Nutritious meals shared together in a happy, social setting', status: 'Upcoming' },
-               { time: '1:00 PM', subject: 'Time to Head Home', desc: 'Saying goodbye, heading home with smiles and stories to share', status: 'Upcoming' },
-             ].map((slot, idx) => (
-               <div key={idx} className="relative flex items-center gap-4 group">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-white ${slot.status === 'Current' ? 'border-blue-500 text-blue-600 shadow-sm' : 'border-slate-200 text-slate-400'}`}>
-                    <span className="text-[10px] font-bold">{idx + 1}</span>
-                  </div>
-                  <div className={`flex-1 p-4 rounded-xl border ${slot.status === 'Current' ? 'bg-blue-50/50 border-blue-200' : 'bg-white border-slate-100 group-hover:border-slate-200'} transition-colors`}>
-                     <div className="flex justify-between items-center mb-1">
-                        <span className={`font-bold ${slot.status === 'Current' ? 'text-blue-800' : 'text-slate-800'}`}>{slot.subject}</span>
-                        <span className="text-xs text-slate-500 bg-white px-2 py-1 rounded border border-slate-100 font-bold whitespace-nowrap">{slot.time}</span>
-                     </div>
-                     <p className="text-xs text-slate-500 leading-relaxed">{slot.desc}</p>
-                  </div>
-               </div>
-             ))}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+            <div className="flex items-center justify-between mb-6 min-w-[500px]">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                <Clock className="w-5 h-5 text-blue-500" /> A Day at JOIS Preschool
+              </h3>
+              <div className="flex items-center gap-3">
+                {canEdit && (
+                  <button 
+                    onClick={() => { setEditingSlot({ time: '', subject: '', desc: '', status: 'Upcoming' }); setShowTimetableModal(true); }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Add Event
+                  </button>
+                )}
+                <button className="text-xs text-blue-600 font-bold hover:underline">Download PDF</button>
+              </div>
+            </div>
+            
+            <div className="space-y-4 relative min-w-[500px] pl-2 pr-2">
+              <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
+              {timetableItems.map((slot, idx) => (
+                <div key={slot.id} className="relative flex items-center gap-6 group">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 z-10 bg-white shrink-0 ${slot.status === 'Current' ? 'border-blue-500 text-blue-600 shadow-sm' : 'border-slate-200 text-slate-400'}`}>
+                      <span className="text-xs font-black">{idx + 1}</span>
+                    </div>
+                    <div className={`flex-1 p-5 rounded-[1.5rem] border transition-all ${slot.status === 'Current' ? 'bg-blue-50/50 border-blue-200 shadow-sm' : 'bg-white border-slate-100 group-hover:border-slate-200'} relative`}>
+                      <div className="flex justify-between items-start mb-2">
+                          <div className="space-y-1">
+                            <span className={`text-base font-black block ${slot.status === 'Current' ? 'text-blue-900' : 'text-slate-800'}`}>{slot.subject}</span>
+                            <span className="text-[10px] text-slate-500 bg-white px-2 py-1 rounded-lg border border-slate-100 font-black whitespace-nowrap inline-block uppercase tracking-widest">{slot.time}</span>
+                          </div>
+                          {canEdit && (
+                            <div className="flex gap-1">
+                              <button 
+                                onClick={() => { setEditingSlot(slot); setShowTimetableModal(true); }}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => deleteTimetableSlot(slot.id)}
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                      </div>
+                      <p className="text-sm text-slate-500 leading-relaxed font-medium">{slot.desc}</p>
+                    </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'homework' && (
          <div className="space-y-6">
-            {isAdmin && (
-              <div className="flex justify-end">
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors"
-                >
-                    <Plus className="w-4 h-4" /> Create Assignment
-                </button>
-              </div>
-            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                {homeworkList.map((hw) => (
                   <div key={hw.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow relative overflow-hidden">
@@ -140,6 +204,19 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
                      </div>
                   </div>
                ))}
+
+               {/* Creation Card for Admin/Teacher */}
+               {canEdit && (
+                 <div 
+                   onClick={() => setShowAddHWModal(true)}
+                   className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-slate-400 hover:bg-slate-100 hover:border-blue-300 transition-all cursor-pointer group h-auto min-h-[220px]"
+                 >
+                   <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm border border-slate-100">
+                     <Plus className="w-6 h-6 text-slate-300 group-hover:text-pink-500" />
+                   </div>
+                   <p className="font-bold text-sm text-slate-500 uppercase tracking-wider">Create Assignment</p>
+                 </div>
+               )}
             </div>
          </div>
       )}
@@ -197,24 +274,92 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
         </div>
       )}
 
-      {/* Assignment Modal for Admin */}
-      {showAddModal && isAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">New Assignment</h3>
-                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+      {/* Timetable Modal for Admin/Teacher */}
+      {showTimetableModal && canEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+           <div className="bg-white rounded-3xl p-6 md:p-10 max-w-lg w-full shadow-2xl relative">
+              <div className="flex justify-between items-center mb-8">
+                 <h3 className="text-2xl font-black text-slate-900">{editingSlot?.id ? 'Edit Plan' : 'New Academic Entry'}</h3>
+                 <button onClick={() => setShowTimetableModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-colors">
                     <X className="w-6 h-6" />
                  </button>
               </div>
-              <form onSubmit={handleCreateAssignment} className="space-y-4">
+              <form onSubmit={handleSaveTimetable} className="space-y-5">
                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                    <div className="space-y-1.5">
+                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Time</label>
+                       <input 
+                         required 
+                         type="text" 
+                         value={editingSlot?.time} 
+                         onChange={e => setEditingSlot({...editingSlot, time: e.target.value})}
+                         className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500" 
+                         placeholder="e.g. 9:00 AM"
+                       />
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Current Status</label>
+                       <select 
+                         value={editingSlot?.status} 
+                         onChange={e => setEditingSlot({...editingSlot, status: e.target.value as any})}
+                         className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                       >
+                          <option value="Upcoming">Upcoming</option>
+                          <option value="Current">Current</option>
+                          <option value="Past">Past</option>
+                       </select>
+                    </div>
+                 </div>
+                 <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Event / Subject</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={editingSlot?.subject} 
+                      onChange={e => setEditingSlot({...editingSlot, subject: e.target.value})}
+                      className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500" 
+                      placeholder="e.g. Circle Time & Greetings"
+                    />
+                 </div>
+                 <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Activity Description</label>
+                    <textarea 
+                      required 
+                      value={editingSlot?.desc} 
+                      onChange={e => setEditingSlot({...editingSlot, desc: e.target.value})}
+                      className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 h-28 resize-none"
+                      placeholder="What will the little ones be doing?"
+                    />
+                 </div>
+                 <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowTimetableModal(false)} className="px-6 py-3 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors uppercase text-xs tracking-widest">Cancel</button>
+                    <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 flex items-center gap-2 transition-all active:scale-95">
+                      <Save className="w-4 h-4" /> Save Entry
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
+
+      {/* Assignment Modal for Admin/Teacher */}
+      {showAddHWModal && canEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+           <div className="bg-white rounded-3xl p-6 md:p-10 max-w-lg w-full shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                 <h3 className="text-2xl font-black text-slate-900">New Assignment</h3>
+                 <button onClick={() => setShowAddHWModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-colors">
+                    <X className="w-6 h-6" />
+                 </button>
+              </div>
+              <form onSubmit={handleCreateAssignment} className="space-y-5">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
                        <select 
                          value={newHW.subject} 
                          onChange={e => setNewHW({...newHW, subject: e.target.value})}
-                         className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
                        >
                           <option>Art</option>
                           <option>Nature</option>
@@ -223,51 +368,53 @@ export const Academics: React.FC<AcademicsProps> = ({ role }) => {
                           <option>Math</option>
                        </select>
                     </div>
-                    <div>
-                       <label className="block text-sm font-medium text-slate-700 mb-1">Target Group</label>
+                    <div className="space-y-1.5">
+                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Target Group</label>
                        <select 
                          value={newHW.grade} 
                          onChange={e => setNewHW({...newHW, grade: e.target.value})}
-                         className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
                        >
                           {preschoolGroups.map(g => <option key={g} value={g}>{g}</option>)}
                        </select>
                     </div>
                  </div>
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                 <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
                     <input 
                       required 
                       type="text" 
                       value={newHW.title} 
                       onChange={e => setNewHW({...newHW, title: e.target.value})}
-                      className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      placeholder="e.g., Spring Coloring"
+                      className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500" 
+                      placeholder="e.g. Spring Coloring"
                     />
                  </div>
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                 <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Instructions</label>
                     <textarea 
                       required 
                       value={newHW.description} 
                       onChange={e => setNewHW({...newHW, description: e.target.value})}
-                      className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-                      placeholder="Details of the activity..."
+                      className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 h-28 resize-none"
+                      placeholder="What do the kids need to do?"
                     />
                  </div>
-                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
+                 <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Due Date</label>
                     <input 
                       required 
                       type="date" 
                       value={newHW.dueDate} 
                       onChange={e => setNewHW({...newHW, dueDate: e.target.value})}
-                      className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      className="w-full px-5 py-3 border border-slate-200 rounded-2xl text-sm font-semibold bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500" 
                     />
                  </div>
-                 <div className="pt-4 border-t flex justify-end gap-3">
-                    <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
-                    <button type="submit" className="bg-pink-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center gap-2 transition-all"><Save className="w-4 h-4" /> Post Assignment</button>
+                 <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowAddHWModal(false)} className="px-6 py-3 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors uppercase text-xs tracking-widest">Cancel</button>
+                    <button type="submit" className="bg-pink-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest hover:bg-pink-600 shadow-xl shadow-pink-100 flex items-center gap-2 transition-all active:scale-95">
+                      <Save className="w-4 h-4" /> Post Task
+                    </button>
                  </div>
               </form>
            </div>

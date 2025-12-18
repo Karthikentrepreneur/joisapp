@@ -1,11 +1,42 @@
 import React, { useState } from 'react';
 import { mockNotices, mockChats } from '../data/mockData';
-import { Bell, Search, Send, MessageSquare, MoreVertical, Paperclip } from 'lucide-react';
+import { UserRole, Notice } from '../types';
+import { Bell, Search, Send, MessageSquare, MoreVertical, Paperclip, X, Save, Plus } from 'lucide-react';
 
-export const Communication: React.FC = () => {
+interface CommunicationProps {
+  role?: UserRole;
+}
+
+export const Communication: React.FC<CommunicationProps> = ({ role }) => {
   const [activeTab, setActiveTab] = useState<'notices' | 'chat'>('notices');
+  const [notices, setNotices] = useState<Notice[]>(mockNotices);
   const [selectedChat, setSelectedChat] = useState<string | null>('1');
   const [messageInput, setMessageInput] = useState('');
+  
+  // Create Notice State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newNotice, setNewNotice] = useState<Partial<Notice>>({
+    title: '',
+    content: '',
+    priority: 'Medium',
+    sender: role === UserRole.ADMIN ? 'Principal Office' : 'Teacher'
+  });
+
+  const canCreate = role === UserRole.ADMIN || role === UserRole.TEACHER;
+
+  const handleCreateNotice = (e: React.FormEvent) => {
+    e.preventDefault();
+    const created: Notice = {
+      ...newNotice,
+      id: `N-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      sender: role === UserRole.ADMIN ? 'Principal Office' : 'Teacher'
+    } as Notice;
+    
+    setNotices([created, ...notices]);
+    setShowCreateModal(false);
+    setNewNotice({ title: '', content: '', priority: 'Medium' });
+  };
 
   return (
     <div className="p-4 md:p-6 h-full md:h-[calc(100vh-64px)] flex flex-col animate-in fade-in duration-500 overflow-hidden">
@@ -33,7 +64,20 @@ export const Communication: React.FC = () => {
       {activeTab === 'notices' ? (
         <div className="flex-1 overflow-y-auto min-h-0 -mx-1 px-1">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20 md:pb-6">
-            {mockNotices.map((notice) => (
+            {/* Create Card - Only for Admin/Teacher */}
+            {canCreate && (
+              <div 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-slate-400 hover:bg-slate-100 hover:border-blue-300 transition-all cursor-pointer group h-auto min-h-[200px]"
+              >
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm border border-slate-100">
+                  <Plus className="w-6 h-6 text-slate-300 group-hover:text-blue-500" />
+                </div>
+                <p className="font-bold text-sm text-slate-500 uppercase tracking-widest">Create New Notice</p>
+              </div>
+            )}
+
+            {notices.map((notice) => (
               <div key={notice.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col h-auto md:h-fit min-h-[200px]">
                  <div className={`h-1.5 w-full ${notice.priority === 'High' ? 'bg-red-500' : notice.priority === 'Medium' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
                  <div className="p-5 md:p-6 flex-1 flex flex-col">
@@ -56,12 +100,6 @@ export const Communication: React.FC = () => {
                  </div>
               </div>
             ))}
-            <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-slate-400 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer group h-48 md:h-64">
-               <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm border border-slate-100">
-                 <Bell className="w-6 h-6 text-slate-300 group-hover:text-blue-500" />
-               </div>
-               <p className="font-semibold text-sm text-slate-500">Create New Notice</p>
-            </div>
           </div>
         </div>
       ) : (
@@ -137,7 +175,7 @@ export const Communication: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Type a message..." 
-                      className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 min-w-0"
+                      className="flex-1 bg-white outline-none text-sm text-slate-700 placeholder-slate-400 min-w-0"
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                     />
@@ -146,6 +184,66 @@ export const Communication: React.FC = () => {
                     </button>
                  </div>
               </div>
+           </div>
+        </div>
+      )}
+
+      {/* Notice Creation Modal */}
+      {showCreateModal && canCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-xl font-bold text-slate-800">New Announcement</h3>
+                 <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-6 h-6" />
+                 </button>
+              </div>
+              <form onSubmit={handleCreateNotice} className="space-y-4">
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                    <div className="flex gap-2">
+                       {['Low', 'Medium', 'High'].map((p) => (
+                          <button
+                             key={p}
+                             type="button"
+                             onClick={() => setNewNotice({...newNotice, priority: p as any})}
+                             className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                newNotice.priority === p 
+                                   ? 'bg-blue-600 text-white border-blue-700 shadow-sm' 
+                                   : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200'
+                             }`}
+                          >
+                             {p}
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={newNotice.title} 
+                      onChange={e => setNewNotice({...newNotice, title: e.target.value})}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      placeholder="e.g., Annual Day Rehearsal"
+                    />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Announcement Content</label>
+                    <textarea 
+                      required 
+                      value={newNotice.content} 
+                      onChange={e => setNewNotice({...newNotice, content: e.target.value})}
+                      className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                      placeholder="Write your message to the parents..."
+                    />
+                 </div>
+                 <div className="pt-4 border-t flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-lg flex items-center gap-2 transition-all"><Save className="w-4 h-4" /> Post Notice</button>
+                 </div>
+              </form>
            </div>
         </div>
       )}

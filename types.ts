@@ -31,6 +31,7 @@ export interface Student {
   busRoute: string;
   image: string;
   parentName: string;
+  parentEmail: string; // Added parent email
   parentId: string; // Link to parent user
   parentPhone: string;
   dob: string;
@@ -116,10 +117,13 @@ export interface Homework {
 
 export interface Certificate {
   id: string;
-  type: 'Bonafide' | 'Transfer' | 'Character' | 'Fee';
+  type: 'Bonafide' | 'Transfer' | 'Character' | 'Fee Receipt';
   studentName: string;
-  issueDate: string;
-  status: 'Generated' | 'Pending';
+  studentId: string;
+  requestDate: string;
+  issueDate?: string;
+  status: 'Requested' | 'Teacher Approved' | 'Released' | 'Rejected';
+  reason?: string;
 }
 
 export interface LeaveRequest {

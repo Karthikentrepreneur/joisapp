@@ -4,10 +4,10 @@ import { Student, Invoice, Notice, ChatMessage, Staff, Homework, Certificate, Le
 export const CURRENT_USER_ID = 'USR-PARENT-01'; // Jane Doe
 
 export const mockStudents: Student[] = [
-  { id: 'ST-2024-001', name: 'Emma Thompson', grade: 'Pre-KG', section: 'A', attendance: 98, feesStatus: 'Paid', busRoute: 'R-01', image: 'https://picsum.photos/seed/emma/200/200', parentName: 'Jane Doe', parentId: 'USR-PARENT-01', parentPhone: '+1 234-567-8901', dob: '2013-05-12' },
-  { id: 'ST-2024-002', name: 'Liam Wilson', grade: 'Play Group', section: 'A', attendance: 92, feesStatus: 'Pending', busRoute: 'R-02', image: 'https://picsum.photos/seed/liam/200/200', parentName: 'James Wilson', parentId: 'USR-PARENT-02', parentPhone: '+1 234-567-8902', dob: '2013-08-24' },
-  { id: 'ST-2024-003', name: 'Olivia Martinez', grade: 'KG 1', section: 'B', attendance: 85, feesStatus: 'Overdue', busRoute: 'Parent Pickup', image: 'https://picsum.photos/seed/olivia/200/200', parentName: 'Maria Martinez', parentId: 'USR-PARENT-03', parentPhone: '+1 234-567-8903', dob: '2013-02-15' },
-  { id: 'ST-2024-004', name: 'Noah Chen', grade: 'KG 2', section: 'A', attendance: 99, feesStatus: 'Paid', busRoute: 'R-01', image: 'https://picsum.photos/seed/noah/200/200', parentName: 'David Chen', parentId: 'USR-PARENT-04', parentPhone: '+1 234-567-8904', dob: '2014-11-30' },
+  { id: 'ST-2024-001', name: 'Emma Thompson', grade: 'Pre-KG', section: 'A', attendance: 98, feesStatus: 'Paid', busRoute: 'R-01', image: 'https://picsum.photos/seed/emma/200/200', parentName: 'Jane Doe', parentEmail: 'jane.doe@example.com', parentId: 'USR-PARENT-01', parentPhone: '+1 234-567-8901', dob: '2013-05-12' },
+  { id: 'ST-2024-002', name: 'Liam Wilson', grade: 'Play Group', section: 'A', attendance: 92, feesStatus: 'Pending', busRoute: 'R-02', image: 'https://picsum.photos/seed/liam/200/200', parentName: 'James Wilson', parentEmail: 'james.wilson@example.com', parentId: 'USR-PARENT-02', parentPhone: '+1 234-567-8902', dob: '2013-08-24' },
+  { id: 'ST-2024-003', name: 'Olivia Martinez', grade: 'KG 1', section: 'B', attendance: 85, feesStatus: 'Overdue', busRoute: 'Parent Pickup', image: 'https://picsum.photos/seed/olivia/200/200', parentName: 'Maria Martinez', parentEmail: 'maria.martinez@example.com', parentId: 'USR-PARENT-03', parentPhone: '+1 234-567-8903', dob: '2013-02-15' },
+  { id: 'ST-2024-004', name: 'Noah Chen', grade: 'KG 2', section: 'A', attendance: 99, feesStatus: 'Paid', busRoute: 'R-01', image: 'https://picsum.photos/seed/noah/200/200', parentName: 'David Chen', parentEmail: 'david.chen@example.com', parentId: 'USR-PARENT-04', parentPhone: '+1 234-567-8904', dob: '2014-11-30' },
 ];
 
 const mockSig = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iNDAiPjxwYXRoIGQ9Ik0xMCwyMCBDMzAsNSAzMCwzNSA1MCwyMCBDNzAsNSA3MCwzNSA5MCwyMCBDMTEwLDUgMTEwLDM1IDEzMCwyMCIgc3Ryb2tlPSJibHVlIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz48L3N2Zz4=";
@@ -69,7 +69,9 @@ export const mockChats: ChatMessage[] = [
 ];
 
 export const mockCertificates: Certificate[] = [
-  { id: 'CERT-001', type: 'Bonafide', studentName: 'Emma Thompson', issueDate: '2024-01-15', status: 'Generated' },
+  { id: 'DOC-001', type: 'Bonafide', studentName: 'Emma Thompson', studentId: 'ST-2024-001', requestDate: '2024-03-01', status: 'Released', issueDate: '2024-03-02' },
+  { id: 'DOC-002', type: 'Transfer', studentName: 'Liam Wilson', studentId: 'ST-2024-002', requestDate: '2024-03-15', status: 'Requested' },
+  { id: 'DOC-003', type: 'Character', studentName: 'Noah Chen', studentId: 'ST-2024-004', requestDate: '2024-03-18', status: 'Teacher Approved' },
 ];
 
 export const mockLeaveRequests: LeaveRequest[] = [];

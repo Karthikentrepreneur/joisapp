@@ -25,11 +25,10 @@ const DEFAULT_PERMISSIONS = {
   ],
   [UserRole.TEACHER]: [
     View.DASHBOARD, View.STUDENTS, View.ACADEMICS, View.ATTENDANCE, 
-    View.LEAVE, View.COMMUNICATION, View.SETTINGS
+    View.LEAVE, View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
   ],
   [UserRole.PARENT]: [
-    View.DASHBOARD, View.ACADEMICS, View.ATTENDANCE, View.LEAVE, View.FEES, 
-    View.TRANSPORT, View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
+    View.DASHBOARD, View.ACADEMICS, View.COMMUNICATION, View.DOCUMENTS
   ],
   [UserRole.TRANSPORT]: [
     View.DASHBOARD, View.TRANSPORT, View.SAFETY, View.SETTINGS
@@ -63,7 +62,7 @@ function App() {
       case View.SAFETY:
         return <Safety />;
       case View.ACADEMICS:
-        return <Academics />;
+        return <Academics role={role} />;
       case View.AI_ASSISTANT:
         return <AIAssistant />;
       case View.FEES:
@@ -73,9 +72,9 @@ function App() {
       case View.LEAVE:
         return <Leave role={role} />;
       case View.COMMUNICATION:
-        return <Communication />;
+        return <Communication role={role} />;
       case View.DOCUMENTS:
-        return <Documents />;
+        return <Documents role={role} />;
       case View.SETTINGS:
         return <Settings role={role} permissions={permissions} setPermissions={setPermissions} />;
       default:
