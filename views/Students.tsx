@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { mockStudents, mockInvoices } from '../data/mockData';
-import { Search, Filter, Plus, Phone, Bus, X, Save, Camera, Pencil, DollarSign } from 'lucide-react';
+import { Search, Filter, Plus, Phone, Mail, Bus, X, Save, Camera, Pencil, DollarSign } from 'lucide-react';
 import { UserRole, Student, Invoice } from '../types';
 
 interface StudentsProps {
@@ -26,6 +26,7 @@ export const Students: React.FC<StudentsProps> = ({ role }) => {
     section: 'A',
     parentName: '',
     parentPhone: '',
+    parentEmail: '',
     feesStatus: 'Pending',
     attendance: 100,
     busRoute: 'Parent Pickup',
@@ -73,7 +74,7 @@ export const Students: React.FC<StudentsProps> = ({ role }) => {
     setShowAddModal(false);
     setEditingId(null);
     setNewStudent({
-        name: '', grade: 'Play Group', section: 'A', parentName: '', parentPhone: '', feesStatus: 'Pending',
+        name: '', grade: 'Play Group', section: 'A', parentName: '', parentPhone: '', parentEmail: '', feesStatus: 'Pending',
         attendance: 100, busRoute: 'Parent Pickup', image: `https://picsum.photos/seed/${Date.now()}/200/200`,
         dob: '', feeAmount: 50000, paidAmount: 0
     });
@@ -177,6 +178,10 @@ export const Students: React.FC<StudentsProps> = ({ role }) => {
                 <span className="text-slate-600 font-medium">{student.parentPhone}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
+                <Mail className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-600 font-medium truncate max-w-full" title={student.parentEmail}>{student.parentEmail || 'No email provided'}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
                 <Bus className="w-4 h-4 text-slate-400" />
                 <span className="text-slate-600 font-medium">{student.busRoute}</span>
               </div>
@@ -202,6 +207,7 @@ export const Students: React.FC<StudentsProps> = ({ role }) => {
               <form onSubmit={handleSaveStudent} className="space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
+                       <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-2">Student Information</h4>
                        <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                           <input required type="text" value={newStudent.name} onChange={e => setNewStudent({...newStudent, name: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
@@ -222,9 +228,19 @@ export const Students: React.FC<StudentsProps> = ({ role }) => {
                             </select>
                         </div>
                        </div>
+                       
+                       <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider mt-6 mb-2">Parent Information</h4>
+                       <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Parent Name</label>
+                          <input required type="text" value={newStudent.parentName} onChange={e => setNewStudent({...newStudent, parentName: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
+                       </div>
                        <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">Parent Phone</label>
                           <input required type="tel" value={newStudent.parentPhone} onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       </div>
+                       <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Parent Email</label>
+                          <input required type="email" value={newStudent.parentEmail} onChange={e => setNewStudent({...newStudent, parentEmail: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
                        </div>
                     </div>
                     

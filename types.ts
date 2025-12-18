@@ -33,6 +33,7 @@ export interface Student {
   parentName: string;
   parentId: string; // Link to parent user
   parentPhone: string;
+  parentEmail: string;
   dob: string;
   address?: string;
 }
