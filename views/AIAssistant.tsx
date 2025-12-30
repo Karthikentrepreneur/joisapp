@@ -5,7 +5,8 @@ import { ChatMessage } from '../types';
 
 export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 'init-1', role: 'model', text: 'Hello! I am EduNexus AI. How can I help you today? I can generate lesson plans, summarize student performance, or draft notices.', timestamp: new Date() }
+    // Fix: Convert Date to string for ChatMessage timestamp
+    { id: 'init-1', role: 'model', text: 'Hello! I am EduNexus AI. How can I help you today? I can generate lesson plans, summarize student performance, or draft notices.', timestamp: new Date().toISOString() }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,8 @@ export const AIAssistant: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: input, timestamp: new Date() };
+    // Fix: Convert Date to string for ChatMessage timestamp
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: input, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
@@ -34,7 +36,8 @@ export const AIAssistant: React.FC = () => {
 
     const responseText = await generateSchoolInsight(input, contextData);
 
-    const botMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: new Date() };
+    // Fix: Convert Date to string for ChatMessage timestamp
+    const botMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, botMsg]);
     setLoading(false);
   };

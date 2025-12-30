@@ -31,7 +31,7 @@ export interface Student {
   busRoute: string;
   image: string;
   parentName: string;
-  parentId: string; // Link to parent user
+  parentId: string;
   parentPhone: string;
   parentEmail: string;
   dob: string;
@@ -48,7 +48,7 @@ export interface Staff {
   email: string;
   status: 'Active' | 'On Leave';
   image: string;
-  signature?: string; // URL or Base64 of signature
+  signature?: string;
   salaryDetails?: {
     basic: number;
     allowances: number;
@@ -66,23 +66,27 @@ export interface Notice {
   sender: string;
 }
 
-export interface BusLocation {
-  id: string;
-  routeId: string;
-  lat: number;
-  lng: number;
-  speed: number;
-  status: 'Moving' | 'Stopped' | 'Traffic';
-  driver: string;
-}
-
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'model' | 'other';
+  senderId?: string;
+  receiverId?: string; // 'ALL' for broadcasts
   senderName?: string;
+  senderRole?: UserRole;
   text: string;
-  timestamp: Date;
+  timestamp: string;
   isRead?: boolean;
+  type?: 'Private' | 'Broadcast';
+  role?: string; // Support for AI assistant ('user'|'model') and mock data ('other')
+}
+
+export interface Conversation {
+  id: string;
+  participantId: string;
+  participantName: string;
+  participantRole: UserRole;
+  lastMessage: string;
+  lastTimestamp: string;
+  unreadCount: number;
 }
 
 export interface Invoice {

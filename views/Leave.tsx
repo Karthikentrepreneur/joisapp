@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole, LeaveRequest } from '../types';
-import { mockLeaveRequests, getMyChild } from '../data/mockData';
-import { CalendarDays, Plus, Check, X, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { db } from '../services/persistence';
+import { CalendarDays, Plus, Check, X, Clock, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { getMyChild } from '../data/mockData';
 
 interface LeaveProps {
   role?: UserRole;
 }
 
 export const Leave: React.FC<LeaveProps> = ({ role }) => {
-  const [requests, setRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
   const [showModal, setShowModal] = useState(false);
   
@@ -16,16 +18,39 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Parent Logic
-  const child = role === UserRole.PARENT ? getMyChild() : null;
-  const myRequests = role === UserRole.PARENT && child 
-    ? requests.filter(r => r.parentId === child.parentId)
-    : [];
+  const isParent = role === UserRole.PARENT;
+  const child = isParent ? getMyChild() : null;
 
-  const handleCreateRequest = (e: React.FormEvent) => {
+  const loadLeaveRequests = async () => {
+    setLoading(true);
+    try {
+      const data = await db.getAll('leaveRequests');
+      // If parent, filter for their specific child
+      if (isParent && child) {
+        setRequests(data.filter(r => r.studentId === child.id).sort((a, b) => b.requestDate.localeCompare(a.requestDate)));
+      } else {
+        setRequests(data.sort((a, b) => b.requestDate.localeCompare(a.requestDate)));
+      }
+    } catch (error) {
+      console.error("Failed to load leave requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLeaveRequests();
+    // Subscribe to real-time changes
+    const sub = db.subscribe('leaveRequests', loadLeaveRequests, loadLeaveRequests, loadLeaveRequests);
+    return () => { sub.unsubscribe(); };
+  }, [role, child?.id]);
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!child) return;
+    setIsSubmitting(true);
 
     const newRequest: LeaveRequest = {
       id: `LR-${Date.now()}`,
@@ -39,18 +64,26 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
       requestDate: new Date().toISOString().split('T')[0]
     };
 
-    setRequests([newRequest, ...requests]);
-    setShowModal(false);
-    setStartDate('');
-    setEndDate('');
-    setReason('');
+    try {
+      await db.create('leaveRequests', newRequest);
+      setShowModal(false);
+      setStartDate('');
+      setEndDate('');
+      setReason('');
+    } catch (err) {
+      alert("Failed to submit leave request to the server.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Admin Logic
-  const handleAction = (id: string, status: 'Approved' | 'Rejected') => {
-    setRequests(requests.map(req => 
-      req.id === id ? { ...req, status } : req
-    ));
+  const handleAction = async (id: string, status: 'Approved' | 'Rejected') => {
+    try {
+      await db.update('leaveRequests', id, { status });
+      // Real-time subscription will update the list
+    } catch (e) {
+      alert("Failed to update leave request status.");
+    }
   };
 
   const pendingRequests = requests.filter(r => r.status === 'Pending');
@@ -64,12 +97,12 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
             <CalendarDays className="w-6 h-6 text-blue-500" /> Leave Management
           </h2>
           <p className="text-slate-500">
-            {role === UserRole.PARENT 
+            {isParent 
               ? "Apply for student leave and view history." 
               : "Review and manage student leave applications."}
           </p>
         </div>
-        {role === UserRole.PARENT && (
+        {isParent && (
           <button 
             onClick={() => setShowModal(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2 w-full md:w-auto justify-center transition-all"
@@ -79,20 +112,25 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
         )}
       </div>
 
-      {role === UserRole.PARENT ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+           <Loader2 className="w-10 h-10 animate-spin mb-4" />
+           <p className="font-black uppercase tracking-widest text-xs">Syncing with Cloud Vault...</p>
+        </div>
+      ) : isParent ? (
         <div className="space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Leaves</p>
-                 <h3 className="text-3xl font-black text-slate-800">{myRequests.length}</h3>
+                 <h3 className="text-3xl font-black text-slate-800">{requests.length}</h3>
               </div>
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Pending</p>
-                 <h3 className="text-3xl font-black text-yellow-500">{myRequests.filter(r => r.status === 'Pending').length}</h3>
+                 <h3 className="text-3xl font-black text-yellow-500">{requests.filter(r => r.status === 'Pending').length}</h3>
               </div>
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Approved</p>
-                 <h3 className="text-3xl font-black text-green-500">{myRequests.filter(r => r.status === 'Approved').length}</h3>
+                 <h3 className="text-3xl font-black text-green-500">{requests.filter(r => r.status === 'Approved').length}</h3>
               </div>
            </div>
 
@@ -100,11 +138,14 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
               <div className="p-4 bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
                  Leave History
               </div>
-              {myRequests.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-sm">No leave requests found.</div>
+              {requests.length === 0 ? (
+                <div className="p-12 text-center text-slate-300">
+                   <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                   <p className="font-bold">No leave requests found in history.</p>
+                </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                   {myRequests.map((req) => (
+                   {requests.map((req) => (
                       <div key={req.id} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
                          <div className="flex items-start gap-4">
                             <div className={`mt-1 p-2 rounded-lg ${
@@ -140,7 +181,7 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
            </div>
         </div>
       ) : (
-        // Admin View
+        // Admin / Teacher View
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[calc(100%-80px)] overflow-hidden">
            <div className="border-b border-slate-200 flex">
               <button 
@@ -163,11 +204,11 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                  {filteredRequests.length === 0 ? (
-                    <div className="col-span-full py-12 text-center">
+                    <div className="col-span-full py-20 text-center">
                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Check className="w-8 h-8 text-slate-300" />
                        </div>
-                       <p className="text-slate-500 font-medium">No {activeTab} requests found.</p>
+                       <p className="text-slate-500 font-medium">No {activeTab} requests found in the database.</p>
                     </div>
                  ) : (
                     filteredRequests.map((req) => (
@@ -229,7 +270,7 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
             <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
                <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-bold text-slate-800">Apply for Student Leave</h3>
-                  <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600" disabled={isSubmitting}>
                      <X className="w-6 h-6" />
                   </button>
                </div>
@@ -250,7 +291,10 @@ export const Leave: React.FC<LeaveProps> = ({ role }) => {
                      <AlertCircle className="w-4 h-4 shrink-0" />
                      <p>Requests must be submitted at least 24 hours in advance unless it is a medical emergency.</p>
                   </div>
-                  <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all mt-2 shadow-lg">Submit Request</button>
+                  <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all mt-2 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
+                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                     {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                  </button>
                </form>
             </div>
          </div>

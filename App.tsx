@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './views/Dashboard';
@@ -14,9 +14,9 @@ import { Staff } from './views/Staff';
 import { Documents } from './views/Documents';
 import { Settings } from './views/Settings';
 import { Leave } from './views/Leave';
+import { Toast, ToastMessage, ToastType } from './components/Toast';
 import { UserRole, View } from './types';
 
-// Default configuration for role-based access
 const DEFAULT_PERMISSIONS = {
   [UserRole.ADMIN]: [
     View.DASHBOARD, View.STUDENTS, View.STAFF, View.ACADEMICS, 
@@ -40,51 +40,63 @@ function App() {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [permissions, setPermissions] = useState<Record<UserRole, View[]>>(DEFAULT_PERMISSIONS);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Reset view when role changes if the current view isn't accessible
+  const showToast = useCallback((title: string, type: ToastType = 'success', description?: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, title, type, description }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
     if (!permissions[newRole].includes(currentView)) {
       setCurrentView(View.DASHBOARD);
     }
+    showToast(`Switched to ${newRole} View`, 'info');
   };
 
   const renderView = () => {
+    const commonProps = { role, showToast };
     switch (currentView) {
       case View.DASHBOARD:
-        return <Dashboard role={role} onNavigate={setCurrentView} />;
+        return <Dashboard {...commonProps} onNavigate={setCurrentView} />;
       case View.STUDENTS:
-        return <Students role={role} />;
+        return <Students {...commonProps} />;
       case View.STAFF:
-        return <Staff role={role} />;
+        return <Staff {...commonProps} />;
       case View.TRANSPORT:
-        return <Transport />;
+        return <Transport showToast={showToast} />;
       case View.SAFETY:
         return <Safety />;
       case View.ACADEMICS:
-        return <Academics role={role} />;
+        return <Academics {...commonProps} />;
       case View.AI_ASSISTANT:
         return <AIAssistant />;
       case View.FEES:
-        return <Fees role={role} />;
+        return <Fees {...commonProps} />;
       case View.ATTENDANCE:
-        return <Attendance role={role} />;
+        return <Attendance {...commonProps} />;
       case View.LEAVE:
-        return <Leave role={role} />;
+        return <Leave {...commonProps} />;
       case View.COMMUNICATION:
-        return <Communication role={role} />;
+        return <Communication {...commonProps} />;
       case View.DOCUMENTS:
-        return <Documents role={role} />;
+        return <Documents {...commonProps} />;
       case View.SETTINGS:
         return <Settings role={role} permissions={permissions} setPermissions={setPermissions} />;
       default:
-        return <Dashboard role={role} onNavigate={setCurrentView} />;
+        return <Dashboard {...commonProps} onNavigate={setCurrentView} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
+      <Toast toasts={toasts} removeToast={removeToast} />
+      
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
@@ -92,7 +104,6 @@ function App() {
         />
       )}
       
-      {/* Sidebar Container - Logic to show/hide on mobile */}
       <div className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar 
           currentView={currentView} 
