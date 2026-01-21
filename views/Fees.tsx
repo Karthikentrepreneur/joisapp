@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/persistence';
 import { UserRole, ProgramType, Invoice, Student } from '../types';
@@ -10,15 +11,11 @@ import {
   GraduationCap,
   X, 
   RefreshCw,
-  Target,
   Save,
   CreditCard,
   Receipt,
   ArrowUpRight,
-  PlusCircle,
-  TrendingDown,
-  ChevronDown,
-  FileText
+  PlusCircle
 } from 'lucide-react';
 import { CURRENT_USER_ID } from '../data/mockData';
 import { ToastType } from '../components/Toast';
@@ -46,7 +43,6 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [matrix, setMatrix] = useState<FeeMatrix>(DEFAULT_FEE_MATRIX);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'student' | 'yield'>('student');
   const [activeProgram, setActiveProgram] = useState<'All' | ProgramType>('All');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configActiveProgram, setConfigActiveProgram] = useState<ProgramType>('Little Seeds');
@@ -79,14 +75,38 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
 
   const isParent = role === UserRole.PARENT;
 
+  // Add the missing downloadInvoice function
+  const downloadInvoice = (invoice: Invoice) => {
+    const csvRows = [
+      [`JUNIOR ODYSSEY INTERNATIONAL - FEE INVOICE`],
+      [`Invoice ID: ${invoice.id}`],
+      [`Student: ${invoice.studentName} (${invoice.studentId})`],
+      [`Type: ${invoice.type}`],
+      [`Due Date: ${invoice.dueDate}`],
+      [`Status: ${invoice.status}`],
+      [],
+      [`Description`, `Amount`],
+      [`${invoice.type} Fees`, `INR ${invoice.amount.toLocaleString('en-IN')}`],
+      [],
+      [`Total Amount:`, `INR ${invoice.amount.toLocaleString('en-IN')}`],
+      [],
+      [`Generated on: ${new Date().toLocaleString()}`],
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `Invoice_${invoice.id}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast?.("Invoice Downloaded", "success");
+  };
+
   const getStandardRate = (student: Student) => {
     const pRates = matrix[student.program] || DEFAULT_FEE_MATRIX[student.program];
     const offer = (student.offer as OfferType) || 'Regular';
     return pRates[offer] || pRates['Regular'] || 0;
-  };
-
-  const downloadInvoice = (invoice: Invoice) => {
-    showToast?.("Downloading Receipt", "info", `Generating digital copy for ${invoice.id}...`);
   };
 
   const handleQuickAllocate = async (student: Student) => {
@@ -112,10 +132,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
 
   if (isParent) {
     if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
-    let myChild = students.find(s => s.parentId === CURRENT_USER_ID);
-    if (!myChild && students.length > 0) {
-      myChild = students.find(s => invoices.some(i => i.studentId === s.id)) || students[0];
-    }
+    const myChild = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
     const myInvoices = myChild ? invoices.filter(i => i.studentId === myChild.id) : [];
     const pendingInvoices = myInvoices.filter(i => i.status !== 'Paid');
     const totalPending = pendingInvoices.reduce((sum, i) => sum + i.amount, 0);
@@ -125,8 +142,8 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     return (
       <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 overflow-y-auto h-full no-scrollbar pb-24">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div><h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Finance Ledger</h2><p className="text-slate-500 font-medium flex items-center gap-2"><GraduationCap className="w-4 h-4" /> Personal Account for <span className="text-blue-600 font-bold">{myChild.name}</span></p></div>
-          <button className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"><Download className="w-5 h-5" /> Export PDF</button>
+          <div><h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Finance Ledger</h2><p className="text-slate-500 font-medium flex items-center gap-2"><GraduationCap className="w-4 h-4" /> Account for <span className="text-blue-600 font-bold">{myChild.name}</span></p></div>
+          <button className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3"><Download className="w-5 h-5" /> Export PDF</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <div className="bg-white p-10 rounded-[3rem] border border-rose-100 shadow-xl flex items-center gap-8 relative overflow-hidden group">
@@ -148,7 +165,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                 <div key={inv.id} className="p-8 flex flex-col md:flex-row items-center justify-between hover:bg-slate-50/80 transition-all group gap-6">
                    <div className="flex items-center gap-6 flex-1">
                       <div className="w-14 h-14 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-blue-600 transition-all"><Receipt className="w-7 h-7" /></div>
-                      <div><p className="text-lg font-black text-slate-800 tracking-tight leading-none">{inv.type} Allocation</p><p className="text-[11px] font-bold text-slate-400 uppercase mt-2">Reference: {inv.id.slice(-8)}</p></div>
+                      <div><p className="text-lg font-black text-slate-800 tracking-tight leading-none">{inv.type} Allocation</p><p className="text-[11px] font-bold text-slate-400 uppercase mt-2">Ref: {inv.id.slice(-8)}</p></div>
                    </div>
                    <div className="text-right flex items-center gap-10">
                       <p className="text-2xl font-black text-slate-900 tracking-tighter">₹{inv.amount.toLocaleString('en-IN')}</p>
@@ -162,12 +179,6 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     );
   }
 
-  const getStudentPaymentStatus = (studentId: string) => {
-    const inv = invoices.find(i => i.studentId === studentId && i.type === 'Tuition');
-    if (!inv) return 'Unbilled';
-    return inv.status;
-  };
-
   const programFilteredStudents = activeProgram === 'All' ? students : students.filter(s => s.program === activeProgram);
   const totalCollected = invoices.filter(i => i.status === 'Paid' && (activeProgram === 'All' || students.find(s => s.id === i.studentId)?.program === activeProgram)).reduce((acc, i) => acc + i.amount, 0);
   const totalTarget = programFilteredStudents.reduce((acc, s) => acc + getStandardRate(s), 0);
@@ -175,9 +186,9 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   return (
     <div className="p-4 md:p-10 h-full flex flex-col animate-in fade-in duration-500 overflow-hidden max-w-[1400px] mx-auto w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 shrink-0">
-        <div><h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Financial Command</h2><p className="text-slate-500 text-sm font-medium">Monitoring <span className="text-blue-600 font-bold">{activeProgram}</span> yield matrix.</p></div>
+        <div><h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Financial Hub</h2><p className="text-slate-500 text-sm font-medium">Yield matrix for <span className="text-blue-600 font-bold">{activeProgram}</span>.</p></div>
         <div className="flex gap-3 w-full md:w-auto">
-           {role === UserRole.ADMIN && <button onClick={() => { setSyncing(true); loadData(); }} className="flex-1 md:flex-none bg-white border border-slate-200 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-3">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Sync Vault</button>}
+           {role === UserRole.ADMIN && <button onClick={() => { setSyncing(true); loadData().then(() => setSyncing(false)); }} className="flex-1 md:flex-none bg-white border border-slate-200 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-3">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Sync Vault</button>}
            <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3"><Settings className="w-4 h-4" /> Configure Matrix</button>
         </div>
       </div>
@@ -193,10 +204,11 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
       <div className="flex-1 pro-card overflow-hidden bg-white flex flex-col">
          <div className="overflow-y-auto flex-1 no-scrollbar">
             <table className="w-full text-left">
-               <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-xl border-b border-slate-100"><tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"><th className="px-8 py-6">Member Registry</th><th className="px-8 py-6 text-center">Applied Rate</th><th className="px-8 py-6 text-center">Invoiced Status</th><th className="px-8 py-6 text-right">Control</th></tr></thead>
+               <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-xl border-b border-slate-100"><tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"><th className="px-8 py-6">Member Registry</th><th className="px-8 py-6 text-center">Applied Rate</th><th className="px-8 py-6 text-center">Status</th><th className="px-8 py-6 text-right">Control</th></tr></thead>
                <tbody className="divide-y divide-slate-50">
                   {programFilteredStudents.map(student => {
-                     const status = getStudentPaymentStatus(student.id);
+                     const inv = invoices.find(i => i.studentId === student.id && i.type === 'Tuition');
+                     const status = inv ? inv.status : 'Unbilled';
                      const stdRate = getStandardRate(student);
                      return (
                         <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -229,11 +241,11 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                   {OFFERS.map(offer => (
                     <div key={offer} className="flex items-center justify-between p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
                        <span className="text-[11px] font-black uppercase tracking-widest text-slate-600">{offer}</span>
-                       <div className="relative w-32"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-black">₹</span><input type="number" value={matrix[configActiveProgram][offer]} onChange={e => setMatrix(prev => ({...prev, [configActiveProgram]: {...prev[configActiveProgram], [offer]: Number(e.target.value)}})} className="w-full pl-8 pr-4 py-2 bg-transparent border-b-2 border-slate-200 focus:border-blue-600 outline-none text-right font-black text-slate-900" /></div>
+                       <div className="relative w-32"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-black">₹</span><input type="number" value={matrix[configActiveProgram][offer]} onChange={e => setMatrix(prev => ({...prev, [configActiveProgram]: {...prev[configActiveProgram], [offer]: Number(e.target.value)}}))} className="w-full pl-8 pr-4 py-2 bg-transparent border-b-2 border-slate-200 focus:border-blue-600 outline-none text-right font-black text-slate-900" /></div>
                     </div>
                   ))}
                </div>
-               <button onClick={() => { showToast?.("Matrix Synced", "success"); setShowConfigModal(false); }} className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-4 shadow-2xl"><Save className="w-6 h-6" /> Commit Protocol Changes</button>
+               <button onClick={() => { showToast?.("Matrix Synced", "success"); setShowConfigModal(false); }} className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-4 shadow-2xl"><Save className="w-6 h-6" /> Commit Changes</button>
             </div>
          </div>
       )}
