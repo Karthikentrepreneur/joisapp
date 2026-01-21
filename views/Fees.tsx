@@ -1,22 +1,28 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/persistence';
-import { schoolService } from '../services/schoolService';
-import { mockInvoices, getMyChild } from '../data/mockData';
-import { UserRole, Invoice, Student } from '../types';
+import { UserRole, ProgramType, Invoice, Student } from '../types';
 import { 
-  DollarSign, 
   Download, 
   CheckCircle, 
-  Clock, 
   AlertCircle, 
-  CreditCard, 
   Loader2, 
-  X,
+  Settings,
+  GraduationCap,
+  X, 
+  RefreshCw,
+  Target,
+  Save,
+  CreditCard,
+  FileText,
   History,
-  TrendingUp,
-  ChevronRight
+  Receipt,
+  ArrowUpRight,
+  PlusCircle,
+  TrendingDown,
+  ChevronDown
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { CURRENT_USER_ID } from '../data/mockData';
 import { ToastType } from '../components/Toast';
 
 interface FeesProps {
@@ -24,254 +30,148 @@ interface FeesProps {
   showToast?: (title: string, type: ToastType, description?: string) => void;
 }
 
+const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
+const OFFERS = ['Early Bird Offer', 'Regular', 'Vijayadasami', 'New Year', 'Bridge Course'] as const;
+type OfferType = typeof OFFERS[number];
+
+type FeeMatrix = Record<ProgramType, Record<OfferType, number>>;
+
+const DEFAULT_FEE_MATRIX: FeeMatrix = {
+  'Little Seeds': { 'Early Bird Offer': 40000, 'Regular': 45000, 'Vijayadasami': 42000, 'New Year': 43000, 'Bridge Course': 15000 },
+  'Curiosity Cubs': { 'Early Bird Offer': 50000, 'Regular': 55000, 'Vijayadasami': 52000, 'New Year': 53000, 'Bridge Course': 18000 },
+  'Odyssey Owls': { 'Early Bird Offer': 60000, 'Regular': 65000, 'Vijayadasami': 62000, 'New Year': 63000, 'Bridge Course': 20000 },
+  'Future Makers': { 'Early Bird Offer': 70000, 'Regular': 75000, 'Vijayadasami': 72000, 'New Year': 73000, 'Bridge Course': 25000 }
+};
+
+type PaymentFilter = 'All' | 'Paid' | 'Unpaid';
+
 export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [matrix, setMatrix] = useState<FeeMatrix>(DEFAULT_FEE_MATRIX);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [viewMode, setViewMode] = useState<'student' | 'yield'>('student');
+  const [activeProgram, setActiveProgram] = useState<'All' | ProgramType>('All');
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('All');
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [configActiveProgram, setConfigActiveProgram] = useState<ProgramType>('Little Seeds');
+  const [syncing, setSyncing] = useState(false);
+
+  // Fix: Use useCallback to stabilize loadData and ensure it's handled as 0-arg function
+  const loadData = useCallback(async () => {
+    try {
+      const [invs, stds] = await Promise.all([
+        db.getAll('invoices'), 
+        db.getAll('students')
+      ]);
+      setInvoices(invs || []);
+      setStudents(stds || []);
+    } catch (err) {
+      console.error("Finance load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { 
+    loadData();
+    // Real-time synchronization from Supabase
+    // Using arrow functions that explicitly accept the payload argument (ignoring it) 
+    // to satisfy the subscribe parameters while calling loadData with 0 arguments.
+    const invoiceSub = db.subscribe('invoices', (_p) => { loadData(); }, (_p) => { loadData(); }, (_p) => { loadData(); });
+    const studentSub = db.subscribe('students', (_p) => { loadData(); }, (_p) => { loadData(); }, (_p) => { loadData(); });
+    return () => { 
+      invoiceSub.unsubscribe(); 
+      studentSub.unsubscribe();
+    };
+  }, [loadData]);
 
   const isParent = role === UserRole.PARENT;
-  const child = isParent ? getMyChild() : null;
 
-  const loadInvoices = async () => {
-    setLoading(true);
-    const data = await db.getAll('invoices');
-    if (isParent && child) {
-      setInvoices(data.filter(i => i.studentId === child.id));
-    } else {
-      setInvoices(data);
-    }
-    setLoading(false);
+  const getStandardRate = (student: Student) => {
+    const pRates = matrix[student.program] || DEFAULT_FEE_MATRIX[student.program];
+    const offer = (student.offer as OfferType) || 'Regular';
+    return pRates[offer] || pRates['Regular'] || 0;
   };
 
-  useEffect(() => {
-    loadInvoices();
-  }, [role]);
+  const handleQuickAllocate = async (student: Student) => {
+    const rate = getStandardRate(student);
+    const newInvoice: Invoice = {
+      id: `INV-${Date.now()}-${student.id}`,
+      studentId: student.id,
+      studentName: student.name,
+      amount: rate,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'Pending',
+      type: 'Tuition'
+    };
 
-  const totalCollected = invoices.filter(i => i.status === 'Paid').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = invoices.filter(i => i.status === 'Pending').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalOverdue = invoices.filter(i => i.status === 'Overdue').reduce((acc, curr) => acc + curr.amount, 0);
-
-  const pieData = [
-    { name: 'Collected', value: totalCollected, color: '#10b981' },
-    { name: 'Pending', value: totalPending, color: '#3b82f6' },
-    { name: 'Overdue', value: totalOverdue, color: '#ef4444' },
-  ];
-
-  const handlePayClick = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setShowPaymentModal(true);
-  };
-
-  const processPayment = async () => {
-    if (!selectedInvoice) return;
-    setProcessing(true);
     try {
-      await schoolService.collectPayment(selectedInvoice.id);
-      await loadInvoices();
-      setShowPaymentModal(false);
-      showToast?.("Payment Successful", "success", `₹${selectedInvoice.amount.toLocaleString()} received. Your receipt is now available.`);
-    } catch (e) {
-      showToast?.("Payment Failed", "error", "The transaction could not be completed. Please contact support.");
+      setSyncing(true);
+      await db.create('invoices', newInvoice);
+      showToast?.("Fee Allocated", "success", `₹${rate.toLocaleString()} invoiced to ${student.name}.`);
+      await loadData();
+    } catch (err) {
+      showToast?.("Allocation Error", "error", "Failed to sync with cloud vault.");
     } finally {
-      setProcessing(false);
+      setSyncing(false);
     }
   };
 
-  return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-            {isParent && child ? `Finances for ${child.name}` : "School Finance Hub"}
-          </h2>
-          <p className="text-slate-500 font-medium">
-            {isParent ? "View and pay school fees securely using our digital portal." : "Real-time revenue tracking and invoice management."}
-          </p>
-        </div>
-        {!isParent && (
-           <button className="bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] text-sm font-black uppercase tracking-widest hover:bg-black shadow-xl shadow-slate-200 flex items-center gap-3 transition-all active:scale-95">
-              <Download className="w-4 h-4" /> Export Financials
-           </button>
-        )}
-      </div>
+  if (isParent) {
+    if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between group overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-full w-2 bg-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-6">
-             <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm">
-                <CheckCircle className="w-7 h-7" />
-             </div>
-             <TrendingUp className="w-5 h-5 text-emerald-500" />
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{isParent ? "You have Paid" : "Total Revenue"}</p>
-            <h3 className="text-3xl font-black text-slate-900">₹{totalCollected.toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between group overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-full w-2 bg-blue-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-6">
-             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
-                <Clock className="w-7 h-7" />
-             </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Outstanding</p>
-            <h3 className="text-3xl font-black text-slate-900">₹{totalPending.toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between group overflow-hidden relative">
-          <div className="absolute right-0 top-0 h-full w-2 bg-rose-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-6">
-             <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center shadow-sm">
-                <AlertCircle className="w-7 h-7" />
-             </div>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Overdue Payments</p>
-            <h3 className="text-3xl font-black text-slate-900">₹{totalOverdue.toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-      </div>
+    // Resilient child finding for Parent view
+    let myChild = students.find(s => s.parentId === CURRENT_USER_ID);
+    if (!myChild && students.length > 0) {
+      myChild = students.find(s => invoices.some(i => i.studentId === s.id)) || students[0];
+    }
+    
+    const myInvoices = myChild ? invoices.filter(i => i.studentId === myChild.id) : [];
+    const pendingInvoices = myInvoices.filter(i => i.status !== 'Paid');
+    const paidInvoices = myInvoices.filter(i => i.status === 'Paid');
+    const totalPending = pendingInvoices.reduce((sum, i) => sum + i.amount, 0);
 
-      <div className="flex flex-col xl:flex-row gap-8">
-        <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-            <h3 className="font-black text-slate-900 text-xl flex items-center gap-3">
-               <History className="w-6 h-6 text-blue-500" />
-               Transaction Ledger
-            </h3>
-            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full uppercase tracking-widest">
-               {invoices.length} Records
-            </span>
+    const childProgramFees = myChild ? matrix[myChild.program] : null;
+    const childOffer = myChild?.offer || 'Regular';
+
+    const downloadInvoice = (invoice: Invoice) => {
+      showToast?.("Invoice Generated", "success", `Downloading receipt for Ref: ${invoice.id.slice(0, 8)}`);
+    };
+
+    if (!myChild) {
+      return (
+        <div className="p-12 text-center flex flex-col items-center justify-center h-full">
+           <AlertCircle className="w-16 h-16 text-slate-200 mb-6" />
+           <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">No Student Records Found</h3>
+           <p className="text-slate-500 mt-2">The school database is currently empty or no child is linked to your account.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 overflow-y-auto h-full no-scrollbar pb-24">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Academic Financials</h2>
+            <p className="text-slate-500 font-medium flex items-center gap-2">
+              <GraduationCap className="w-4 h-4" /> Personal Ledger for <span className="text-blue-600 font-bold">{myChild.name}</span>
+            </p>
           </div>
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left">
-              <thead className="bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-50">
-                <tr>
-                  <th className="px-8 py-5">Reference</th>
-                  <th className="px-8 py-5">Service Type</th>
-                  <th className="px-8 py-5">Net Amount</th>
-                  <th className="px-8 py-5">Status</th>
-                  <th className="px-8 py-5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {loading ? (
-                   <tr><td colSpan={5} className="p-12 text-center text-slate-400"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" /> Loading ledger...</td></tr>
-                ) : invoices.length > 0 ? (
-                  invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-8 py-6">
-                         <p className="font-black text-slate-800 text-sm">{inv.id}</p>
-                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{inv.studentName}</p>
-                      </td>
-                      <td className="px-8 py-6 text-sm font-bold text-slate-600">{inv.type}</td>
-                      <td className="px-8 py-6 font-black text-slate-900">₹{inv.amount.toLocaleString('en-IN')}</td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                          inv.status === 'Paid' ? 'bg-emerald-500 text-white' : 
-                          inv.status === 'Pending' ? 'bg-blue-100 text-blue-700' : 
-                          'bg-rose-500 text-white'
-                        }`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        {inv.status !== 'Paid' ? (
-                          <button 
-                            onClick={() => handlePayClick(inv)}
-                            className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 shadow-lg shadow-slate-100 transition-all active:scale-95"
-                          >
-                            Pay Online
-                          </button>
-                        ) : (
-                          <button className="text-xs font-black text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all flex items-center gap-2 ml-auto">
-                             <Download className="w-3.5 h-3.5" /> Receipt
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan={5} className="p-20 text-center text-slate-300 font-bold italic">No financial activity found for this period.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <button className="bg-slate-900 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95 flex items-center gap-3">
+            <Download className="w-5 h-5" /> Export PDF Statement
+          </button>
         </div>
 
-        <div className="w-full xl:w-96 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col">
-           <h3 className="font-black text-slate-900 text-xl mb-8">Payment Distribution</h3>
-           <div className="h-64 w-full">
-             <ResponsiveContainer width="100%" height="100%">
-               <PieChart>
-                 <Pie data={pieData} innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">
-                   {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />)}
-                 </Pie>
-                 <RechartsTooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`} />
-                 <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{paddingTop: '20px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em'}} />
-               </PieChart>
-             </ResponsiveContainer>
-           </div>
-           <div className="mt-8 space-y-4">
-              <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 text-center">
-                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Fee for AY 2024</p>
-                 <p className="text-3xl font-black text-slate-900">₹{(totalCollected + totalPending + totalOverdue).toLocaleString('en-IN')}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="bg-white p-10 rounded-[3rem] border border-rose-100 shadow-xl shadow-rose-500/5 flex items-center gap-8 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+              <div className="w-20 h-20 bg-rose-500 text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-rose-200 z-10">
+                 <AlertCircle className="w-10 h-10" />
               </div>
-              <div className="bg-indigo-600 p-8 rounded-[2rem] text-white shadow-xl shadow-indigo-100 group cursor-pointer overflow-hidden relative">
-                 <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                 <h4 className="text-lg font-black mb-1">Fee Receipts</h4>
-                 <p className="text-indigo-100 text-xs font-medium leading-relaxed">Download your tax-saving fee certificates for the current financial year.</p>
-                 <div className="mt-4 flex items-center text-[10px] font-black uppercase tracking-widest gap-2">Access Portal <ChevronRight className="w-3.5 h-3.5" /></div>
+              <div className="z-10">
+                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Net Outstanding</p>
+                 <h3 className="text-4xl font-black text-slate-900 tracking-tighter">₹{totalPending.toLocaleString('en-IN')}</h3>
+                 <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mt-2">Due immediately</p>
               </div>
-           </div>
-        </div>
-      </div>
-
-      {showPaymentModal && selectedInvoice && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300 p-4">
-            <div className="bg-white rounded-[3rem] p-10 max-w-md w-full shadow-2xl relative">
-               <div className="flex justify-between items-center mb-10">
-                  <h3 className="text-2xl font-black text-slate-900">Checkout</h3>
-                  <button onClick={() => setShowPaymentModal(false)} className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-colors">
-                     <X className="w-6 h-6" />
-                  </button>
-               </div>
-               
-               <div className="bg-slate-50 p-8 rounded-[2rem] mb-8 border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Service Payment</p>
-                  <p className="font-black text-slate-900 text-2xl">{selectedInvoice.type} Maintenance</p>
-                  <div className="flex justify-between mt-6 pt-6 border-t border-slate-200">
-                     <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Amount Due</span>
-                     <span className="text-3xl font-black text-blue-600">₹{selectedInvoice.amount.toLocaleString('en-IN')}</span>
-                  </div>
-               </div>
-
-               <div className="space-y-3 mb-10">
-                  <div className="p-4 rounded-2xl border-2 border-blue-600 bg-blue-50/50 flex items-center justify-between">
-                     <div className="flex items-center gap-4">
-                        <CreditCard className="w-6 h-6 text-blue-600" />
-                        <span className="font-black text-blue-900 uppercase tracking-widest text-xs">Verified Portal</span>
-                     </div>
-                     <CheckCircle className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">Transaction is SSL Encrypted</p>
-               </div>
-
-               <button 
-                  onClick={processPayment} 
-                  disabled={processing}
-                  className="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
-               >
-                  {processing ? <Loader2 className="w-6 h-6 animate-spin" /> : <><DollarSign className="w-5 h-5" /> Confirm & Pay</>}
-               </button>
-            </div>
-         </div>
-      )}
-    </div>
-  );
-};
+              <button className="ml-auto bg-rose-500 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow

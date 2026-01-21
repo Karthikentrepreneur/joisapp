@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = 'Admin',
   TEACHER = 'Teacher',
@@ -16,45 +17,88 @@ export enum View {
   COMMUNICATION = 'Communication',
   AI_ASSISTANT = 'AI Assistant',
   STAFF = 'Staff Management',
-  DOCUMENTS = 'Documents & Certificates',
   SETTINGS = 'System Settings',
   LEAVE = 'Leave Management'
 }
 
+export type ProgramType = 'Little Seeds' | 'Curiosity Cubs' | 'Odyssey Owls' | 'Future Makers';
+
 export interface Student {
   id: string;
-  name: string;
-  grade: string;
-  section: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  name: string; // Combined for display
+  dob: string;
+  bloodGroup?: string;
+  
+  // Parent Details
+  motherName: string;
+  motherEmail: string;
+  fatherName: string;
+  fatherEmail: string;
+  
+  // School Details
+  program: ProgramType;
+  dateOfJoining: string;
+  offer: 'Early Bird Offer' | 'Regular' | 'Vijayadasami' | 'New Year' | 'Bridge Course';
+  
+  // Emergency Contact
+  emergencyContact: {
+    name: string;
+    relationship: string;
+    phone: string;
+  };
+
+  // Status & Metadata
   attendance: number;
   feesStatus: 'Paid' | 'Pending' | 'Overdue';
   busRoute: string;
   image: string;
-  parentName: string;
   parentId: string;
   parentPhone: string;
   parentEmail: string;
-  dob: string;
   address?: string;
 }
 
 export interface Staff {
   id: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   name: string;
-  role: 'Teacher' | 'Admin' | 'Driver' | 'Clerk';
-  subject?: string;
-  classAssigned?: string;
   phone: string;
+  aadhaarNumber: string;
   email: string;
+  dateOfJoining: string;
+  classAssigned?: string;
+  maritalStatus: 'Married' | 'Unmarried';
   status: 'Active' | 'On Leave';
+  role: 'Teacher' | 'Admin' | 'Driver' | 'Clerk';
   image: string;
   signature?: string;
+  
+  emergencyContact: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    relationship: string;
+    phone: string;
+  };
+  
   salaryDetails?: {
     basic: number;
     allowances: number;
     deductions: number;
     net: number;
   };
+}
+
+export interface FeeStructure {
+  id: string;
+  program: ProgramType;
+  amount: number;
+  description: string;
 }
 
 export interface Notice {
@@ -64,29 +108,21 @@ export interface Notice {
   priority: 'High' | 'Medium' | 'Low';
   content: string;
   sender: string;
+  targetGroup: 'All' | ProgramType;
+  attachmentUrl?: string;
 }
 
 export interface ChatMessage {
   id: string;
   senderId?: string;
-  receiverId?: string; // 'ALL' for broadcasts
+  receiverId?: string;
   senderName?: string;
   senderRole?: UserRole;
   text: string;
   timestamp: string;
   isRead?: boolean;
   type?: 'Private' | 'Broadcast';
-  role?: string; // Support for AI assistant ('user'|'model') and mock data ('other')
-}
-
-export interface Conversation {
-  id: string;
-  participantId: string;
-  participantName: string;
-  participantRole: UserRole;
-  lastMessage: string;
-  lastTimestamp: string;
-  unreadCount: number;
+  role?: string;
 }
 
 export interface Invoice {
@@ -100,6 +136,7 @@ export interface Invoice {
 }
 
 export interface AttendanceRecord {
+  id: string;
   date: string;
   present: number;
   absent: number;
@@ -107,16 +144,11 @@ export interface AttendanceRecord {
   status: 'Submitted' | 'Pending';
 }
 
-export interface Homework {
+export interface AttendanceLog {
   id: string;
-  subject: string;
-  title: string;
-  description: string;
-  grade: string;
-  section: string;
-  dueDate: string;
-  assignedBy: string;
-  status: 'Active' | 'Closed';
+  date: string;
+  studentId: string;
+  status: 'Present' | 'Absent' | 'Late';
 }
 
 export interface Certificate {
@@ -125,9 +157,20 @@ export interface Certificate {
   studentName: string;
   studentId: string;
   requestDate: string;
-  issueDate?: string;
   status: 'Requested' | 'Teacher Approved' | 'Released' | 'Rejected';
-  reason?: string;
+  reason: string;
+  issueDate?: string;
+}
+
+export interface Homework {
+  id: string;
+  subject: string;
+  title: string;
+  description: string;
+  program?: ProgramType;
+  dueDate: string;
+  assignedBy: string;
+  status: 'Active' | 'Closed';
 }
 
 export interface LeaveRequest {

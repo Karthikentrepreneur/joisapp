@@ -1,66 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { UserRole, View, LeaveRequest, Staff, Student, Invoice } from '../types';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { UserRole, View, Student, Staff, AttendanceLog, ProgramType, LeaveRequest } from '../types';
 import { db } from '../services/persistence';
 import { 
   Users, 
-  AlertTriangle, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  BookOpen, 
-  Bus, 
   CheckCircle, 
-  CalendarPlus, 
-  X, 
-  Check, 
-  FileText, 
-  Printer, 
-  ArrowRight,
-  ChevronRight,
+  Loader2, 
   TrendingUp,
-  Sparkles,
-  CalendarDays,
-  Plus,
   CalendarCheck,
-  Download,
-  Database,
-  Loader2
+  ArrowUpRight,
+  CalendarDays,
+  Clock,
+  Briefcase,
+  GraduationCap,
+  CreditCard,
+  AlertCircle,
+  PieChart,
+  RefreshCw
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { CURRENT_USER_ID } from '../data/mockData';
 
 interface DashboardProps {
   role: UserRole;
   onNavigate: (view: View) => void;
+  onFilterNavigate?: (program: ProgramType) => void;
 }
 
-const schoolData = [
-  { name: 'Jan', attendance: 92, fees: 85 },
-  { name: 'Feb', attendance: 95, fees: 88 },
-  { name: 'Mar', attendance: 91, fees: 92 },
-  { name: 'Apr', attendance: 98, fees: 75 },
-  { name: 'May', attendance: 96, fees: 95 },
-  { name: 'Jun', attendance: 97, fees: 98 },
-];
+const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
-export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate, onFilterNavigate }) => {
   const isConnected = db.isConnected();
 
   const renderContent = () => {
-    if (role === UserRole.PARENT) {
-      return <ParentDashboard onNavigate={onNavigate} />;
-    } else if (role === UserRole.TEACHER) {
-      return <TeacherDashboard onNavigate={onNavigate} />;
-    } else {
-      return <AdminDashboard onNavigate={onNavigate} />;
+    switch (role) {
+      case UserRole.PARENT: return <ParentDashboard onNavigate={onNavigate} />;
+      case UserRole.TEACHER: return <TeacherDashboard onNavigate={onNavigate} />;
+      default: return <AdminDashboard onNavigate={onNavigate} onFilterNavigate={onFilterNavigate} />;
     }
   };
 
   return (
-    <div className="h-full overflow-y-auto scroll-smooth bg-slate-50/50">
-      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-slate-200 shadow-lg pointer-events-none">
-        <Database className={`w-3 h-3 ${isConnected ? 'text-emerald-500' : 'text-amber-500'}`} />
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
-          {isConnected ? 'Supabase Live' : 'Local Persistence'}
+    <div className="h-full overflow-y-auto bg-[#f8fafc] scroll-smooth no-scrollbar">
+      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-lg pointer-events-none">
+        <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">
+          {isConnected ? 'Vault Connected' : 'Offline Mode'}
         </span>
       </div>
       {renderContent()}
@@ -68,300 +52,349 @@ export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate }) => {
   );
 };
 
-/* --- PARENT DASHBOARD --- */
-const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
-  const [child, setChild] = useState<Student | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [myLeaveRequests, setMyLeaveRequests] = useState<LeaveRequest[]>([]); 
+const CompactStat = ({ icon: Icon, label, value, color, onClick, subValue }: any) => (
+  <div 
+    onClick={onClick}
+    className="pro-card p-6 cursor-pointer group flex items-center gap-5 hover:shadow-xl transition-all duration-300 border-none shadow-sm bg-white"
+  >
+    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color} text-white shadow-lg group-hover:scale-110 transition-transform`}>
+      <Icon className="w-7 h-7" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-2">{label}</p>
+      <h3 className="text-3xl font-black text-slate-900 tracking-tighter truncate">{value}</h3>
+      {subValue && <p className="text-[11px] font-bold text-slate-400 mt-1">{subValue}</p>}
+    </div>
+    <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 opacity-0 group-hover:opacity-100 transition-all">
+      <ArrowUpRight className="w-4 h-4 text-slate-400" />
+    </div>
+  </div>
+);
+
+const AdminDashboard = ({ onNavigate, onFilterNavigate }: { onNavigate: (view: View) => void, onFilterNavigate?: (program: ProgramType) => void }) => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState('Good Morning');
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
-  
-  const [leaveStartDate, setLeaveStartDate] = useState('');
-  const [leaveEndDate, setLeaveEndDate] = useState('');
-  const [leaveReason, setLeaveReason] = useState('');
 
-  const loadParentData = async () => {
-    setLoading(true);
-    const students = await db.getAll('students');
-    // For demo, assume first student is ours if no CURRENT_USER_ID match
-    const myChild = students.find(s => s.parentId === 'USR-PARENT-01') || students[0];
-    setChild(myChild || null);
-
-    if (myChild) {
-      const [allInvoices, allLeaves] = await Promise.all([
-        db.getAll('invoices'),
+  const loadData = useCallback(async () => {
+    try {
+      const [s, st, lv] = await Promise.all([
+        db.getAll('students'), 
+        db.getAll('staff'),
         db.getAll('leaveRequests')
       ]);
-      setInvoices(allInvoices.filter(i => i.studentId === myChild.id));
-      setMyLeaveRequests(allLeaves.filter(l => l.studentId === myChild.id).sort((a,b) => b.id.localeCompare(a.id)));
+      setStudents(s || []);
+      setStaff(st || []);
+      setLeaves(lv || []);
+    } catch (err) {
+      console.error("Dashboard refresh error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    
+    const studentSub = db.subscribe('students', () => loadData(), () => loadData(), () => loadData());
+    const staffSub = db.subscribe('staff', () => loadData(), () => loadData(), () => loadData());
+    const leaveSub = db.subscribe('leaveRequests', () => loadData(), () => loadData(), () => loadData());
+    
+    return () => {
+      studentSub.unsubscribe();
+      staffSub.unsubscribe();
+      leaveSub.unsubscribe();
+    };
+  }, [loadData]);
+
+  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+
+  const pendingLeavesCount = leaves.filter(l => l.status === 'Pending').length;
+
+  return (
+    <div className="p-6 space-y-6 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-100 pb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Administrative Command</h1>
+          <p className="text-slate-500 font-medium flex items-center gap-2">
+             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+             Global monitoring for <span className="text-blue-600 font-bold">Junior Odyssey Hub</span>
+          </p>
+        </div>
+        <button 
+          onClick={() => { setLoading(true); loadData(); }} 
+          className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 hover:bg-white hover:shadow-sm transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Force Sync
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <CompactStat icon={Users} label="Current Enrollment" value={students.length} color="bg-blue-600" onClick={() => onNavigate(View.STUDENTS)} />
+         <CompactStat icon={Briefcase} label="Active Personnel" value={staff.length} color="bg-slate-900" onClick={() => onNavigate(View.STAFF)} />
+         <CompactStat icon={CalendarDays} label="Approval Queue" value={pendingLeavesCount} subValue="Pending leave apps" color="bg-rose-500" onClick={() => onNavigate(View.LEAVE)} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+         <div className="lg:col-span-12 pro-card p-8 bg-white">
+            <div className="flex justify-between items-center mb-8">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                  <GraduationCap className="w-4 h-4 text-blue-600" /> Enrollment Matrix
+               </h4>
+               <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest border border-blue-100">Live Load Balance</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+               {PROGRAMS.map((p, i) => {
+                  const programCount = students.filter(s => s.program === p).length;
+                  const capacity = 40;
+                  const fillPercent = (programCount / capacity) * 100;
+
+                  return (
+                    <div 
+                      key={p} 
+                      className="space-y-3 cursor-pointer group/prog p-4 rounded-2xl bg-slate-50/50 hover:bg-slate-50 hover:shadow-sm border border-transparent hover:border-slate-100 transition-all"
+                      onClick={() => onFilterNavigate?.(p)}
+                    >
+                       <div className="flex justify-between items-center">
+                          <span className="text-[13px] font-black text-slate-900 tracking-tight">{p}</span>
+                          <span className="text-blue-600 text-xs font-black flex items-center gap-2">
+                            {programCount} <span className="text-slate-300 font-medium">/ {capacity}</span>
+                            <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/prog:opacity-100 transition-opacity" />
+                          </span>
+                       </div>
+                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-white">
+                          <div 
+                            className={`h-full ${i % 2 === 0 ? 'bg-blue-600' : 'bg-slate-900'} rounded-full transition-all duration-1000`} 
+                            style={{ width: `${Math.min(100, fillPercent)}%` }}
+                          />
+                       </div>
+                    </div>
+                  );
+               })}
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+  const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
+  const [presenceToday, setPresenceToday] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [program, setProgram] = useState<ProgramType | 'N/A'>('N/A');
+
+  const loadTeacherData = useCallback(async () => {
+    try {
+      const [allStudents, allStaff, allLogs] = await Promise.all([
+        db.getAll('students'),
+        db.getAll('staff'),
+        db.getAll('attendanceLogs')
+      ]);
+
+      const currentTeacher = allStaff.find(s => s.role === 'Teacher');
+      const assignedProgram = currentTeacher?.classAssigned as ProgramType || 'Little Seeds';
+      setProgram(assignedProgram);
+
+      const myStudents = allStudents.filter(s => s.program === assignedProgram);
+      setAssignedStudents(myStudents);
+
+      const today = new Date().toISOString().split('T')[0];
+      const studentIds = new Set(myStudents.map(s => s.id));
+      const presentCount = allLogs.filter(l => 
+        l.date === today && 
+        studentIds.has(l.studentId) && 
+        (l.status === 'Present' || l.status === 'Late')
+      ).length;
+      
+      setPresenceToday(presentCount);
+    } catch (err) {
+      console.error("Teacher dash error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTeacherData();
+    
+    const studentSub = db.subscribe('students', () => loadTeacherData(), () => loadTeacherData(), () => loadTeacherData());
+    const attendanceSub = db.subscribe('attendanceLogs', () => loadTeacherData(), () => loadTeacherData(), () => loadTeacherData());
+    
+    return () => {
+      studentSub.unsubscribe();
+      attendanceSub.unsubscribe();
+    };
+  }, [loadTeacherData]);
+
+  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+
+  return (
+    <div className="p-6 space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
+      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-50"></div>
+         <div className="relative z-10">
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-3">Faculty Hub</h1>
+            <p className="text-slate-500 text-sm font-medium flex items-center gap-2">
+               Currently directing <span className="text-blue-600 font-bold uppercase tracking-widest">{program}</span> cohort
+            </p>
+         </div>
+         <div className="bg-blue-600 text-white px-8 py-5 rounded-[2rem] shadow-2xl shadow-blue-100 flex items-center gap-4 relative z-10 group hover:scale-105 transition-all">
+            <Clock className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+            <div className="text-right">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none mb-1">Morning Shift</p>
+               <p className="text-lg font-black leading-none">Active Session</p>
+            </div>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <CompactStat 
+            icon={Users} 
+            label="Enrolled Learners" 
+            value={assignedStudents.length} 
+            color="bg-blue-600" 
+            onClick={() => onNavigate(View.STUDENTS)} 
+         />
+         <CompactStat 
+            icon={CalendarCheck} 
+            label="Presence Audit" 
+            value={`${presenceToday} / ${assignedStudents.length}`} 
+            color="bg-emerald-500" 
+            subValue="Verified checked-in today"
+            onClick={() => onNavigate(View.ATTENDANCE)} 
+         />
+      </div>
+
+      <div className="pro-card p-12 text-center border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-[3rem]">
+         <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px] leading-none">End of Morning Brief</p>
+      </div>
+    </div>
+  );
+};
+
+const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+  const [child, setChild] = useState<Student | null>(null);
+  const [pendingFees, setPendingFees] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const loadParentData = useCallback(async () => {
+    try {
+      const [students, invoices] = await Promise.all([
+        db.getAll('students'),
+        db.getAll('invoices')
+      ]);
+      
+      let myChild = students.find(s => s.parentId === CURRENT_USER_ID);
+      if (!myChild && students.length > 0) {
+        myChild = students.find(s => invoices.some(i => i.studentId === s.id)) || students[0];
+      }
+      setChild(myChild || null);
+
+      if (myChild) {
+         const dues = invoices
+           .filter(i => i.studentId === myChild.id && i.status !== 'Paid')
+           .reduce((sum, i) => sum + i.amount, 0);
+         setPendingFees(dues);
+      }
+    } catch (err) {
+      console.error("Parent dashboard load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadParentData();
-    const hour = new Date().getHours();
-    if (hour >= 12 && hour < 17) setGreeting('Good Afternoon');
-    else if (hour >= 17) setGreeting('Good Evening');
-    else setGreeting('Good Morning');
-  }, []);
-
-  const handleLeaveSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!child) return;
-    
-    const newRequest: LeaveRequest = {
-      id: `LR-${Date.now()}`,
-      studentId: child.id,
-      studentName: child.name,
-      parentId: child.parentId,
-      startDate: leaveStartDate,
-      endDate: leaveEndDate,
-      reason: leaveReason,
-      status: 'Pending',
-      requestDate: new Date().toISOString().split('T')[0]
+    const studentSub = db.subscribe('students', () => loadParentData(), () => loadParentData(), () => loadParentData());
+    const invoiceSub = db.subscribe('invoices', () => loadParentData(), () => loadParentData(), () => loadParentData());
+    return () => {
+      studentSub.unsubscribe();
+      invoiceSub.unsubscribe();
     };
+  }, [loadParentData]);
 
-    try {
-      await db.create('leaveRequests', newRequest);
-      setMyLeaveRequests([newRequest, ...myLeaveRequests]);
-      setShowLeaveModal(false);
-      setLeaveStartDate('');
-      setLeaveEndDate('');
-      setLeaveReason('');
-    } catch (err) {
-      alert("Failed to submit leave request.");
-    }
-  };
-
-  if (loading) return <div className="flex items-center justify-center h-full text-slate-400"><Loader2 className="animate-spin w-8 h-8" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+  
   if (!child) return (
-    <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-full space-y-4">
-      <Users className="w-16 h-16 opacity-20" />
-      <h3 className="text-xl font-black">No Student Linked</h3>
-      <p>Please contact school administration to link your child's profile.</p>
+    <div className="p-24 text-center flex flex-col items-center justify-center h-full">
+       <AlertCircle className="w-16 h-16 text-slate-200 mb-8" />
+       <h3 className="text-2xl font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Identity Not Found</h3>
+       <p className="text-slate-500 max-w-sm font-medium">Please contact the central office to link your parent profile to a student ID.</p>
     </div>
   );
 
-  const pendingFee = invoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + i.amount, 0);
-
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-8 md:p-12 text-white shadow-2xl">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-sm font-semibold border border-white/10">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              <span>JOIS Parent Portal</span>
+    <div className="p-6 max-w-[1200px] mx-auto space-y-10 animate-in fade-in duration-700">
+      <div className="pro-card p-12 flex flex-col md:flex-row items-center gap-10 bg-white border-none shadow-2xl rounded-[3.5rem] relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 opacity-80"></div>
+         <div className="relative z-10">
+            <img src={child.image} className="w-40 h-40 rounded-[3rem] object-cover border-8 border-slate-50 shadow-2xl group-hover:scale-105 transition-transform" />
+            <div className="absolute -bottom-3 -right-3 bg-blue-600 text-white p-3 rounded-2xl shadow-xl border-4 border-white">
+               <GraduationCap className="w-6 h-6" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              {greeting}, <br className="md:hidden" />
-              <span className="text-blue-100">{child.parentName.split(' ')[0]}!</span>
-            </h1>
-            <p className="text-blue-100/80 text-lg font-medium max-w-md">
-              Your child, <span className="text-white font-bold underline decoration-yellow-400 underline-offset-4">{child.name}</span>, is enrolled in {child.grade}.
-            </p>
-          </div>
-          <div onClick={() => onNavigate(View.TRANSPORT)} className="group cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 transition-all duration-300 shadow-xl">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-inner group-hover:scale-110 transition-transform">
-                <Bus className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-blue-200 uppercase tracking-widest">Live Bus Tracking</p>
-                <p className="text-xl font-black flex items-center gap-2"><span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>Active</p>
-                <div className="flex items-center text-sm font-medium text-blue-100 gap-1 group-hover:gap-2 transition-all">Track now <ChevronRight className="w-4 h-4" /></div>
-              </div>
+         </div>
+         <div className="flex-1 text-center md:text-left relative z-10">
+            <span className="text-[11px] font-black text-blue-600 uppercase tracking-[0.4em] mb-4 block">Child Profile Linked</span>
+            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-3">{child.name}</h1>
+            <p className="text-[16px] font-bold text-slate-400 uppercase tracking-widest">{child.program} • UID: {child.id}</p>
+         </div>
+         <div className="bg-slate-50 px-10 py-6 rounded-[2.5rem] border border-slate-100 flex flex-col items-center md:items-end relative z-10">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Vault Security</p>
+            <div className="flex items-center gap-3">
+               <CheckCircle className="w-5 h-5 text-emerald-500" />
+               <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest">Verified Account</span>
             </div>
-          </div>
-        </div>
+         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div onClick={() => onNavigate(View.ATTENDANCE)} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all cursor-pointer overflow-hidden">
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm"><CheckCircle className="w-7 h-7" /></div>
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-wide mb-1">Attendance</p>
-            <div className="flex items-baseline gap-2"><h3 className="text-4xl font-black text-slate-900">{child.attendance}%</h3></div>
-          </div>
-        </div>
-        <div onClick={() => onNavigate(View.ACADEMICS)} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all cursor-pointer overflow-hidden">
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-14 h-14 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm"><BookOpen className="w-7 h-7" /></div>
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-wide mb-1">Academics</p>
-            <h3 className="text-4xl font-black text-slate-900">Portal</h3>
-          </div>
-        </div>
-        <div onClick={() => onNavigate(View.FEES)} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all cursor-pointer overflow-hidden">
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm"><DollarSign className="w-7 h-7" /></div>
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-wide mb-1">Fees Due</p>
-            <h3 className="text-3xl font-black text-slate-900">₹{pendingFee.toLocaleString('en-IN')}</h3>
-          </div>
-        </div>
-        <div onClick={() => setShowLeaveModal(true)} className="group relative bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all cursor-pointer overflow-hidden">
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm"><CalendarPlus className="w-7 h-7" /></div>
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-wide mb-1">Leave</p>
-            <h3 className="text-4xl font-black text-slate-900">Request</h3>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+         <CompactStat 
+            icon={CalendarCheck} 
+            label="Attendance Score" 
+            value={`${child.attendance}%`} 
+            subValue="Verified academic presence"
+            color="bg-emerald-500" 
+            onClick={() => onNavigate(View.ATTENDANCE)} 
+         />
+
+         <CompactStat 
+            icon={CreditCard} 
+            label="Account Standing" 
+            value={`₹${pendingFees.toLocaleString('en-IN')}`} 
+            subValue={pendingFees > 0 ? "Outstanding Balance" : "Cleared for Cycle"}
+            color={pendingFees > 0 ? "bg-rose-500" : "bg-blue-600"} 
+            onClick={() => onNavigate(View.FEES)} 
+         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
-           <h3 className="font-black text-2xl text-slate-900 flex items-center gap-3 mb-8"><Clock className="w-6 h-6 text-blue-600" />Schedule</h3>
-           <p className="text-slate-400 italic">No schedule data provided by administration yet.</p>
-        </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-           <h3 className="font-black text-2xl text-slate-900 mb-8 flex items-center gap-3"><Calendar className="w-6 h-6 text-purple-600" />Leave Log</h3>
-           <div className="space-y-4">
-              {myLeaveRequests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                   <p className="text-slate-400 font-bold">No recent requests</p>
-                </div>
-              ) : (
-                myLeaveRequests.map((req) => (
-                  <div key={req.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:border-purple-200 transition-colors">
-                     <div className="flex justify-between items-start mb-3">
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${req.status === 'Approved' ? 'bg-emerald-500 text-white' : 'bg-yellow-400 text-slate-900'}`}>{req.status}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">{req.requestDate}</span>
-                     </div>
-                     <p className="text-sm font-black text-slate-800">{req.startDate} → {req.endDate}</p>
-                  </div>
-                ))
-              )}
+      {pendingFees > 0 && (
+        <div className="bg-rose-50 border border-rose-100 p-10 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8 animate-pulse shadow-xl shadow-rose-500/5">
+           <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-rose-500 shadow-lg">
+                 <AlertCircle className="w-8 h-8" />
+              </div>
+              <div>
+                 <h4 className="text-2xl font-black text-rose-900 tracking-tight leading-none mb-2">Financial Alert</h4>
+                 <p className="text-sm text-rose-700 font-bold opacity-80 uppercase tracking-widest">Please settle ₹{pendingFees.toLocaleString('en-IN')} to prevent service suspension.</p>
+              </div>
            </div>
-           <button onClick={() => setShowLeaveModal(true)} className="w-full mt-8 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl border border-slate-100 flex items-center justify-center gap-2 transition-all group">Apply for Leave <Plus className="w-4 h-4" /></button>
-        </div>
-      </div>
-
-      {showLeaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300 p-4">
-           <div className="bg-white rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl">
-              <div className="flex justify-between items-center mb-8"><h3 className="text-2xl font-black text-slate-900">Request Leave</h3><button onClick={() => setShowLeaveModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 hover:bg-slate-100 rounded-full flex items-center justify-center transition-colors"><X className="w-6 h-6" /></button></div>
-              <form onSubmit={handleLeaveSubmit} className="space-y-5">
-                 <div className="space-y-1.5"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label><input type="date" required value={leaveStartDate} onChange={(e) => setLeaveStartDate(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl text-sm font-semibold bg-white" /></div>
-                 <div className="space-y-1.5"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label><input type="date" required value={leaveEndDate} onChange={(e) => setLeaveEndDate(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl text-sm font-semibold bg-white" /></div>
-                 <div className="space-y-1.5"><label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Reason</label><textarea required value={leaveReason} onChange={(e) => setLeaveReason(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 rounded-2xl text-sm font-semibold h-28 resize-none"></textarea></div>
-                 <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-[1.5rem] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl active:scale-95 mt-4">Submit Request</button>
-              </form>
-           </div>
+           <button 
+             onClick={() => onNavigate(View.FEES)}
+             className="bg-rose-500 text-white px-12 py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-rose-200 hover:bg-rose-600 transition-all active:scale-95 whitespace-nowrap"
+           >
+             Settle Dues
+           </button>
         </div>
       )}
-    </div>
-  );
-};
 
-/* --- TEACHER DASHBOARD --- */
-const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
-  return (
-    <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
-         <h1 className="text-3xl font-black text-slate-900">Teacher Dashboard</h1>
-         <p className="text-slate-500 font-medium mt-2">Manage your assigned groups and daily activities here.</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-         <div onClick={() => onNavigate(View.ATTENDANCE)} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all cursor-pointer">
-            <h3 className="text-xl font-black text-slate-800">Attendance</h3>
-            <p className="text-sm text-slate-500 mt-2">Take daily roll call</p>
-         </div>
-         <div onClick={() => onNavigate(View.ACADEMICS)} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all cursor-pointer">
-            <h3 className="text-xl font-black text-slate-800">Academics</h3>
-            <p className="text-sm text-slate-500 mt-2">Lesson plans & tasks</p>
-         </div>
-         <div onClick={() => onNavigate(View.COMMUNICATION)} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all cursor-pointer">
-            <h3 className="text-xl font-black text-slate-800">Messaging</h3>
-            <p className="text-sm text-slate-500 mt-2">Parent communications</p>
-         </div>
+      <div className="flex items-center gap-4 py-10 opacity-40 justify-center">
+         <div className="h-px w-20 bg-slate-200"></div>
+         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Junior Odyssey Cloud Hub</p>
+         <div className="h-px w-20 bg-slate-200"></div>
       </div>
     </div>
-  );
-};
-
-/* --- ADMIN DASHBOARD --- */
-const AdminDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadAdminStats = async () => {
-    setLoading(true);
-    const [sData, stData, iData, lData] = await Promise.all([
-      db.getAll('students'),
-      db.getAll('staff'),
-      db.getAll('invoices'),
-      db.getAll('leaveRequests')
-    ]);
-    setStudents(sData);
-    setStaff(stData);
-    setInvoices(iData);
-    setLeaveRequests(lData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadAdminStats();
-    const studentSub = db.subscribe('students', loadAdminStats);
-    const invoiceSub = db.subscribe('invoices', loadAdminStats);
-    const leaveSub = db.subscribe('leaveRequests', loadAdminStats);
-    return () => { studentSub.unsubscribe(); invoiceSub.unsubscribe(); leaveSub.unsubscribe(); };
-  }, []);
-
-  const handleLeaveAction = async (id: string, action: 'Approved' | 'Rejected') => {
-    try {
-      await db.update('leaveRequests', id, { status: action });
-      setLeaveRequests(prev => prev.map(req => req.id === id ? { ...req, status: action } : req));
-    } catch (e) {
-      alert("Failed to update leave request");
-    }
-  };
-
-  const pendingLeaves = leaveRequests.filter(r => r.status === 'Pending');
-  const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0);
-
-  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-slate-400 w-10 h-10" /></div>;
-
-  return (
-    <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
-        <div><h1 className="text-3xl font-black text-slate-900 leading-tight">Admin Console</h1><p className="text-slate-500 font-medium">Real-time school performance monitoring.</p></div>
-        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-3 shadow-sm"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span><span className="text-sm font-black text-emerald-700 uppercase tracking-widest">System Healthy</span></div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div onClick={() => onNavigate(View.STUDENTS)} className="cursor-pointer"><StatCard icon={Users} label="Total Students" value={students.length.toString()} trend="Live Count" color="blue" /></div>
-        <div onClick={() => onNavigate(View.STAFF)} className="cursor-pointer"><StatCard icon={Users} label="Total Staff" value={staff.length.toString()} trend="Live Count" color="purple" /></div>
-        <div onClick={() => onNavigate(View.FEES)} className="cursor-pointer"><StatCard icon={DollarSign} label="Revenue" value={`₹${(totalRevenue/100000).toFixed(1)}L`} trend="Actual Sum" color="yellow" /></div>
-        <div onClick={() => onNavigate(View.SAFETY)} className="cursor-pointer"><StatCard icon={AlertTriangle} label="Safety Alerts" value="0" trend="All Clear" color="emerald" /></div>
-      </div>
-      
-      <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-         <div className="flex justify-between items-center mb-8"><h3 className="text-2xl font-black text-slate-900">Pending Leave Requests</h3><span className="bg-yellow-100 text-yellow-700 text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest">{pendingLeaves.length} To Action</span></div>
-         {pendingLeaves.length === 0 ? (
-           <div className="text-center py-20 text-slate-300"><CalendarCheck className="w-16 h-16 mx-auto mb-4 opacity-20" /><p className="font-bold">No pending leave requests.</p></div>
-         ) : (
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pendingLeaves.map(req => (
-                <div key={req.id} className="border-2 border-slate-50 rounded-[2rem] p-6 hover:border-blue-100 transition-all bg-slate-50/50 group">
-                   <div className="flex justify-between items-start mb-4"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 font-black text-xs border border-slate-100 shadow-sm">{req.studentName.charAt(0)}</div><div><h4 className="font-black text-slate-800 leading-tight">{req.studentName}</h4><p className="text-[10px] text-slate-400 uppercase tracking-widest">{req.studentId}</p></div></div><span className="text-[10px] text-slate-400 font-bold">{req.requestDate}</span></div>
-                   <div className="mb-6"><p className="text-xs text-slate-500 font-medium">"{req.reason}"</p></div>
-                   <div className="flex gap-3"><button onClick={() => handleLeaveAction(req.id, 'Approved')} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 transition-all active:scale-95"><Check className="w-4 h-4 stroke-[3]" /> Approve</button><button onClick={() => handleLeaveAction(req.id, 'Rejected')} className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-100 flex items-center justify-center gap-2 transition-all active:scale-95"><X className="w-4 h-4 stroke-[3]" /> Reject</button></div>
-                </div>
-              ))}
-           </div>
-         )}
-      </div>
-    </div>
-  );
-}
-
-const StatCard = ({ icon: Icon, label, value, trend, color }: any) => {
-  const colorClasses: {[key: string]: string} = { blue: 'bg-blue-50 text-blue-600 border-blue-100', green: 'bg-emerald-50 text-emerald-600 border-emerald-100', emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100', yellow: 'bg-yellow-50 text-yellow-600 border-yellow-100', purple: 'bg-purple-50 text-purple-600 border-purple-100', };
-  return (
-    <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all group overflow-hidden relative"><div className={`absolute top-0 right-0 w-2 h-full opacity-0 group-hover:opacity-100 transition-opacity ${colorClasses[color].split(' ')[1]}`}></div><div className="flex items-center justify-between mb-6"><div className={`p-4 rounded-2xl shadow-sm ${colorClasses[color]}`}><Icon className="w-7 h-7" /></div><span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-slate-100`}>{trend}</span></div><h3 className="text-3xl font-black text-slate-900 mb-1">{value}</h3><p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{label}</p></div>
   );
 };

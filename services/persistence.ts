@@ -1,9 +1,9 @@
+
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate } from '../types';
+import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate, AttendanceRecord, AttendanceLog } from '../types';
 
 /**
  * PersistenceService handles all database interactions via Supabase.
- * It uses the provided Project ID and API Key for cloud storage.
  */
 
 const SUPABASE_URL = 'https://ymjtfkwmjdfprzajsplz.supabase.co';
@@ -21,31 +21,54 @@ interface DatabaseSchema {
   notices: Notice[];
   chats: ChatMessage[];
   certificates: Certificate[];
+  attendanceRecords: AttendanceRecord[];
+  attendanceLogs: AttendanceLog[];
 }
 
 // Helper to convert camelCase string (collection) to snake_case string (table)
-const toSnakeTable = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+const toSnakeTable = (str: string) => str.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
 
-// Helper to convert camelCase object to snake_case for Postgres
-const toSnakeCase = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
+/**
+ * Recursive helper to convert camelCase object to snake_case for Postgres
+ */
+const toSnakeCase = (obj: any): any => {
+  if (!obj || typeof obj !== 'object' || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+  
   const snakeObj: any = {};
   for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    const snakeKey = key.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
     let value = obj[key];
+    
+    // Convert empty strings to null for DB consistency
     if (value === "") value = null;
+    
+    // Recurse into objects (but not null/dates)
+    if (value !== null && typeof value === 'object') {
+      value = toSnakeCase(value);
+    }
     snakeObj[snakeKey] = value;
   }
   return snakeObj;
 };
 
-// Helper to convert snake_case Postgres record to camelCase for TypeScript
-const toCamelCase = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
+/**
+ * Recursive helper to convert snake_case Postgres record to camelCase for TypeScript
+ */
+const toCamelCase = (obj: any): any => {
+  if (!obj || typeof obj !== 'object' || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+  
   const camelObj: any = {};
   for (const key in obj) {
     const camelKey = key.replace(/(_\w)/g, m => m[1].toUpperCase());
-    camelObj[camelKey] = obj[key];
+    let value = obj[key];
+    
+    // Recurse into nested objects (JSONB fields)
+    if (value !== null && typeof value === 'object') {
+      value = toCamelCase(value);
+    }
+    camelObj[camelKey] = value;
   }
   return camelObj;
 };
@@ -56,14 +79,14 @@ class PersistenceService {
       const data = localStorage.getItem(DB_KEY);
       if (!data) return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [] 
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [] 
       };
       return JSON.parse(data);
     } catch (e) {
       console.warn("Could not read from local storage", e);
       return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [] 
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [] 
       };
     }
   }
@@ -126,7 +149,8 @@ class PersistenceService {
     this.saveLocalDB(dbLocal);
 
     try {
-      const { error } = await supabase.from(table).insert(toSnakeCase(item));
+      const payload = toSnakeCase(item);
+      const { error } = await supabase.from(table).insert(payload);
       if (error) throw error;
     } catch (error: any) {
       console.error(`Supabase create error [${table}]:`, error.message || JSON.stringify(error));
@@ -144,7 +168,8 @@ class PersistenceService {
     }
 
     try {
-      const { error } = await supabase.from(table).update(toSnakeCase(updates)).eq('id', id);
+      const payload = toSnakeCase(updates);
+      const { error } = await supabase.from(table).update(payload).eq('id', id);
       if (error) throw error;
     } catch (error: any) {
       console.error(`Supabase update error [${table}]:`, error.message || JSON.stringify(error));

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -11,24 +12,23 @@ import { Fees } from './views/Fees';
 import { Attendance } from './views/Attendance';
 import { Communication } from './views/Communication';
 import { Staff } from './views/Staff';
-import { Documents } from './views/Documents';
 import { Settings } from './views/Settings';
 import { Leave } from './views/Leave';
 import { Toast, ToastMessage, ToastType } from './components/Toast';
-import { UserRole, View } from './types';
+import { UserRole, View, ProgramType } from './types';
 
 const DEFAULT_PERMISSIONS = {
   [UserRole.ADMIN]: [
     View.DASHBOARD, View.STUDENTS, View.STAFF, View.ACADEMICS, 
     View.ATTENDANCE, View.LEAVE, View.FEES, View.TRANSPORT, View.SAFETY, 
-    View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
+    View.COMMUNICATION, View.SETTINGS
   ],
   [UserRole.TEACHER]: [
     View.DASHBOARD, View.STUDENTS, View.ACADEMICS, View.ATTENDANCE, 
-    View.LEAVE, View.COMMUNICATION, View.DOCUMENTS, View.SETTINGS
+    View.LEAVE, View.COMMUNICATION, View.SETTINGS
   ],
   [UserRole.PARENT]: [
-    View.DASHBOARD, View.ACADEMICS, View.ATTENDANCE, View.LEAVE, View.COMMUNICATION, View.DOCUMENTS
+    View.DASHBOARD, View.ACADEMICS, View.ATTENDANCE, View.LEAVE, View.COMMUNICATION
   ],
   [UserRole.TRANSPORT]: [
     View.DASHBOARD, View.TRANSPORT, View.SAFETY, View.SETTINGS
@@ -41,6 +41,9 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [permissions, setPermissions] = useState<Record<UserRole, View[]>>(DEFAULT_PERMISSIONS);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  
+  // State to handle cross-view filtering (e.g. clicking program in Dashboard)
+  const [sharedFilter, setSharedFilter] = useState<'All' | ProgramType>('All');
 
   const showToast = useCallback((title: string, type: ToastType = 'success', description?: string) => {
     const id = Date.now().toString();
@@ -59,13 +62,18 @@ function App() {
     showToast(`Switched to ${newRole} View`, 'info');
   };
 
+  const navigateToStudents = (program: 'All' | ProgramType) => {
+    setSharedFilter(program);
+    setCurrentView(View.STUDENTS);
+  };
+
   const renderView = () => {
     const commonProps = { role, showToast };
     switch (currentView) {
       case View.DASHBOARD:
-        return <Dashboard {...commonProps} onNavigate={setCurrentView} />;
+        return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
       case View.STUDENTS:
-        return <Students {...commonProps} />;
+        return <Students {...commonProps} initialFilter={sharedFilter} />;
       case View.STAFF:
         return <Staff {...commonProps} />;
       case View.TRANSPORT:
@@ -84,12 +92,10 @@ function App() {
         return <Leave {...commonProps} />;
       case View.COMMUNICATION:
         return <Communication {...commonProps} />;
-      case View.DOCUMENTS:
-        return <Documents {...commonProps} />;
       case View.SETTINGS:
         return <Settings role={role} permissions={permissions} setPermissions={setPermissions} />;
       default:
-        return <Dashboard {...commonProps} onNavigate={setCurrentView} />;
+        return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
     }
   };
 
@@ -97,26 +103,33 @@ function App() {
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
       <Toast toasts={toasts} removeToast={removeToast} />
       
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* Mobile Sidebar Overlay */}
+      <div 
+        className={`fixed inset-0 bg-slate-900/60 z-40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
       
-      <div className={`fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Sidebar Container */}
+      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
         <Sidebar 
           currentView={currentView} 
           role={role} 
           permissions={permissions}
           onChangeView={(view) => {
+            // Reset shared filter when manually changing views from sidebar
+            if (view !== View.STUDENTS) setSharedFilter('All');
             setCurrentView(view);
             setIsMobileMenuOpen(false);
           }} 
+          onClose={() => setIsMobileMenuOpen(false)}
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
         <Header 
           role={role} 
           setRole={handleRoleChange} 

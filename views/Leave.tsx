@@ -43,7 +43,8 @@ export const Leave: React.FC<LeaveProps> = ({ role, showToast }) => {
 
   useEffect(() => {
     loadLeaveRequests();
-    const sub = db.subscribe('leaveRequests', loadLeaveRequests, loadLeaveRequests, loadLeaveRequests);
+    // Using arrow functions to avoid "Expected 0 arguments, but got 1" since loadLeaveRequests takes no args
+    const sub = db.subscribe('leaveRequests', () => { loadLeaveRequests(); }, () => { loadLeaveRequests(); }, () => { loadLeaveRequests(); });
     return () => { sub.unsubscribe(); };
   }, [role, child?.id]);
 

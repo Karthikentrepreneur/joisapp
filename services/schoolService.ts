@@ -1,6 +1,7 @@
+
 import { db } from './persistence';
 import { cryptoService } from './cryptoService';
-import { Student, Invoice, AttendanceRecord, LeaveRequest, Certificate, Notice, ChatMessage, UserRole } from '../types';
+import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole } from '../types';
 
 /**
  * schoolService contains all high-level business logic.
@@ -56,7 +57,8 @@ export const schoolService = {
     const absentCount = statuses.filter(s => s === 'Absent').length;
     const lateCount = statuses.filter(s => s === 'Late').length;
 
-    const record: AttendanceRecord = {
+    const summaryRecord: AttendanceRecord = {
+      id: `AR-${Date.now()}`,
       date,
       present: presentCount,
       absent: absentCount,
@@ -64,15 +66,24 @@ export const schoolService = {
       status: 'Submitted'
     };
 
-    // 1. Insert daily register entry
-    // In a full schema, this would go to an 'attendance_logs' table
-    
-    // 2. Atomically update student aggregate percentages
+    // 1. Save Summary Record
+    await db.create('attendanceRecords', summaryRecord);
+
+    // 2. Save individual student logs for historical reporting
     const students = await db.getAll('students');
     for (const student of students) {
       const status = records[student.id];
       if (status) {
-        // Simple logic: Absent drops %, others slightly boost it
+        // Individual Log
+        const log: AttendanceLog = {
+          id: `AL-${Date.now()}-${student.id}`,
+          date,
+          studentId: student.id,
+          status
+        };
+        await db.create('attendanceLogs', log);
+
+        // Update student aggregate percentages
         const delta = status === 'Absent' ? -1.0 : 0.05;
         const newAttendance = Math.max(0, Math.min(100, student.attendance + delta));
         await db.update('students', student.id, { 
@@ -81,7 +92,7 @@ export const schoolService = {
       }
     }
 
-    return record;
+    return summaryRecord;
   },
 
   // --- FINANCE & LEDGER ---
