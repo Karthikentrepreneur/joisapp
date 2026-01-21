@@ -86,7 +86,7 @@ const FormField = ({ label, required, value, onChange, type = "text", placeholde
       required={required} 
       value={value || ''} 
       onChange={e => onChange(e.target.value)} 
-      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600 transition-all placeholder:text-slate-300" 
+      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600 transition-all placeholder:text-slate-300 shadow-sm" 
       placeholder={placeholder || `Enter ${label}...`}
     />
   </div>
@@ -280,7 +280,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden animate-in fade-in duration-300">
-      {/* Directory Header - Mirrors Staff Directory */}
+      {/* Directory Header - Mirrors Staff Hub exactly */}
       <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/20 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-md">
@@ -288,7 +288,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 leading-none tracking-tight">Student Directory</h2>
-            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{filteredStudents.length} Students in cohort</p>
+            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{filteredStudents.length} Profiles in View</p>
           </div>
         </div>
 
@@ -339,12 +339,12 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
 
       {/* Summary Stats Grid */}
       <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/10 border-b border-slate-100">
-         <SummaryCard icon={UserCheck} label="Cohort Pool" value={directoryStats.total} color="bg-blue-600 shadow-blue-100" />
-         <SummaryCard icon={Activity} label="Morning Attendance" value={directoryStats.present} color="bg-emerald-500 shadow-emerald-100" />
-         <SummaryCard icon={CreditCard} label="Finance Alerts" value={directoryStats.pending} color="bg-rose-500 shadow-rose-100" />
+         <SummaryCard icon={UserCheck} label="Cohort Pool" value={directoryStats.total} color="bg-blue-600 shadow-blue-100 text-white" />
+         <SummaryCard icon={Activity} label="Morning Attendance" value={directoryStats.present} color="bg-emerald-500 shadow-emerald-100 text-white" />
+         <SummaryCard icon={CreditCard} label="Finance Alerts" value={directoryStats.pending} color="bg-rose-500 shadow-rose-100 text-white" />
       </div>
 
-      {/* Modern Data Table - Mirrors Staff Directory Format */}
+      {/* Modern Data Table - Mirrors Staff Directory format precisely */}
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-400">
@@ -368,7 +368,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                 <tr 
                   key={s.id} 
                   onClick={() => setSelectedStudent(s)}
-                  className="sheet-row group cursor-pointer"
+                  className="sheet-row group cursor-pointer hover:bg-slate-50 transition-colors"
                 >
                   <td className="pl-6 pr-3 py-4 text-[11px] text-slate-300 font-bold text-center">{idx + 1}</td>
                   <td className="px-3 py-4">
@@ -415,7 +415,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
         )}
       </div>
 
-      {/* Profile Detail View - Sectioned Format */}
+      {/* Profile Detail View - Organized by 'Section 01-04' */}
       {selectedStudent && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200">
@@ -617,7 +617,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
         </div>
       )}
 
-      {/* Delete Confirm */}
+      {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
