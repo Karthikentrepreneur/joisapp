@@ -13,8 +13,6 @@ import {
   Edit,
   Trash2,
   AlertTriangle,
-  CheckCircle2,
-  Download,
   Camera,
   Activity,
   Lock,
@@ -26,7 +24,8 @@ import {
   Mail,
   Phone,
   UserCheck,
-  CreditCard
+  CreditCard,
+  Bus
 } from 'lucide-react';
 import { UserRole, Student, ProgramType, Staff, AttendanceLog } from '../types';
 import { ToastType } from '../components/Toast';
@@ -39,6 +38,7 @@ interface StudentsProps {
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 const OFFERS = ['Early Bird Offer', 'Regular', 'Vijayadasami', 'New Year', 'Bridge Course'] as const;
+const FEES_STATUSES = ['Paid', 'Pending', 'Overdue'] as const;
 
 const PROGRAM_CODES: Record<ProgramType, string> = {
   'Little Seeds': 'LS',
@@ -54,13 +54,6 @@ const SummaryCard = ({ icon: Icon, label, value, color }: any) => (
         <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 leading-none">{label}</p>
         <p className="text-xl font-black text-slate-900 leading-none">{value}</p>
      </div>
-  </div>
-);
-
-const DetailBlock = ({ label, value }: { label: string, value: string | number | undefined }) => (
-  <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-    <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</p>
-    <p className="text-[12px] font-bold text-slate-700 leading-tight truncate">{value || "---"}</p>
   </div>
 );
 
@@ -171,15 +164,15 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
     motherEmail: '',
     fatherName: '',
     fatherEmail: '',
-    program: isTeacher ? activeFilter as ProgramType : 'Little Seeds',
-    dateOfJoining: new Date().toISOString().split('T')[0],
-    offer: 'Regular',
     parentPhone: '',
     parentEmail: '',
     address: '',
+    program: isTeacher ? activeFilter as ProgramType : 'Little Seeds',
+    dateOfJoining: new Date().toISOString().split('T')[0],
+    offer: 'Regular',
+    feesStatus: 'Pending',
     busRoute: 'Not Assigned',
     image: '',
-    feesStatus: 'Pending',
     emergencyContact: { name: '', relationship: '', phone: '' }
   };
 
@@ -398,47 +391,45 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                     <img src={selectedStudent.image} className="w-48 h-48 rounded-[2.5rem] object-cover border-8 border-white shadow-xl" alt="Student" />
                     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-2 rounded-xl shadow-lg border border-white/10 whitespace-nowrap"><p className="text-[9px] font-black uppercase tracking-[0.2em]">{selectedStudent.program}</p></div>
                  </div>
-                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6 flex-1 w-full">
-                    <DetailBlock label="Legal First Name" value={selectedStudent.firstName} />
-                    <DetailBlock label="Legal Last Name" value={selectedStudent.lastName} />
-                    <DetailBlock label="Attendance Score" value={`${selectedStudent.attendance}%`} />
-                    <DetailBlock label="Genesis ID" value={selectedStudent.id} />
-                    <DetailBlock label="Fees Account" value={selectedStudent.feesStatus} />
-                    <DetailBlock label="Enrollment Offer" value={selectedStudent.offer} />
+                 <div className="grid grid-cols-2 md:grid-cols-2 gap-x-12 gap-y-6 flex-1 w-full">
+                    <InfoRow label="First Name" value={selectedStudent.firstName} icon={User} />
+                    <InfoRow label="Middle Name" value={selectedStudent.middleName} icon={User} />
+                    <InfoRow label="Last Name" value={selectedStudent.lastName} icon={User} />
+                    <InfoRow label="Date of Birth" value={selectedStudent.dob} icon={Calendar} />
+                    <InfoRow label="Blood Group" value={selectedStudent.bloodGroup} icon={Droplets} />
+                    <InfoRow label="Genesis ID" value={selectedStudent.id} icon={Lock} />
                  </div>
               </div>
 
               <div className="space-y-12 pt-6">
                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><User className="w-5 h-5 text-blue-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Section 01: Profile Identity</h4></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                       <InfoRow label="Date of Genesis (DOB)" value={selectedStudent.dob} icon={Calendar} />
-                       <InfoRow label="Blood Matrix Type" value={selectedStudent.bloodGroup || "O+"} icon={Droplets} />
-                       <InfoRow label="Digital Gateway (Email)" value={selectedStudent.parentEmail} icon={Mail} />
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><Home className="w-5 h-5 text-indigo-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Parent & Family Registry</h4></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-12 gap-y-8">
+                       <InfoRow label="Mother Name" value={selectedStudent.motherName} sub={selectedStudent.motherEmail} icon={User} />
+                       <InfoRow label="Father Name" value={selectedStudent.fatherName} sub={selectedStudent.fatherEmail} icon={User} />
+                       <InfoRow label="Parent Phone" value={selectedStudent.parentPhone} icon={Phone} />
+                       <InfoRow label="Parent Email" value={selectedStudent.parentEmail} icon={Mail} />
+                       <div className="sm:col-span-2">
+                         <InfoRow label="Residential Address" value={selectedStudent.address} icon={MapPin} />
+                       </div>
                     </div>
                  </div>
                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><GraduationCap className="w-5 h-5 text-emerald-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Section 02: Academic Framework</h4></div>
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><GraduationCap className="w-5 h-5 text-emerald-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Academic Framework & Logistics</h4></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                        <InfoRow label="Cohort Placement" value={selectedStudent.program} icon={Lock} />
-                       <InfoRow label="Applied Offer Matrix" value={selectedStudent.offer} icon={Heart} />
                        <InfoRow label="Date of Joining" value={selectedStudent.dateOfJoining} icon={Calendar} />
+                       <InfoRow label="Enrollment Offer" value={selectedStudent.offer} icon={Heart} />
+                       <InfoRow label="Fees Account" value={selectedStudent.feesStatus} icon={CreditCard} />
+                       <InfoRow label="Assigned Bus Route" value={selectedStudent.busRoute} icon={Bus} />
                     </div>
                  </div>
                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><Home className="w-5 h-5 text-indigo-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Section 03: Family Registry</h4></div>
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><ShieldAlert className="w-5 h-5 text-rose-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Emergency Intercept</h4></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                       <InfoRow label="Mother Principal Name" value={selectedStudent.motherName} sub={selectedStudent.motherEmail} icon={User} />
-                       <InfoRow label="Father Principal Name" value={selectedStudent.fatherName} sub={selectedStudent.fatherEmail} icon={User} />
-                       <InfoRow label="Primary Contact Phone" value={selectedStudent.parentPhone} icon={Phone} />
-                    </div>
-                 </div>
-                 <div className="space-y-6">
-                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><ShieldAlert className="w-5 h-5 text-rose-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.3em]">Section 04: Safety Intercept</h4></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                       <InfoRow label="Assigned Fleet" value={selectedStudent.busRoute || "Self Pickup"} icon={Activity} />
-                       <InfoRow label="Emergency Contact" value={selectedStudent.emergencyContact?.name} sub={selectedStudent.emergencyContact?.phone} icon={ShieldAlert} />
-                       <InfoRow label="Legal Resident Address" value={selectedStudent.address || "No Address on File"} icon={MapPin} />
+                       <InfoRow label="Emergency Contact Name" value={selectedStudent.emergencyContact?.name} icon={User} />
+                       <InfoRow label="Relationship" value={selectedStudent.emergencyContact?.relationship} icon={Heart} />
+                       <InfoRow label="Emergency Phone" value={selectedStudent.emergencyContact?.phone} icon={Phone} />
                     </div>
                  </div>
               </div>
@@ -455,7 +446,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
 
       {showFormModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200">
             <div className="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/30">
               <div><h3 className="text-lg font-extrabold text-slate-900 tracking-tight">{isEditing ? 'Modify Personnel Identity' : 'Genesis Student Enrollment'}</h3><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Registry Control Protocol</p></div>
               <button onClick={() => setShowFormModal(false)} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all"><X className="w-5 h-5" /></button>
@@ -463,47 +454,55 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
             
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-12 no-scrollbar">
               <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><User className="w-5 h-5 text-blue-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 01: Profile Identity</h4></div>
+                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><User className="w-5 h-5 text-blue-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 01: Student Identity</h4></div>
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                    <div className="relative group shrink-0 mx-auto md:mx-0">
                       <div className={`w-32 h-32 rounded-3xl border-4 border-white shadow-xl overflow-hidden bg-slate-100 flex items-center justify-center transition-all ${uploadingImage ? 'opacity-50' : ''}`}>{formData.image ? <img src={formData.image} className="w-full h-full object-cover" alt="Profile" /> : <User className="w-12 h-12 text-slate-300" />}{uploadingImage && <Loader2 className="absolute w-8 h-8 animate-spin text-slate-900" />}</div>
                       <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute bottom-1 right-1 w-9 h-9 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg border-4 border-white active:scale-90 transition-all"><Camera className="w-4 h-4" /></button>
                       <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
                    </div>
-                   <div className="grid grid-cols-2 gap-4 flex-1 w-full">
-                      <FormField label="Legal First Name" required value={formData.firstName} onChange={(v: string) => setFormData({...formData, firstName: v})} />
-                      <FormField label="Legal Last Name" required value={formData.lastName} onChange={(v: string) => setFormData({...formData, lastName: v})} />
-                      <FormField label="Digital Gateway (Email)" type="email" required value={formData.parentEmail} onChange={(v: string) => setFormData({...formData, parentEmail: v})} />
-                      <FormField label="Date of Genesis (DOB)" type="date" required value={formData.dob} onChange={(v: string) => setFormData({...formData, dob: v})} />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                      <FormField label="First Name" required value={formData.firstName} onChange={(v: string) => setFormData({...formData, firstName: v})} />
+                      <FormField label="Middle Name" value={formData.middleName} onChange={(v: string) => setFormData({...formData, middleName: v})} />
+                      <FormField label="Last Name" required value={formData.lastName} onChange={(v: string) => setFormData({...formData, lastName: v})} />
+                      <FormField label="Date of Birth" type="date" required value={formData.dob} onChange={(v: string) => setFormData({...formData, dob: v})} />
+                      <FormField label="Blood Group" value={formData.bloodGroup} onChange={(v: string) => setFormData({...formData, bloodGroup: v})} />
                    </div>
                 </div>
               </section>
 
               <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><GraduationCap className="w-5 h-5 text-emerald-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 02: Academic Framework</h4></div>
+                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><Home className="w-5 h-5 text-indigo-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 02: Parent Registry</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cohort Placement</label><select value={formData.program} disabled={isTeacher} onChange={e => setFormData({...formData, program: e.target.value as any})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600">{PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Applied Offer Matrix</label><select value={formData.offer} onChange={e => setFormData({...formData, offer: e.target.value as any})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600">{OFFERS.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
-                  <FormField label="Blood Matrix Type" value={formData.bloodGroup} onChange={(v: string) => setFormData({...formData, bloodGroup: v})} />
-                  <FormField label="Joining Date" type="date" required value={formData.dateOfJoining} onChange={(v: string) => setFormData({...formData, dateOfJoining: v})} />
+                   <FormField label="Mother Name" required value={formData.motherName} onChange={(v: string) => setFormData({...formData, motherName: v})} />
+                   <FormField label="Mother Email" type="email" required value={formData.motherEmail} onChange={(v: string) => setFormData({...formData, motherEmail: v})} />
+                   <FormField label="Father Name" required value={formData.fatherName} onChange={(v: string) => setFormData({...formData, fatherName: v})} />
+                   <FormField label="Father Email" type="email" required value={formData.fatherEmail} onChange={(v: string) => setFormData({...formData, fatherEmail: v})} />
+                   <FormField label="Parent Phone" required value={formData.parentPhone} onChange={(v: string) => setFormData({...formData, parentPhone: v})} />
+                   <FormField label="Parent Email" type="email" required value={formData.parentEmail} onChange={(v: string) => setFormData({...formData, parentEmail: v})} />
                 </div>
               </section>
 
               <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><Home className="w-5 h-5 text-indigo-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 03: Family Registry</h4></div>
+                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><GraduationCap className="w-5 h-5 text-emerald-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 03: Academic & Logistics</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <FormField label="Father Principal Name" required value={formData.fatherName} onChange={(v: string) => setFormData({...formData, fatherName: v})} />
-                   <FormField label="Mother Principal Name" required value={formData.motherName} onChange={(v: string) => setFormData({...formData, motherName: v})} />
-                   <FormField label="Primary Contact Phone" required value={formData.parentPhone} onChange={(v: string) => setFormData({...formData, parentPhone: v})} />
-                   <FormField label="Legal Resident Address" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} />
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Program</label><select value={formData.program} disabled={isTeacher} onChange={e => setFormData({...formData, program: e.target.value as any})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600 shadow-sm">{PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+                  <FormField label="Date of Joining" type="date" required value={formData.dateOfJoining} onChange={(v: string) => setFormData({...formData, dateOfJoining: v})} />
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Offer</label><select value={formData.offer} onChange={e => setFormData({...formData, offer: e.target.value as any})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600 shadow-sm">{OFFERS.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fees Status</label><select value={formData.feesStatus} onChange={e => setFormData({...formData, feesStatus: e.target.value as any})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 outline-none focus:border-blue-600 shadow-sm">{FEES_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                  <FormField label="Bus Route" value={formData.busRoute} onChange={(v: string) => setFormData({...formData, busRoute: v})} />
                 </div>
               </section>
 
               <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><ShieldAlert className="w-5 h-5 text-rose-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 04: Safety Intercept</h4></div>
+                <div className="flex items-center gap-3 border-b border-slate-50 pb-3"><ShieldAlert className="w-5 h-5 text-rose-600" /><h4 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Section 04: Emergency & Address</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <FormField label="Emergency Contact Name" value={formData.emergencyContact?.name} onChange={(v: string) => setFormData({...formData, emergencyContact: {...(formData.emergencyContact || {name:'',relationship:'',phone:''}), name: v}})} />
-                   <FormField label="Intercept Phone" value={formData.emergencyContact?.phone} onChange={(v: string) => setFormData({...formData, emergencyContact: {...(formData.emergencyContact || {name:'',relationship:'',phone:''}), phone: v}})} />
+                   <FormField label="Relationship" value={formData.emergencyContact?.relationship} onChange={(v: string) => setFormData({...formData, emergencyContact: {...(formData.emergencyContact || {name:'',relationship:'',phone:''}), relationship: v}})} />
+                   <FormField label="Emergency Phone" value={formData.emergencyContact?.phone} onChange={(v: string) => setFormData({...formData, emergencyContact: {...(formData.emergencyContact || {name:'',relationship:'',phone:''}), phone: v}})} />
+                   <div className="md:col-span-2">
+                     <FormField label="Residential Address" value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} placeholder="Enter full permanent address..." />
+                   </div>
                 </div>
               </section>
             </form>

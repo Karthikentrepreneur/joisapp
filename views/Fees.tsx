@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/persistence';
 import { UserRole, ProgramType, Invoice, Student } from '../types';
@@ -75,7 +74,6 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
 
   const isParent = role === UserRole.PARENT;
 
-  // Add the missing downloadInvoice function
   const downloadInvoice = (invoice: Invoice) => {
     const csvRows = [
       [`JUNIOR ODYSSEY INTERNATIONAL - FEE INVOICE`],
