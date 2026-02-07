@@ -80,8 +80,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Junior Odyssey</h1>
-              <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">International School</h1>
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-2">Portal Access</p>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-2">International School</p>
             </div>
           </div>
 
