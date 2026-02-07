@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, Student, Staff } from '../types';
-import { Bell, Search, Menu, X, ShieldCheck, ChevronRight, LogOut, Key, Save, Loader2 } from 'lucide-react';
+import { Bell, Search, Menu, X, ShieldCheck, ChevronRight, LogOut, Key, Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { db } from '../services/persistence';
 import { CURRENT_USER_ID } from '../data/mockData';
 
@@ -17,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ role, setRole, toggleMobileMenu,
   const [userProfile, setUserProfile] = useState<any>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem('JOIS_AUTH_SESSION');
@@ -111,13 +112,22 @@ export const Header: React.FC<HeaderProps> = ({ role, setRole, toggleMobileMenu,
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] font-bold text-slate-400 uppercase ml-1">Change Password</label>
                           <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="New password..." 
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500"
-                            />
+                            <div className="relative flex-1">
+                              <input 
+                                type={showNewPassword ? "text" : "password"} 
+                                placeholder="New password..." 
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 pr-10"
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                              >
+                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                             <button 
                               onClick={handleUpdatePassword}
                               disabled={isUpdating}
