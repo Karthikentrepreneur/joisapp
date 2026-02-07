@@ -28,7 +28,7 @@ export interface Camera {
   id: string;
   name: string;
   location: string;
-  streamUrl: string; // HLS (.m3u8) or WebRTC endpoint
+  streamUrl: string; 
   status: 'Online' | 'Offline' | 'Loading';
   type: 'Indoor' | 'Outdoor' | 'Gate';
 }
@@ -61,6 +61,7 @@ export interface Student {
   parentPhone: string;
   parentEmail: string;
   address?: string;
+  password?: string; // Authentication field
 }
 
 export interface Staff {
@@ -92,6 +93,7 @@ export interface Staff {
     deductions: number;
     net: number;
   };
+  password?: string; // Authentication field
 }
 
 export interface FeeStructure {

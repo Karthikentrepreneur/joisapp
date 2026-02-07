@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './views/Dashboard';
@@ -14,6 +14,7 @@ import { Communication } from './views/Communication';
 import { Staff } from './views/Staff';
 import { Settings } from './views/Settings';
 import { Leave } from './views/Leave';
+import { Login } from './views/Login';
 import { Toast, ToastMessage, ToastType } from './components/Toast';
 import { UserRole, View, ProgramType } from './types';
 
@@ -42,11 +43,43 @@ const DEFAULT_PERMISSIONS = {
 
 function App() {
   const [role, setRole] = useState<UserRole>(UserRole.ADMIN);
+  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [permissions, setPermissions] = useState<Record<UserRole, View[]>>(DEFAULT_PERMISSIONS);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [sharedFilter, setSharedFilter] = useState<'All' | ProgramType>('All');
+
+  // Check for existing session
+  useEffect(() => {
+    const savedSession = localStorage.getItem('JOIS_AUTH_SESSION');
+    if (savedSession) {
+      try {
+        const { user: savedUser, role: savedRole } = JSON.parse(savedSession);
+        setUser(savedUser);
+        setRole(savedRole);
+        setIsAuthenticated(true);
+      } catch (e) {
+        localStorage.removeItem('JOIS_AUTH_SESSION');
+      }
+    }
+  }, []);
+
+  const handleLoginSuccess = (loggedInUser: any, userRole: UserRole) => {
+    setUser(loggedInUser);
+    setRole(userRole);
+    setIsAuthenticated(true);
+    localStorage.setItem('JOIS_AUTH_SESSION', JSON.stringify({ user: loggedInUser, role: userRole }));
+    showToast(`Welcome back, ${loggedInUser.name || loggedInUser.firstName}`, 'success');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+    localStorage.removeItem('JOIS_AUTH_SESSION');
+    showToast("Logged out successfully", "info");
+  };
 
   const showToast = useCallback((title: string, type: ToastType = 'success', description?: string) => {
     const id = Date.now().toString();
@@ -72,7 +105,7 @@ function App() {
   };
 
   const renderView = () => {
-    const commonProps = { role, showToast };
+    const commonProps = { role, showToast, currentUser: user };
     switch (currentView) {
       case View.DASHBOARD: return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
       case View.STUDENTS: return <Students {...commonProps} initialFilter={sharedFilter} />;
@@ -89,6 +122,15 @@ function App() {
       default: return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Toast toasts={toasts} removeToast={removeToast} />
+        <Login onLogin={handleLoginSuccess} />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
@@ -123,10 +165,11 @@ function App() {
         <Header 
           role={role} 
           setRole={handleRoleChange} 
-          toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onLogout={handleLogout}
         />
         
-        {/* Main content scroll container - ensured vertical scroll is allowed and visible */}
+        {/* Main content scroll container */}
         <main className="flex-1 overflow-y-auto relative bg-[#f8fafc] no-scrollbar">
           <div className="w-full min-h-full">
             {renderView()}

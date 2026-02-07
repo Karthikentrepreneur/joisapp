@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../services/persistence';
-/* Added missing CheckCircle2 import */
 import { 
   Search, 
   Plus, 
@@ -29,7 +28,9 @@ import {
   ShieldCheck,
   Award,
   Wallet,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  Key
 } from 'lucide-react';
 import { UserRole, Staff as StaffType, ProgramType } from '../types';
 import { ToastType } from '../components/Toast';
@@ -70,7 +71,7 @@ const DetailItem = ({ label, value, icon: Icon }: { label: string, value: string
   </div>
 );
 
-const Input = ({ label, required, value, onChange, type = "text", placeholder, options }: any) => (
+const Input = ({ label, required, value, onChange, type = "text", placeholder, options, readOnly }: any) => (
   <div className="space-y-1 w-full">
     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-0.5">
       {label} {required && <span className="text-rose-500">*</span>}
@@ -79,8 +80,9 @@ const Input = ({ label, required, value, onChange, type = "text", placeholder, o
       <select 
         value={value || ''} 
         required={required}
+        disabled={readOnly}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm appearance-none"
+        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm appearance-none disabled:opacity-70"
       >
         <option value="" disabled>Select {label}</option>
         {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
@@ -90,8 +92,9 @@ const Input = ({ label, required, value, onChange, type = "text", placeholder, o
         type={type} 
         required={required} 
         value={value || ''} 
+        readOnly={readOnly}
         onChange={e => onChange(e.target.value)} 
-        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300 shadow-sm" 
+        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300 shadow-sm read-only:opacity-70" 
         placeholder={placeholder || `Enter ${label}`}
       />
     )}
@@ -111,11 +114,17 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
 
   const isAdmin = role === UserRole.ADMIN;
 
+  // Helper to generate a random 8-character password
+  const generatePassword = () => {
+    return Math.random().toString(36).slice(-8).toUpperCase();
+  };
+
   const initialFormData: Partial<StaffType> = {
     firstName: '', middleName: '', lastName: '', phone: '', aadhaarNumber: '', email: '',
     dateOfJoining: new Date().toISOString().split('T')[0],
     classAssigned: 'Little Seeds', maritalStatus: 'Unmarried', status: 'Active', role: 'Teacher', 
-    image: '', emergencyContact: { firstName: '', lastName: '', relationship: '', phone: '' }
+    image: '', emergencyContact: { firstName: '', lastName: '', relationship: '', phone: '' },
+    password: generatePassword() // Auto-generate on creation
   };
 
   const [formData, setFormData] = useState<Partial<StaffType>>(initialFormData);
@@ -173,7 +182,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
           image: formData.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${staffId}`,
         };
         await db.create('staff', newStaff);
-        showToast?.("New Staff Registered", "success", `${fullName} added to system.`);
+        showToast?.("New Staff Registered", "success", `${fullName} added to system. Initial Password: ${newStaff.password}`);
       }
       setShowFormModal(false);
       loadData();
@@ -389,6 +398,17 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                 </div>
               </section>
 
+              {/* Access Credentials Section */}
+              <section className="space-y-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5 flex items-center gap-2">
+                   <Lock className="w-3 h-3" /> Portal Access
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
+                   <DetailItem label="Username (Phone)" value={selectedStaff.phone} icon={Phone} />
+                   <DetailItem label="Portal Password" value={selectedStaff.password || 'Not Set'} icon={Key} />
+                </div>
+              </section>
+
               {/* Personal Details */}
               <section className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5 flex items-center gap-2">
@@ -450,6 +470,20 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                     <Input label="Role" options={ROLES} required value={formData.role} onChange={(v: string) => setFormData({...formData, role: v as any})} />
                     <Input label="Class Assignment" options={PROGRAMS} value={formData.classAssigned} onChange={(v: string) => setFormData({...formData, classAssigned: v})} />
                     <Input label="Joining Date" type="date" required value={formData.dateOfJoining} onChange={(v: string) => setFormData({...formData, dateOfJoining: v})} />
+                  </div>
+               </section>
+
+               {/* Access Credentials Section */}
+               <section className="space-y-4">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
+                    <Lock className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Access Credentials</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input label="Generated Password" required value={formData.password} onChange={(v: string) => setFormData({...formData, password: v})} readOnly={!isAdmin} />
+                    <div className="flex flex-col justify-end">
+                       <p className="text-[9px] text-slate-400 font-bold uppercase p-2 bg-slate-50 rounded-lg border border-slate-100">Staff use their phone number as username and this password to access the teacher portal.</p>
+                    </div>
                   </div>
                </section>
 

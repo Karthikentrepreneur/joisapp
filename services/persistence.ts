@@ -128,7 +128,9 @@ class PersistenceService {
     try {
       const { data, error } = await supabase.from(table).select('*');
       if (error) throw error;
-      const parsedData = data.map(toCamelCase);
+      
+      const safeData = data || [];
+      const parsedData = safeData.map(toCamelCase);
       
       const dbLocal = this.getLocalDB();
       dbLocal[collection] = parsedData as any;
@@ -137,7 +139,8 @@ class PersistenceService {
       return parsedData as any;
     } catch (error: any) {
       console.warn(`Supabase fetch failed for table [${table}], using local fallback.`, error.message || error);
-      return this.getLocalDB()[collection];
+      const local = this.getLocalDB()[collection];
+      return (local && Array.isArray(local) ? local : []) as any;
     }
   }
 

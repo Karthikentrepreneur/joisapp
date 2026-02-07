@@ -1,102 +1,6 @@
 
 -- ==========================================
--- STORAGE CONFIGURATION
--- ==========================================
-
--- Create the 'students' bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('students', 'students', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Create the 'staff' bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('staff', 'staff', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Set up access policies for the 'students' bucket
-DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-CREATE POLICY "Public Access" ON storage.objects
-  FOR SELECT USING (bucket_id = 'students');
-
-DROP POLICY IF EXISTS "Public Upload" ON storage.objects;
-CREATE POLICY "Public Upload" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'students');
-
-DROP POLICY IF EXISTS "Public Update" ON storage.objects;
-CREATE POLICY "Public Update" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'students');
-
-DROP POLICY IF EXISTS "Public Delete" ON storage.objects;
-CREATE POLICY "Public Delete" ON storage.objects
-  FOR DELETE USING (bucket_id = 'students');
-
--- Set up access policies for the 'staff' bucket
-DROP POLICY IF EXISTS "Staff Public Access" ON storage.objects;
-CREATE POLICY "Staff Public Access" ON storage.objects
-  FOR SELECT USING (bucket_id = 'staff');
-
-DROP POLICY IF EXISTS "Staff Public Upload" ON storage.objects;
-CREATE POLICY "Staff Public Upload" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'staff');
-
-DROP POLICY IF EXISTS "Staff Public Update" ON storage.objects;
-CREATE POLICY "Staff Public Update" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'staff');
-
-DROP POLICY IF EXISTS "Staff Public Delete" ON storage.objects;
-CREATE POLICY "Staff Public Delete" ON storage.objects
-  FOR DELETE USING (bucket_id = 'staff');
-
-
--- ==========================================
--- MIGRATION: RUN THIS IF YOU HAVE EXISTING TABLES
--- ==========================================
-
--- Students Table Migrations
-ALTER TABLE students ADD COLUMN IF NOT EXISTS first_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS middle_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS last_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS dob DATE;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS blood_group TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_email TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS father_name TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS father_email TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_phone TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_email TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS program TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS date_of_joining DATE;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS offer TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS fees_status TEXT DEFAULT 'Pending';
-ALTER TABLE students ADD COLUMN IF NOT EXISTS bus_route TEXT DEFAULT 'Not Assigned';
-ALTER TABLE students ADD COLUMN IF NOT EXISTS image TEXT;
-
--- Remove NOT NULL constraints from grade and section as they are deprecated
-ALTER TABLE students ALTER COLUMN grade DROP NOT NULL;
-ALTER TABLE students ALTER COLUMN section DROP NOT NULL;
-
--- Staff Table Migrations
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS first_name TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS middle_name TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS last_name TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS name TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS phone TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS emergency_contact JSONB;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS salary_details JSONB;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS signature TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS image TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS aadhaar_number TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS date_of_joining DATE;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS marital_status TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active';
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS role TEXT;
-ALTER TABLE staff ADD COLUMN IF NOT EXISTS class_assigned TEXT;
-
--- ==========================================
--- FULL SCHEMA DEFINITION (FRESH START)
+-- SCHEMA INITIALIZATION: CORE TABLES
 -- ==========================================
 
 -- Students Table
@@ -112,20 +16,19 @@ CREATE TABLE IF NOT EXISTS students (
   mother_email TEXT,
   father_name TEXT,
   father_email TEXT,
-  program TEXT NOT NULL,
+  program TEXT,
   date_of_joining DATE NOT NULL,
   offer TEXT,
-  grade TEXT, 
-  section TEXT, 
   emergency_contact JSONB,
   attendance NUMERIC DEFAULT 100,
   fees_status TEXT DEFAULT 'Pending',
-  bus_route TEXT DEFAULT 'Not Assigned',
+  bus_route TEXT DEFAULT 'Self Pickup',
   image TEXT,
   parent_id TEXT,
-  parent_phone TEXT,
+  parent_phone TEXT NOT NULL,
   parent_email TEXT,
   address TEXT,
+  password TEXT, -- Explicitly included
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -136,7 +39,7 @@ CREATE TABLE IF NOT EXISTS staff (
   middle_name TEXT,
   last_name TEXT NOT NULL,
   name TEXT NOT NULL,
-  phone TEXT,
+  phone TEXT NOT NULL,
   aadhaar_number TEXT,
   email TEXT,
   date_of_joining DATE NOT NULL,
@@ -148,10 +51,48 @@ CREATE TABLE IF NOT EXISTS staff (
   signature TEXT,
   emergency_contact JSONB,
   salary_details JSONB,
+  password TEXT, -- Explicitly included
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Invoices Table
+-- ==========================================
+-- MIGRATION: ENSURE AUTH COLUMNS EXIST
+-- ==========================================
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE students ADD COLUMN password TEXT;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+    
+    BEGIN
+        ALTER TABLE staff ADD COLUMN password TEXT;
+    EXCEPTION
+        WHEN duplicate_column THEN NULL;
+    END;
+END $$;
+
+-- ==========================================
+-- SEED DATA (Admin & Founders)
+-- ==========================================
+
+-- Admin Account
+INSERT INTO staff (id, first_name, last_name, name, phone, date_of_joining, role, password, status)
+VALUES ('ADMIN-MASTER', 'School', 'Administrator', 'School Administrator', '9940455190', '2025-01-01', 'Admin', 'JO!$@Future', 'Active')
+ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password, phone = EXCLUDED.phone;
+
+-- Founders
+INSERT INTO staff (id, first_name, last_name, name, phone, date_of_joining, role, password, status)
+VALUES 
+('FOUNDER-1', 'School', 'Founder', 'School Founder', '9363254437', '2025-01-01', 'Founder', 'JO!$@Founder', 'Active'),
+('FOUNDER-2', 'Executive', 'Founder', 'School Founder', '9500001656', '2025-01-01', 'Founder', 'JO!$@Founder', 'Active')
+ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password;
+
+-- ==========================================
+-- SUPPORTING TABLES
+-- ==========================================
+
 CREATE TABLE IF NOT EXISTS invoices (
   id TEXT PRIMARY KEY,
   student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
@@ -163,7 +104,6 @@ CREATE TABLE IF NOT EXISTS invoices (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Leave Requests Table
 CREATE TABLE IF NOT EXISTS leave_requests (
   id TEXT PRIMARY KEY,
   student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
@@ -177,7 +117,6 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Notices Table
 CREATE TABLE IF NOT EXISTS notices (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -190,7 +129,6 @@ CREATE TABLE IF NOT EXISTS notices (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Chats Table
 CREATE TABLE IF NOT EXISTS chats (
   id TEXT PRIMARY KEY,
   sender_id TEXT,
@@ -203,67 +141,72 @@ CREATE TABLE IF NOT EXISTS chats (
   type TEXT DEFAULT 'Private'
 );
 
--- Certificates Table
 CREATE TABLE IF NOT EXISTS certificates (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL,
   student_name TEXT NOT NULL,
   student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
   request_date DATE DEFAULT CURRENT_DATE,
-  status TEXT DEFAULT 'Requested',
+  status TEXT DEFAULT 'Pending',
   reason TEXT,
   issue_date DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Attendance Records (Summary)
 CREATE TABLE IF NOT EXISTS attendance_records (
   id TEXT PRIMARY KEY,
   date DATE NOT NULL,
   present INTEGER DEFAULT 0,
   absent INTEGER DEFAULT 0,
   late INTEGER DEFAULT 0,
-  status TEXT DEFAULT 'Submitted',
+  status TEXT DEFAULT 'Completed',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Attendance Logs (Individual)
 CREATE TABLE IF NOT EXISTS attendance_logs (
   id TEXT PRIMARY KEY,
   date DATE NOT NULL,
-  student_id REFERENCES students(id) ON DELETE CASCADE,
+  student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
   status TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ENABLE REALTIME
-DO $$
+-- ==========================================
+-- REALTIME & SECURITY
+-- ==========================================
+
+-- Publication check
+DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-        CREATE PUBLICATION supabase_realtime;
-    END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
 END $$;
 
-ALTER PUBLICATION supabase_realtime ADD TABLE students, staff, invoices, leave_requests, notices, chats, certificates, attendance_records, attendance_logs;
+-- Table publication
+DO $$
+DECLARE
+    row record;
+BEGIN
+    FOR row IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' 
+    LOOP
+        BEGIN
+            EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE ' || quote_ident(row.tablename);
+        EXCEPTION WHEN others THEN
+            -- Table already in publication or other minor conflict
+        END;
+    END LOOP;
+END $$;
 
--- ROW LEVEL SECURITY (RLS)
-ALTER TABLE students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
-
--- Creating simple policies for development access
-CREATE POLICY "Public Access Student" ON students FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Staff" ON staff FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Invoices" ON invoices FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Leaves" ON leave_requests FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Notices" ON notices FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Chats" ON chats FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access Certs" ON certificates FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access AttRec" ON attendance_records FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access AttLog" ON attendance_logs FOR ALL USING (true) WITH CHECK (true);
+-- RLS & Policies
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    LOOP
+        EXECUTE 'ALTER TABLE ' || quote_ident(t) || ' ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow All Access" ON ' || quote_ident(t);
+        EXECUTE 'CREATE POLICY "Allow All Access" ON ' || quote_ident(t) || ' FOR ALL USING (true) WITH CHECK (true)';
+    END LOOP;
+END $$;
