@@ -46,13 +46,13 @@ interface AttendanceProps {
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
 const SummaryStat = ({ icon: Icon, label, value, color }: any) => (
-  <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 md:gap-4 shrink-0 flex-1 min-w-[100px] md:min-w-[150px]">
-     <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${color} text-white shadow-sm`}>
+  <div className="bg-white p-3.5 md:p-4 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 shrink-0 flex-1 min-w-[125px] md:min-w-[150px]">
+     <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${color} text-white shadow-sm`}>
        <Icon className="w-4 h-4 md:w-5 md:h-5" />
      </div>
      <div className="min-w-0">
         <p className="text-[8px] md:text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5 leading-none truncate">{label}</p>
-        <p className="text-sm md:text-xl font-black text-slate-900 leading-none truncate">{value}</p>
+        <p className="text-base md:text-xl font-black text-slate-900 leading-none truncate">{value}</p>
      </div>
   </div>
 );
@@ -195,7 +195,6 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
     
     const headers = ["Student ID", "Student Name", "Class", "Date", "Status"];
     
-    // If it's a history date, we need to fetch logs for that day
     const dayLogs = allLogs.filter(l => l.date === targetDate);
     const targetStudents = targetProgram === 'All' ? students : students.filter(s => s.program === targetProgram);
 
@@ -349,12 +348,14 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
       <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pt-6 space-y-6">
         {activeTab === 'register' ? (
           <>
-            {/* Stats & Search Row - Optimized for Mobile visibility */}
+            {/* Stats Row - Explicitly scrollable on mobile to ensure absentee count is never hidden */}
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex gap-2 md:gap-4 flex-1 overflow-x-auto no-scrollbar">
-                <SummaryStat icon={Users} label="Enrolled" value={stats.total} color="bg-blue-600" />
-                <SummaryStat icon={CheckCircle2} label="Present" value={stats.present} color="bg-emerald-600" />
-                <SummaryStat icon={AlertCircle} label="Absent" value={stats.absent} color="bg-rose-500" />
+              <div className="w-full overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                <div className="flex gap-3 md:gap-4 min-w-max md:min-w-0 md:flex-1">
+                  <SummaryStat icon={Users} label="Enrolled" value={stats.total} color="bg-blue-600" />
+                  <SummaryStat icon={CheckCircle2} label="Present" value={stats.present} color="bg-emerald-600" />
+                  <SummaryStat icon={AlertCircle} label="Absent" value={stats.absent} color="bg-rose-500" />
+                </div>
               </div>
               <div className="relative md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -533,46 +534,52 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
         )}
       </div>
 
-      {/* COMPREHENSIVE REPORT GENERATION MODAL */}
+      {/* FULLY RESPONSIVE REPORT GENERATION MODAL */}
       {showReportModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
-           <div className="bg-white rounded-[2rem] p-6 md:p-8 max-w-lg w-full shadow-2xl relative border border-slate-200">
-              <div className="flex justify-between items-center mb-8">
+           <div className="bg-white rounded-[2rem] p-5 md:p-8 max-w-lg w-full shadow-2xl relative border border-slate-200 max-h-[90vh] overflow-y-auto no-scrollbar">
+              <div className="flex justify-between items-start mb-6 sticky top-0 bg-white z-10 pb-2">
                  <div>
-                    <h3 className="text-2xl font-black text-slate-900 leading-tight">Generate Reports</h3>
+                    <h3 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">Generate Reports</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Export attendance spreadsheets</p>
                  </div>
-                 <button onClick={() => setShowReportModal(false)} className="w-10 h-10 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-full flex items-center justify-center transition-all border border-slate-100">
-                    <X className="w-6 h-6" />
+                 <button onClick={() => setShowReportModal(false)} className="w-9 h-9 md:w-10 md:h-10 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-full flex items-center justify-center transition-all border border-slate-100 shrink-0">
+                    <X className="w-5 h-5 md:w-6 md:h-6" />
                  </button>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8 pb-4">
                  {/* DAILY REPORT GENERATOR */}
-                 <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
+                 <div className="p-4 md:p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md">
-                          <CalendarIcon className="w-5 h-5" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <CalendarIcon className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
                           <h4 className="font-black text-slate-900 text-sm">Daily Class Report</h4>
                           <p className="text-[9px] text-slate-500 font-bold uppercase">Attendance for a specific day</p>
                        </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                       <input 
-                         type="date" 
-                         defaultValue={date}
-                         id="report-daily-date"
-                         className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none"
-                       />
-                       <select 
-                         id="report-daily-program"
-                         className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none"
-                       >
-                         <option value="All">All Classes</option>
-                         {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
-                       </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Date</label>
+                          <input 
+                            type="date" 
+                            defaultValue={date}
+                            id="report-daily-date"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none shadow-sm focus:border-blue-500 transition-all"
+                          />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
+                          <select 
+                            id="report-daily-program"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none shadow-sm focus:border-blue-500 transition-all"
+                          >
+                            <option value="All">All Classes</option>
+                            {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
+                          </select>
+                       </div>
                     </div>
                     <button 
                       onClick={() => {
@@ -580,37 +587,43 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         const p = (document.getElementById('report-daily-program') as HTMLSelectElement).value;
                         downloadDailyClassReport(d, p);
                       }}
-                      className="w-full bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                        <Download className="w-4 h-4" /> Download Daily
                     </button>
                  </div>
 
                  {/* MONTHLY REPORT GENERATOR */}
-                 <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
+                 <div className="p-4 md:p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md">
-                          <FileBarChart className="w-5 h-5" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <FileBarChart className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
                           <h4 className="font-black text-slate-900 text-sm">Monthly Summary</h4>
                           <p className="text-[9px] text-slate-500 font-bold uppercase">Consolidated monthly report</p>
                        </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                       <input 
-                         type="month" 
-                         defaultValue={date.substring(0, 7)}
-                         id="report-monthly-date"
-                         className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none"
-                       />
-                       <select 
-                         id="report-monthly-program"
-                         className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none"
-                       >
-                         <option value="All">All Classes</option>
-                         {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
-                       </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Month</label>
+                          <input 
+                            type="month" 
+                            defaultValue={date.substring(0, 7)}
+                            id="report-monthly-date"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none shadow-sm focus:border-indigo-500 transition-all"
+                          />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
+                          <select 
+                            id="report-monthly-program"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none shadow-sm focus:border-indigo-500 transition-all"
+                          >
+                            <option value="All">All Classes</option>
+                            {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
+                          </select>
+                       </div>
                     </div>
                     <button 
                       onClick={() => {
@@ -618,32 +631,35 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         const p = (document.getElementById('report-monthly-program') as HTMLSelectElement).value;
                         downloadMonthlyClassReport(m, p);
                       }}
-                      className="w-full bg-indigo-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      className="w-full bg-indigo-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                        <Download className="w-4 h-4" /> Download Monthly
                     </button>
                  </div>
 
                  {/* INDIVIDUAL SEARCH REPORT */}
-                 <div className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-4">
+                 <div className="p-4 md:p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md">
-                          <User className="w-5 h-5" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <User className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
                           <h4 className="font-black text-slate-900 text-sm">Individual Search</h4>
                           <p className="text-[9px] text-slate-500 font-bold uppercase">Export single student history</p>
                        </div>
                     </div>
-                    <div className="relative">
-                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
-                       <select 
-                         id="report-individual-id"
-                         className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none appearance-none"
-                       >
-                         <option value="">Select Student...</option>
-                         {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.id})</option>)}
-                       </select>
+                    <div className="space-y-1">
+                       <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Student</label>
+                       <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                          <select 
+                            id="report-individual-id"
+                            className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none appearance-none shadow-sm focus:border-emerald-500 transition-all"
+                          >
+                            <option value="">Select Student...</option>
+                            {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.id})</option>)}
+                          </select>
+                       </div>
                     </div>
                     <button 
                       onClick={() => {
@@ -652,7 +668,7 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         if (student) downloadIndividualReport(student);
                         else showToast?.("Error", "error", "Please select a student.");
                       }}
-                      className="w-full bg-emerald-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      className="w-full bg-emerald-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                        <Download className="w-4 h-4" /> Export History
                     </button>
