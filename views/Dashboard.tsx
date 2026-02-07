@@ -1,12 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserRole, View, Student, Staff, AttendanceLog, ProgramType, LeaveRequest } from '../types';
+import { UserRole, View, Student, Staff, ProgramType, LeaveRequest } from '../types';
 import { db } from '../services/persistence';
 import { 
   Users, 
-  CheckCircle, 
   Loader2, 
-  TrendingUp,
   CalendarCheck,
   ArrowUpRight,
   CalendarDays,
@@ -14,11 +11,8 @@ import {
   Briefcase,
   GraduationCap,
   CreditCard,
-  AlertCircle,
-  PieChart,
   RefreshCw
 } from 'lucide-react';
-import { CURRENT_USER_ID } from '../data/mockData';
 
 interface DashboardProps {
   role: UserRole;
@@ -29,8 +23,6 @@ interface DashboardProps {
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate, onFilterNavigate }) => {
-  const isConnected = db.isConnected();
-
   const renderContent = () => {
     switch (role) {
       case UserRole.PARENT: return <ParentDashboard onNavigate={onNavigate} />;
@@ -40,33 +32,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate, onFilter
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-[#f8fafc] scroll-smooth no-scrollbar">
-      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-lg pointer-events-none">
-        <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">
-          {isConnected ? 'Vault Connected' : 'Offline Mode'}
-        </span>
-      </div>
+    <div className="w-full bg-slate-50 min-h-full pb-12">
       {renderContent()}
     </div>
   );
 };
 
-const CompactStat = ({ icon: Icon, label, value, color, onClick, subValue }: any) => (
+const StatCard = ({ icon: Icon, label, value, color, onClick, subValue }: any) => (
   <div 
     onClick={onClick}
-    className="pro-card p-6 cursor-pointer group flex items-center gap-5 hover:shadow-xl transition-all duration-300 border-none shadow-sm bg-white"
+    className="bg-white p-6 cursor-pointer group flex items-center gap-4 hover:shadow-lg transition-all duration-200 border border-slate-200 rounded-2xl shadow-sm active:scale-[0.98]"
   >
-    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color} text-white shadow-lg group-hover:scale-110 transition-transform`}>
-      <Icon className="w-7 h-7" />
+    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color} text-white shadow-sm group-hover:scale-105 transition-transform`}>
+      <Icon className="w-6 h-6" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-2">{label}</p>
-      <h3 className="text-3xl font-black text-slate-900 tracking-tighter truncate">{value}</h3>
-      {subValue && <p className="text-[11px] font-bold text-slate-400 mt-1">{subValue}</p>}
-    </div>
-    <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 opacity-0 group-hover:opacity-100 transition-all">
-      <ArrowUpRight className="w-4 h-4 text-slate-400" />
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
+      <h3 className="text-2xl font-bold text-slate-900 tracking-tight truncate leading-none">{value}</h3>
+      {subValue && <p className="text-[11px] font-medium text-slate-400 mt-1.5 truncate">{subValue}</p>}
     </div>
   </div>
 );
@@ -87,94 +70,76 @@ const AdminDashboard = ({ onNavigate, onFilterNavigate }: { onNavigate: (view: V
       setStudents(s || []);
       setStaff(st || []);
       setLeaves(lv || []);
-    } catch (err) {
-      console.error("Dashboard refresh error:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-    
-    const studentSub = db.subscribe('students', () => loadData(), () => loadData(), () => loadData());
-    const staffSub = db.subscribe('staff', () => loadData(), () => loadData(), () => loadData());
-    const leaveSub = db.subscribe('leaveRequests', () => loadData(), () => loadData(), () => loadData());
-    
-    return () => {
-      studentSub.unsubscribe();
-      staffSub.unsubscribe();
-      leaveSub.unsubscribe();
-    };
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
-  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
 
   const pendingLeavesCount = leaves.filter(l => l.status === 'Pending').length;
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-100 pb-6 gap-4">
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Administrative Command</h1>
-          <p className="text-slate-500 font-medium flex items-center gap-2">
-             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-             Global monitoring for <span className="text-blue-600 font-bold">Junior Odyssey Hub</span>
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">School Overview</h1>
+          <p className="text-slate-500 text-xs font-medium">Monitoring academic and administrative activity</p>
         </div>
         <button 
           onClick={() => { setLoading(true); loadData(); }} 
-          className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl border border-slate-200 hover:bg-white hover:shadow-sm transition-all active:scale-95 text-[11px] font-black uppercase tracking-widest"
+          className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all active:scale-95 text-xs font-bold"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Force Sync
+          Refresh Dashboard
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <CompactStat icon={Users} label="Current Enrollment" value={students.length} color="bg-blue-600" onClick={() => onNavigate(View.STUDENTS)} />
-         <CompactStat icon={Briefcase} label="Active Personnel" value={staff.length} color="bg-slate-900" onClick={() => onNavigate(View.STAFF)} />
-         <CompactStat icon={CalendarDays} label="Approval Queue" value={pendingLeavesCount} subValue="Pending leave apps" color="bg-rose-500" onClick={() => onNavigate(View.LEAVE)} />
+         <StatCard icon={Users} label="Total Students" value={students.length} color="bg-blue-600" onClick={() => onNavigate(View.STUDENTS)} />
+         <StatCard icon={Briefcase} label="Working Staff" value={staff.length} color="bg-indigo-600" onClick={() => onNavigate(View.STAFF)} />
+         <StatCard icon={CalendarDays} label="Leave Requests" value={pendingLeavesCount} subValue="Pending your review" color="bg-orange-500" onClick={() => onNavigate(View.LEAVE)} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-         <div className="lg:col-span-12 pro-card p-8 bg-white">
-            <div className="flex justify-between items-center mb-8">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
-                  <GraduationCap className="w-4 h-4 text-blue-600" /> Enrollment Matrix
-               </h4>
-               <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest border border-blue-100">Live Load Balance</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-               {PROGRAMS.map((p, i) => {
-                  const programCount = students.filter(s => s.program === p).length;
-                  const capacity = 40;
-                  const fillPercent = (programCount / capacity) * 100;
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <GraduationCap className="w-5 h-5 text-blue-600" />
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Enrolled Capacity by Class</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {PROGRAMS.map((p, i) => {
+                const count = students.filter(s => s.program === p).length;
+                const capacity = 40;
+                const fillPercent = (count / capacity) * 100;
 
-                  return (
-                    <div 
-                      key={p} 
-                      className="space-y-3 cursor-pointer group/prog p-4 rounded-2xl bg-slate-50/50 hover:bg-slate-50 hover:shadow-sm border border-transparent hover:border-slate-100 transition-all"
-                      onClick={() => onFilterNavigate?.(p)}
-                    >
-                       <div className="flex justify-between items-center">
-                          <span className="text-[13px] font-black text-slate-900 tracking-tight">{p}</span>
-                          <span className="text-blue-600 text-xs font-black flex items-center gap-2">
-                            {programCount} <span className="text-slate-300 font-medium">/ {capacity}</span>
-                            <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/prog:opacity-100 transition-opacity" />
-                          </span>
-                       </div>
-                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-white">
-                          <div 
-                            className={`h-full ${i % 2 === 0 ? 'bg-blue-600' : 'bg-slate-900'} rounded-full transition-all duration-1000`} 
-                            style={{ width: `${Math.min(100, fillPercent)}%` }}
-                          />
-                       </div>
-                    </div>
-                  );
-               })}
-            </div>
-         </div>
+                return (
+                  <div 
+                    key={p} 
+                    className="p-5 rounded-xl bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-md cursor-pointer"
+                    onClick={() => onFilterNavigate?.(p)}
+                  >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-bold text-slate-900">{p}</span>
+                        <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-1 rounded">
+                          {count}/{capacity}
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden mb-3">
+                        <div 
+                          className={`h-full ${i % 2 === 0 ? 'bg-blue-600' : 'bg-slate-800'} rounded-full transition-all duration-700`} 
+                          style={{ width: `${Math.max(5, Math.min(100, fillPercent))}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-medium text-slate-400">Class Occupancy</p>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                  </div>
+                );
+              })}
+          </div>
       </div>
     </div>
   );
@@ -210,66 +175,49 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       ).length;
       
       setPresenceToday(presentCount);
-    } catch (err) {
-      console.error("Teacher dash error:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadTeacherData();
-    
-    const studentSub = db.subscribe('students', () => loadTeacherData(), () => loadTeacherData(), () => loadTeacherData());
-    const attendanceSub = db.subscribe('attendanceLogs', () => loadTeacherData(), () => loadTeacherData(), () => loadTeacherData());
-    
-    return () => {
-      studentSub.unsubscribe();
-      attendanceSub.unsubscribe();
-    };
-  }, [loadTeacherData]);
+  useEffect(() => { loadTeacherData(); }, [loadTeacherData]);
 
-  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
 
   return (
-    <div className="p-6 space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-50"></div>
-         <div className="relative z-10">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-3">Faculty Hub</h1>
-            <p className="text-slate-500 text-sm font-medium flex items-center gap-2">
-               Currently directing <span className="text-blue-600 font-bold uppercase tracking-widest">{program}</span> cohort
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+         <div className="z-10">
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">Teacher Dashboard</h1>
+            <p className="text-slate-500 text-sm font-medium">
+               Assigned Class: <span className="text-blue-600 font-bold">{program}</span>
             </p>
          </div>
-         <div className="bg-blue-600 text-white px-8 py-5 rounded-[2rem] shadow-2xl shadow-blue-100 flex items-center gap-4 relative z-10 group hover:scale-105 transition-all">
-            <Clock className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-            <div className="text-right">
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none mb-1">Morning Shift</p>
-               <p className="text-lg font-black leading-none">Active Session</p>
+         <div className="bg-blue-600 text-white px-5 py-3 rounded-xl shadow-sm flex items-center gap-3 z-10">
+            <Clock className="w-5 h-5" />
+            <div>
+               <p className="text-sm font-bold leading-none mb-1">Session Active</p>
+               <p className="text-[10px] font-medium opacity-80 uppercase tracking-wider">Attendance window is open</p>
             </div>
          </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-         <CompactStat 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <StatCard 
             icon={Users} 
-            label="Enrolled Learners" 
+            label="Class Roster" 
             value={assignedStudents.length} 
             color="bg-blue-600" 
             onClick={() => onNavigate(View.STUDENTS)} 
          />
-         <CompactStat 
+         <StatCard 
             icon={CalendarCheck} 
-            label="Presence Audit" 
+            label="Attendance Marked" 
             value={`${presenceToday} / ${assignedStudents.length}`} 
-            color="bg-emerald-500" 
-            subValue="Verified checked-in today"
+            color="bg-emerald-600" 
+            subValue="For current date"
             onClick={() => onNavigate(View.ATTENDANCE)} 
          />
-      </div>
-
-      <div className="pro-card p-12 text-center border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-[3rem]">
-         <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px] leading-none">End of Morning Brief</p>
       </div>
     </div>
   );
@@ -287,10 +235,7 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
         db.getAll('invoices')
       ]);
       
-      let myChild = students.find(s => s.parentId === CURRENT_USER_ID);
-      if (!myChild && students.length > 0) {
-        myChild = students.find(s => invoices.some(i => i.studentId === s.id)) || students[0];
-      }
+      const myChild = students[0]; 
       setChild(myChild || null);
 
       if (myChild) {
@@ -299,101 +244,49 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
            .reduce((sum, i) => sum + i.amount, 0);
          setPendingFees(dues);
       }
-    } catch (err) {
-      console.error("Parent dashboard load error:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadParentData();
-    const studentSub = db.subscribe('students', () => loadParentData(), () => loadParentData(), () => loadParentData());
-    const invoiceSub = db.subscribe('invoices', () => loadParentData(), () => loadParentData(), () => loadParentData());
-    return () => {
-      studentSub.unsubscribe();
-      invoiceSub.unsubscribe();
-    };
-  }, [loadParentData]);
+  useEffect(() => { loadParentData(); }, [loadParentData]);
 
-  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-10 h-10 text-blue-600" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
   
-  if (!child) return (
-    <div className="p-24 text-center flex flex-col items-center justify-center h-full">
-       <AlertCircle className="w-16 h-16 text-slate-200 mb-8" />
-       <h3 className="text-2xl font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Identity Not Found</h3>
-       <p className="text-slate-500 max-w-sm font-medium">Please contact the central office to link your parent profile to a student ID.</p>
-    </div>
-  );
+  if (!child) return <div className="p-12 text-center text-slate-400 font-bold uppercase tracking-widest bg-white rounded-2xl border border-slate-200 shadow-sm mx-4">No linked student found.</div>;
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto space-y-10 animate-in fade-in duration-700">
-      <div className="pro-card p-12 flex flex-col md:flex-row items-center gap-10 bg-white border-none shadow-2xl rounded-[3.5rem] relative overflow-hidden">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 opacity-80"></div>
-         <div className="relative z-10">
-            <img src={child.image} className="w-40 h-40 rounded-[3rem] object-cover border-8 border-slate-50 shadow-2xl group-hover:scale-105 transition-transform" />
-            <div className="absolute -bottom-3 -right-3 bg-blue-600 text-white p-3 rounded-2xl shadow-xl border-4 border-white">
-               <GraduationCap className="w-6 h-6" />
-            </div>
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-700">
+      <div className="bg-white p-6 md:p-8 flex flex-col sm:flex-row items-center gap-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+         <div className="shrink-0">
+            <img src={child.image} className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover border-4 border-slate-50 shadow-md" alt="Student" />
          </div>
-         <div className="flex-1 text-center md:text-left relative z-10">
-            <span className="text-[11px] font-black text-blue-600 uppercase tracking-[0.4em] mb-4 block">Child Profile Linked</span>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-3">{child.name}</h1>
-            <p className="text-[16px] font-bold text-slate-400 uppercase tracking-widest">{child.program} • UID: {child.id}</p>
-         </div>
-         <div className="bg-slate-50 px-10 py-6 rounded-[2.5rem] border border-slate-100 flex flex-col items-center md:items-end relative z-10">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Vault Security</p>
-            <div className="flex items-center gap-3">
-               <CheckCircle className="w-5 h-5 text-emerald-500" />
-               <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest">Verified Account</span>
+         <div className="flex-1 text-center sm:text-left">
+            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2 block">Student Account</span>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-4">{child.name}</h1>
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+               <span className="bg-slate-100 px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 uppercase tracking-wider">{child.program}</span>
+               <span className="bg-blue-50 px-3 py-1.5 rounded-lg text-[11px] font-bold text-blue-600 uppercase tracking-wider">ID: {child.id}</span>
             </div>
          </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-         <CompactStat 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <StatCard 
             icon={CalendarCheck} 
-            label="Attendance Score" 
+            label="Attendance Rate" 
             value={`${child.attendance}%`} 
-            subValue="Verified academic presence"
-            color="bg-emerald-500" 
+            color="bg-emerald-600" 
             onClick={() => onNavigate(View.ATTENDANCE)} 
          />
-
-         <CompactStat 
+         <StatCard 
             icon={CreditCard} 
-            label="Account Standing" 
+            label="Pending Fees" 
             value={`₹${pendingFees.toLocaleString('en-IN')}`} 
-            subValue={pendingFees > 0 ? "Outstanding Balance" : "Cleared for Cycle"}
-            color={pendingFees > 0 ? "bg-rose-500" : "bg-blue-600"} 
+            subValue={pendingFees > 0 ? "Outstanding Balance" : "Account Up-to-date"}
+            color={pendingFees > 0 ? "bg-orange-500" : "bg-blue-600"} 
             onClick={() => onNavigate(View.FEES)} 
          />
-      </div>
-
-      {pendingFees > 0 && (
-        <div className="bg-rose-50 border border-rose-100 p-10 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8 animate-pulse shadow-xl shadow-rose-500/5">
-           <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-rose-500 shadow-lg">
-                 <AlertCircle className="w-8 h-8" />
-              </div>
-              <div>
-                 <h4 className="text-2xl font-black text-rose-900 tracking-tight leading-none mb-2">Financial Alert</h4>
-                 <p className="text-sm text-rose-700 font-bold opacity-80 uppercase tracking-widest">Please settle ₹{pendingFees.toLocaleString('en-IN')} to prevent service suspension.</p>
-              </div>
-           </div>
-           <button 
-             onClick={() => onNavigate(View.FEES)}
-             className="bg-rose-500 text-white px-12 py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-rose-200 hover:bg-rose-600 transition-all active:scale-95 whitespace-nowrap"
-           >
-             Settle Dues
-           </button>
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 py-10 opacity-40 justify-center">
-         <div className="h-px w-20 bg-slate-200"></div>
-         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Junior Odyssey Cloud Hub</p>
-         <div className="h-px w-20 bg-slate-200"></div>
       </div>
     </div>
   );

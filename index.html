@@ -1,31 +1,27 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Junior Odyssey - Professional Management System</title>
+    <title>JOIS - Junior Odyssey International School</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         background-color: #f8fafc;
-        color: #0f172a;
+        color: #1e293b;
         -webkit-font-smoothing: antialiased;
         letter-spacing: -0.01em;
+        line-height: 1.5;
       }
-      /* Professional Data Grid Styles */
-      .sheet-row {
-        transition: background-color 0.1s ease;
+      /* Clean and focused visuals */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
       }
-      .sheet-row:hover {
-        background-color: #f1f5f9 !important;
-      }
-      /* Clean Scrollbar */
       ::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
+        width: 4px;
+        height: 4px;
       }
       ::-webkit-scrollbar-track {
         background: transparent; 
@@ -37,14 +33,15 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #cbd5e1; 
       }
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
       .pro-card {
         background: white;
         border: 1px solid #e2e8f0;
         border-radius: 1rem;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      }
+      /* Professional input focus */
+      input:focus, select:focus, textarea:focus {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
       }
     </style>
   <script type="importmap">
@@ -56,7 +53,8 @@
     "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.48.1"
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.48.1",
+    "hls.js": "https://esm.sh/hls.js@^1.6.15"
   }
 }
 </script>

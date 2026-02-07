@@ -28,6 +28,7 @@ export const schoolService = {
       text: encryptedText,
       timestamp: new Date().toISOString(),
       isRead: false,
+      // Fix: Aligned with the 'Broadcast' type added to ChatMessage in types.ts
       type: receiverId === 'ALL' ? 'Broadcast' : 'Private'
     };
     
@@ -63,7 +64,8 @@ export const schoolService = {
       present: presentCount,
       absent: absentCount,
       late: lateCount,
-      status: 'Submitted'
+      // Fix: Changed 'Done' to 'Completed' to match the allowed types in AttendanceRecord status
+      status: 'Completed'
     };
 
     // 1. Save Summary Record
@@ -79,6 +81,7 @@ export const schoolService = {
           id: `AL-${Date.now()}-${student.id}`,
           date,
           studentId: student.id,
+          // Fix: AttendanceLog status is now updated in types.ts to accept 'Present' | 'Absent' | 'Late'
           status
         };
         await db.create('attendanceLogs', log);
@@ -118,7 +121,8 @@ export const schoolService = {
   async updateDocumentStatus(docId: string, status: Certificate['status']) {
     const update: Partial<Certificate> = { 
       status,
-      issueDate: status === 'Released' ? new Date().toISOString().split('T')[0] : undefined
+      // Fix: 'Issued' is correctly typed in Certificate status in types.ts
+      issueDate: status === 'Issued' ? new Date().toISOString().split('T')[0] : undefined
     };
     await db.update('certificates', docId, update);
   },

@@ -1,20 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bus, MapPin, Phone, Navigation, AlertTriangle, Send, Loader2, X } from 'lucide-react';
 import { schoolService } from '../services/schoolService';
 import { UserRole } from '../types';
 import { ToastType } from '../components/Toast';
 
-// Define props interface to include showToast functionality
 interface TransportProps {
   showToast?: (title: string, type: ToastType, description?: string) => void;
 }
 
 export const Transport: React.FC<TransportProps> = ({ showToast }) => {
   const [buses, setBuses] = useState([
-    { id: 'BUS-01', route: 'North Route', driver: 'Mike T.', status: 'Moving', speed: 45, nextStop: 'Maple St', progress: 30 },
-    { id: 'BUS-02', route: 'South Route', driver: 'Sarah J.', status: 'Stopped', speed: 0, nextStop: 'Oak Ave', progress: 65 },
-    { id: 'BUS-03', route: 'East Route', driver: 'John D.', status: 'Traffic', speed: 12, nextStop: 'Pine Ln', progress: 85 },
+    { id: 'BUS-01', route: 'North Road', driver: 'Mike T.', status: 'Moving', speed: 45, nextStop: 'Maple St', progress: 30 },
+    { id: 'BUS-02', route: 'South Road', driver: 'Sarah J.', status: 'Stopped', speed: 0, nextStop: 'Oak Ave', progress: 65 },
+    { id: 'BUS-03', route: 'East Road', driver: 'John D.', status: 'Traffic', speed: 12, nextStop: 'Pine Ln', progress: 85 },
   ]);
 
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -41,24 +39,19 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
     try {
        await schoolService.sendBroadcast(
          'TRN-001',
-         'Transport Desk',
+         'Bus Hub',
          UserRole.TRANSPORT,
-         `BUS ALERT [${selectedBusForAlert}]: Expected delay of 15-20 mins due to ${reason}. Please stay at the stop.`,
+         `BUS NEWS [${selectedBusForAlert}]: Bus will be 15-20 mins late because of ${reason}. Please wait at the stop.`,
          'High'
        );
        setShowAlertModal(false);
        
-       // Improved notification using showToast
        if (showToast) {
-         showToast("Alert Broadcasted", "success", "All parents on this route have been notified of the delay.");
-       } else {
-         alert("Alert broadcasted to all parents successfully.");
+         showToast("Message Sent", "success", "Parents on this road have been told about the delay.");
        }
     } catch (e) {
        if (showToast) {
-         showToast("Broadcast Failed", "error", "The system could not send the transport alert.");
-       } else {
-         alert("Failed to send alert.");
+         showToast("Failed to send", "error", "System could not send the message.");
        }
     } finally {
        setIsSendingAlert(false);
@@ -69,13 +62,13 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
     <div className="p-4 md:p-8 h-full flex flex-col gap-8 animate-in fade-in duration-500 overflow-y-auto max-w-7xl mx-auto w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Tracking</h2>
-          <p className="text-slate-500 font-medium mt-1">Real-time GPS monitoring and parent communication hub.</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Bus Tracking</h2>
+          <p className="text-slate-500 font-medium mt-1">See where the buses are in real-time.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-           <button className="flex-1 md:flex-none bg-white border-2 border-slate-100 px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:border-slate-300 transition-all">Route Config</button>
+           <button className="flex-1 md:flex-none bg-white border-2 border-slate-100 px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:border-slate-300 transition-all">Road List</button>
            <button onClick={() => setShowAlertModal(true)} className="flex-1 md:flex-none bg-rose-500 text-white px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-rose-600 shadow-xl shadow-rose-100 flex items-center gap-2 justify-center transition-all active:scale-95">
-              <AlertTriangle className="w-4 h-4" /> Broadcast Alert
+              <AlertTriangle className="w-4 h-4" /> Send News
            </button>
         </div>
       </div>
@@ -160,17 +153,17 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
                   <Navigation className="w-5 h-5" />
                </div>
-               <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Active Corridors</span>
+               <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Active Roads</span>
              </div>
              <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs">
-                   <span className="text-slate-400 font-bold uppercase">Congestion</span>
-                   <span className="text-rose-500 font-black">HIGH (Route 02)</span>
+                   <span className="text-slate-400 font-bold uppercase">Traffic</span>
+                   <span className="text-rose-500 font-black">BAD (Road 02)</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                    <div className="h-full bg-rose-500 w-4/5"></div>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed font-medium">Traffic detected on OMR near Pudupakkam junction. All drivers notified to use bypass route.</p>
+                <p className="text-[10px] text-slate-500 leading-relaxed font-medium">Lots of traffic on the main road. Drivers told to use the other way.</p>
              </div>
            </div>
         </div>
@@ -181,14 +174,14 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
            <div className="bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl relative">
               <div className="flex justify-between items-center mb-10">
-                 <h3 className="text-2xl font-black text-slate-900">Broadcast Bus Alert</h3>
+                 <h3 className="text-2xl font-black text-slate-900">Send Bus News</h3>
                  <button onClick={() => setShowAlertModal(false)} className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-colors">
                     <X className="w-6 h-6" />
                  </button>
               </div>
               <form onSubmit={handleSendAlert} className="space-y-6">
                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Bus Route</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Choose Bus</label>
                     <div className="grid grid-cols-3 gap-3">
                        {buses.map(b => (
                           <button 
@@ -207,18 +200,18 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Delay Reason</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Why is it late?</label>
                     <select name="reason" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none">
-                       <option value="Traffic">Heavy Traffic</option>
-                       <option value="Breakdown">Mechanical Failure</option>
-                       <option value="Weather">Weather Conditions</option>
-                       <option value="Event">Local Road Event</option>
+                       <option value="Traffic">Traffic</option>
+                       <option value="Breakdown">Broken Bus</option>
+                       <option value="Weather">Bad Weather</option>
+                       <option value="Event">Road Event</option>
                     </select>
                  </div>
                  <div className="p-6 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4">
                     <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
                     <p className="text-[10px] text-rose-700 font-bold leading-relaxed uppercase tracking-widest">
-                       This alert will be sent as a HIGH PRIORITY push notification and broadcast to all parents subscribed to this route.
+                       This message will be sent to all parents on this bus road right away.
                     </p>
                  </div>
                  <button 
@@ -226,7 +219,7 @@ export const Transport: React.FC<TransportProps> = ({ showToast }) => {
                    disabled={!selectedBusForAlert || isSendingAlert}
                    className="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
                  >
-                    {isSendingAlert ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Send className="w-5 h-5" /> Send Broadcast</>}
+                    {isSendingAlert ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Send className="w-5 h-5" /> Send to Everyone</>}
                  </button>
               </form>
            </div>

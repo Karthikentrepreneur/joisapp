@@ -3,54 +3,56 @@ export enum UserRole {
   ADMIN = 'Admin',
   TEACHER = 'Teacher',
   PARENT = 'Parent',
-  TRANSPORT = 'Transport Manager'
+  TRANSPORT = 'Bus Manager',
+  FOUNDER = 'Founder'
 }
 
 export enum View {
-  DASHBOARD = 'Dashboard',
+  DASHBOARD = 'Home',
   STUDENTS = 'Students',
   ACADEMICS = 'Academics',
   ATTENDANCE = 'Attendance',
-  TRANSPORT = 'Transport',
-  SAFETY = 'Safety & CCTV',
-  FEES = 'Fees & Finance',
-  COMMUNICATION = 'Communication',
+  TRANSPORT = 'Bus Tracking',
+  SAFETY = 'Security',
+  FEES = 'Finance',
+  COMMUNICATION = 'Messages',
   AI_ASSISTANT = 'AI Assistant',
-  STAFF = 'Staff Management',
-  SETTINGS = 'System Settings',
-  LEAVE = 'Leave Management'
+  STAFF = 'Staff',
+  SETTINGS = 'Settings',
+  LEAVE = 'Leave Requests'
 }
 
 export type ProgramType = 'Little Seeds' | 'Curiosity Cubs' | 'Odyssey Owls' | 'Future Makers';
+
+export interface Camera {
+  id: string;
+  name: string;
+  location: string;
+  streamUrl: string; // HLS (.m3u8) or WebRTC endpoint
+  status: 'Online' | 'Offline' | 'Loading';
+  type: 'Indoor' | 'Outdoor' | 'Gate';
+}
 
 export interface Student {
   id: string;
   firstName: string;
   middleName?: string;
   lastName: string;
-  name: string; // Combined for display
+  name: string;
   dob: string;
   bloodGroup?: string;
-  
-  // Parent Details
   motherName: string;
   motherEmail: string;
   fatherName: string;
   fatherEmail: string;
-  
-  // School Details
   program: ProgramType;
   dateOfJoining: string;
   offer: 'Early Bird Offer' | 'Regular' | 'Vijayadasami' | 'New Year' | 'Bridge Course';
-  
-  // Emergency Contact
   emergencyContact: {
     name: string;
     relationship: string;
     phone: string;
   };
-
-  // Status & Metadata
   attendance: number;
   feesStatus: 'Paid' | 'Pending' | 'Overdue';
   busRoute: string;
@@ -73,11 +75,10 @@ export interface Staff {
   dateOfJoining: string;
   classAssigned?: string;
   maritalStatus: 'Married' | 'Unmarried';
-  status: 'Active' | 'On Leave';
+  status: 'Active' | 'Away';
   role: 'Teacher' | 'Admin' | 'Driver' | 'Clerk';
   image: string;
   signature?: string;
-  
   emergencyContact: {
     firstName: string;
     middleName?: string;
@@ -85,7 +86,6 @@ export interface Staff {
     relationship: string;
     phone: string;
   };
-  
   salaryDetails?: {
     basic: number;
     allowances: number;
@@ -121,7 +121,7 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   isRead?: boolean;
-  type?: 'Private' | 'Broadcast';
+  type?: 'Private' | 'Everyone' | 'Broadcast';
   role?: string;
 }
 
@@ -132,7 +132,7 @@ export interface Invoice {
   amount: number;
   dueDate: string;
   status: 'Paid' | 'Pending' | 'Overdue';
-  type: 'Tuition' | 'Transport' | 'Library' | 'Activity';
+  type: 'School Fee' | 'Bus' | 'Books' | 'Activity';
 }
 
 export interface AttendanceRecord {
@@ -141,7 +141,7 @@ export interface AttendanceRecord {
   present: number;
   absent: number;
   late: number;
-  status: 'Submitted' | 'Pending';
+  status: 'Completed' | 'Pending';
 }
 
 export interface AttendanceLog {
@@ -153,11 +153,11 @@ export interface AttendanceLog {
 
 export interface Certificate {
   id: string;
-  type: 'Bonafide' | 'Transfer' | 'Character' | 'Fee Receipt';
+  type: 'School Letter' | 'Leaving Paper' | 'Good Conduct' | 'Fee Bill' | 'Bonafide' | 'Transfer' | 'Character' | 'Fee Receipt';
   studentName: string;
   studentId: string;
   requestDate: string;
-  status: 'Requested' | 'Teacher Approved' | 'Released' | 'Rejected';
+  status: 'Pending' | 'Verified' | 'Issued' | 'Declined';
   reason: string;
   issueDate?: string;
 }
@@ -170,7 +170,7 @@ export interface Homework {
   program?: ProgramType;
   dueDate: string;
   assignedBy: string;
-  status: 'Active' | 'Closed';
+  status: 'Ongoing' | 'Closed';
 }
 
 export interface LeaveRequest {
