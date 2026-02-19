@@ -1,7 +1,6 @@
 
 import { db } from './persistence';
 import { cryptoService } from './cryptoService';
-import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole } from '../types';
 import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType } from '../types';
 
 /**
@@ -11,13 +10,11 @@ import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certif
 export const schoolService = {
   
   // --- REAL-TIME E2EE MESSAGING ---
-  async sendMessage(senderId: string, senderName: string, senderRole: UserRole, receiverId: string, text: string) {
   async sendMessage(senderId: string, senderName: string, senderRole: UserRole, receiverId: string, text: string, attachments: Attachment[] = []) {
     // 1. Establish encryption key based on participants (E2EE)
     const threadId = [senderId, receiverId].sort().join(':');
     
     // 2. Encrypt before any storage (Broadcasts are public to the school)
-    const encryptedText = receiverId === 'ALL' 
     const isPublic = receiverId === 'ALL' || receiverId.startsWith('GROUP_');
     const encryptedText = isPublic
       ? text 
@@ -33,7 +30,6 @@ export const schoolService = {
       timestamp: new Date().toISOString(),
       isRead: false,
       // Fix: Aligned with the 'Broadcast' type added to ChatMessage in types.ts
-      type: receiverId === 'ALL' ? 'Broadcast' : 'Private'
       type: isPublic ? 'Broadcast' : 'Private',
       attachments
     };
@@ -43,21 +39,18 @@ export const schoolService = {
     return message;
   },
 
-  async sendBroadcast(senderId: string, senderName: string, senderRole: UserRole, text: string, priority: 'High' | 'Medium' | 'Low' = 'Medium') {
   async sendBroadcast(senderId: string, senderName: string, senderRole: UserRole, text: string, priority: 'High' | 'Medium' | 'Low' = 'Medium', targetGroup: 'All' | ProgramType = 'All', attachments: Attachment[] = []) {
     // 1. Create a public notice entry
     const notice = await this.broadcastNotice({
       title: `Official Bulletin from ${senderRole}`,
       content: text,
       priority,
-      sender: senderName
       sender: senderName,
       targetGroup,
       attachments
     });
 
     // 2. Inject into the communication stream
-    await this.sendMessage(senderId, senderName, senderRole, 'ALL', text);
     const receiverId = targetGroup === 'All' ? 'ALL' : `GROUP_${targetGroup}`;
     await this.sendMessage(senderId, senderName, senderRole, receiverId, text, attachments);
     return notice;
