@@ -212,7 +212,7 @@ export const schoolService = {
     }));
   },
 
-  async getAllThreads() {
+  async getAllThreads(currentUserId?: string) {
     const allChats = await db.getAll('chats');
     const threads: Record<string, ChatMessage[]> = {};
     
@@ -229,7 +229,10 @@ export const schoolService = {
       threadId,
       participants: threadId.split(':'),
       lastMessage: messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0],
-      messageCount: messages.length
+      messageCount: messages.length,
+      unreadCount: currentUserId 
+        ? messages.filter(m => m.receiverId === currentUserId && !m.isRead).length 
+        : 0
     }));
   }
 };

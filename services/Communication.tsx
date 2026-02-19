@@ -21,19 +21,23 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   const [userMap, setUserMap] = useState<Record<string, { name: string; role: string; image?: string }>>({});
   const [isCreateModalOpen, setOpen] = useState(false);
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadData();
   }, [role, activeTab]);
 
   const loadData = async () => {
+    // Always fetch threads to update unread count badge
+    const allThreads = await schoolService.getAllThreads(currentUser.id);
+    const myThreads = allThreads.filter((t: any) => t.participants.includes(currentUser.id));
+    const totalUnread = myThreads.reduce((sum: number, t: any) => sum + (t.unreadCount || 0), 0);
+    setUnreadCount(totalUnread);
+
     if (activeTab === 'announcements') {
       const data = await schoolService.getAnnouncements(role, currentUser.classAssigned || currentUser.childClassId);
       setAnnouncements(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } else {
-      const allThreads = await schoolService.getAllThreads();
-      // Filter threads where current user is a participant
-      const myThreads = allThreads.filter((t: any) => t.participants.includes(currentUser.id));
       setThreads(myThreads);
       
       // Build User Map to resolve names in Sidebar
@@ -115,6 +119,11 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           >
             <MessageSquare className="w-4 h-4" />
             Messages
+            {unreadCount > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
           </button>
         </div>
 
