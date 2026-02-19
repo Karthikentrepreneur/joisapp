@@ -152,6 +152,10 @@ export const schoolService = {
     return await db.getAll('notices');
   },
 
+  async getAll(collection: any) {
+    return await db.getAll(collection);
+  },
+
   // --- ANNOUNCEMENTS (NEW) ---
   async createAnnouncement(announcement: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>) {
     const newAnnouncement: Announcement = {
@@ -191,12 +195,21 @@ export const schoolService = {
   async getMessagesForThread(participantA: string, participantB: string) {
     const threadId = [participantA, participantB].sort().join(':');
     const allChats = await db.getAll('chats');
-    return allChats.filter(msg => {
+    const messages = allChats.filter(msg => {
       if (msg.type === 'Broadcast') return false;
       if (!msg.senderId || !msg.receiverId) return false;
       const currentThreadId = [msg.senderId, msg.receiverId].sort().join(':');
       return currentThreadId === threadId;
     }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    return await Promise.all(messages.map(async (msg) => {
+      try {
+        const decryptedText = await cryptoService.decrypt(msg.text, threadId);
+        return { ...msg, text: decryptedText };
+      } catch (e) {
+        return msg;
+      }
+    }));
   },
 
   async getAllThreads() {

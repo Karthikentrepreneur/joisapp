@@ -223,6 +223,20 @@ class PersistenceService {
     return channel;
   }
 
+  private threadChannels: Map<string, RealtimeChannel> = new Map();
+
+  getThreadChannel(threadId: string): RealtimeChannel {
+    if (this.threadChannels.has(threadId)) {
+      return this.threadChannels.get(threadId)!;
+    }
+    const channel = supabase.channel(`thread:${threadId}`, {
+      config: { broadcast: { self: false } }
+    });
+    channel.subscribe();
+    this.threadChannels.set(threadId, channel);
+    return channel;
+  }
+
   isConnected(): boolean {
     return !!supabase;
   }
