@@ -150,5 +150,38 @@ export const schoolService = {
   
   async getAllNotices() {
     return await db.getAll('notices');
+  },
+
+  // --- MESSAGING HELPERS ---
+  async getMessagesForThread(participantA: string, participantB: string) {
+    const threadId = [participantA, participantB].sort().join(':');
+    const allChats = await db.getAll('chats');
+    return allChats.filter(msg => {
+      if (msg.type === 'Broadcast') return false;
+      if (!msg.senderId || !msg.receiverId) return false;
+      const currentThreadId = [msg.senderId, msg.receiverId].sort().join(':');
+      return currentThreadId === threadId;
+    }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  },
+
+  async getAllThreads() {
+    const allChats = await db.getAll('chats');
+    const threads: Record<string, ChatMessage[]> = {};
+    
+    allChats.forEach(msg => {
+      if (msg.type === 'Broadcast') return;
+      if (!msg.senderId || !msg.receiverId) return;
+      
+      const threadId = [msg.senderId, msg.receiverId].sort().join(':');
+      if (!threads[threadId]) threads[threadId] = [];
+      threads[threadId].push(msg);
+    });
+    
+    return Object.entries(threads).map(([threadId, messages]) => ({
+      threadId,
+      participants: threadId.split(':'),
+      lastMessage: messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0],
+      messageCount: messages.length
+    }));
   }
 };
