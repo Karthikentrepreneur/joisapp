@@ -187,6 +187,17 @@ export interface Notice {
   attachments?: Attachment[];
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  createdBy: string;
+  role: UserRole;
+  classId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ChatMessage {
   id: string;
   senderId?: string;

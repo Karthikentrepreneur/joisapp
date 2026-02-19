@@ -1,7 +1,7 @@
 
 import { db } from './persistence';
 import { cryptoService } from './cryptoService';
-import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType } from '../types';
+import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType, Announcement } from '../types';
 
 /**
  * schoolService contains all high-level business logic.
@@ -150,6 +150,41 @@ export const schoolService = {
   
   async getAllNotices() {
     return await db.getAll('notices');
+  },
+
+  // --- ANNOUNCEMENTS (NEW) ---
+  async createAnnouncement(announcement: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>) {
+    const newAnnouncement: Announcement = {
+      ...announcement,
+      id: `ANC-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await db.create('announcements', newAnnouncement);
+    return newAnnouncement;
+  },
+
+  async getAnnouncements(userRole: UserRole, classId?: string) {
+    const all = await db.getAll('announcements');
+    
+    if (userRole === UserRole.FOUNDER || userRole === UserRole.ADMIN) {
+      return all;
+    }
+    
+    return all.filter(a => {
+      // Global announcements
+      if (!a.classId) return true;
+      // Class specific
+      return a.classId === classId;
+    });
+  },
+
+  async deleteAnnouncement(id: string) {
+    await db.delete('announcements', id);
+  },
+
+  async updateAnnouncement(id: string, updates: Partial<Announcement>) {
+    await db.update('announcements', id, { ...updates, updatedAt: new Date().toISOString() });
   },
 
   // --- MESSAGING HELPERS ---

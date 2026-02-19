@@ -1,6 +1,6 @@
 
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate, AttendanceRecord, AttendanceLog } from '../types';
+import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate, AttendanceRecord, AttendanceLog, Announcement } from '../types';
 
 /**
  * PersistenceService handles all database interactions via Supabase.
@@ -23,6 +23,7 @@ interface DatabaseSchema {
   certificates: Certificate[];
   attendanceRecords: AttendanceRecord[];
   attendanceLogs: AttendanceLog[];
+  announcements: Announcement[];
 }
 
 // Helper to convert camelCase string (collection) to snake_case string (table)
@@ -79,14 +80,14 @@ class PersistenceService {
       const data = localStorage.getItem(DB_KEY);
       if (!data) return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [] 
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: []
       };
       return JSON.parse(data);
     } catch (e) {
       console.warn("Could not read from local storage", e);
       return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [] 
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: []
       };
     }
   }
