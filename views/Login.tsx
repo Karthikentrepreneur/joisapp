@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { db } from '../services/persistence';
-import { Shield, Lock, Phone, Loader2, Info, Eye, EyeOff } from 'lucide-react';
+import { Shield, Lock, Phone, Loader2, Info } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: any, role: UserRole) => void;
@@ -13,7 +13,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +80,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Junior Odyssey</h1>
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-2">Portal Access</p>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-2">International School</p>
             </div>
           </div>
 
@@ -106,20 +105,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
-                  type={showPwd ? "text" : "password"} 
+                  type="password" 
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                 />
-                <button 
-                  type="button"
-                  onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
               </div>
             </div>
 
@@ -146,7 +138,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
         
-        <p className="text-center mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">© 2025 EduNexus - powered by Gemini</p>
+        <p className="text-center mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">© 2026 JOIS - powered by Trends and Tactics</p>
       </div>
     </div>
   );
