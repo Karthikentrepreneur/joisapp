@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole, ChatMessage } from '../types';
-import { Search } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 
 interface ChatThread {
   threadId: string;
@@ -15,6 +15,7 @@ interface ChatSidebarProps {
   selectedThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   userMap: Record<string, { name: string; role: string; image?: string }>;
+  onNewChat: () => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
@@ -22,11 +23,19 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   threads, 
   selectedThreadId, 
   onSelectThread,
-  userMap
+  userMap,
+  onNewChat
 }) => {
   return (
     <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full">
       <div className="p-4 border-b border-gray-100">
+        <button 
+          onClick={onNewChat}
+          className="w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors shadow-sm shadow-blue-200"
+        >
+          <Plus className="w-4 h-4" /> New Chat
+        </button>
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 

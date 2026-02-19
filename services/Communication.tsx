@@ -3,6 +3,7 @@ import { schoolService } from '../services/schoolService';
 import { CreateAnnouncementModal } from '../services/CreateAnnouncementModal';
 import { ChatWindow } from '../services/ChatWindow';
 import { ChatSidebar } from '../components/ChatSidebar';
+import { NewChatModal } from '../components/NewChatModal';
 import { UserRole, Announcement } from '../types';
 import { Megaphone, MessageSquare, Plus } from 'lucide-react';
 
@@ -16,9 +17,10 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   const [activeTab, setActiveTab] = useState<'announcements' | 'chats'>('announcements');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [threads, setThreads] = useState<any[]>([]);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [activeRecipient, setActiveRecipient] = useState<{ id: string; name: string; role: string; image?: string } | null>(null);
   const [userMap, setUserMap] = useState<Record<string, { name: string; role: string; image?: string }>>({});
   const [isCreateModalOpen, setOpen] = useState(false);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -74,14 +76,18 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     }
   };
 
-  const getSelectedRecipient = () => {
-    if (!selectedThreadId) return null;
+  const handleThreadSelect = (threadId: string) => {
     const thread = threads.find(t => t.threadId === selectedThreadId);
-    if (!thread) return null;
-    const otherId = thread.participants.find((p: string) => p !== currentUser.id);
-    // Fallback if user not found in map
-    return { id: otherId, ...(userMap[otherId] || { name: 'Unknown', role: 'User' }) };
+    if (thread) {
+      const otherId = thread.participants.find((p: string) => p !== currentUser.id);
+      if (otherId) {
+        setActiveRecipient({ id: otherId, ...(userMap[otherId] || { name: 'Unknown', role: 'User' }) });
+      }
+    }
   };
+
+  // Calculate selected thread ID based on active recipient to highlight in sidebar
+  const selectedThreadId = activeRecipient ? [currentUser.id, activeRecipient.id].sort().join(':') : null;
 
   return (
     <div className="h-full flex flex-col bg-slate-50">
@@ -180,15 +186,16 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
               currentUser={{ id: currentUser.id, name: currentUser.name, role }}
               threads={threads}
               selectedThreadId={selectedThreadId}
-              onSelectThread={setSelectedThreadId}
+              onSelectThread={handleThreadSelect}
               userMap={userMap}
+              onNewChat={() => setIsNewChatOpen(true)}
             />
             <div className="flex-1 bg-gray-50/50">
-              {selectedThreadId ? (
+              {activeRecipient ? (
                 <ChatWindow 
                   currentUser={{ id: currentUser.id, name: currentUser.name, role }}
-                  recipient={getSelectedRecipient()}
-                  onClose={() => setSelectedThreadId(null)}
+                  recipient={activeRecipient}
+                  onClose={() => setActiveRecipient(null)}
                 />
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -207,6 +214,16 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         onSubmit={handlePostNotice}
         userRole={role}
         userClassId={currentUser.classAssigned || currentUser.childClassId}
+      />
+
+      <NewChatModal 
+        isOpen={isNewChatOpen}
+        onClose={() => setIsNewChatOpen(false)}
+        onSelectUser={(user) => {
+          setActiveRecipient(user);
+          setIsNewChatOpen(false);
+        }}
+        contacts={Object.entries(userMap).map(([id, u]) => ({ id, ...u })).filter(u => u.id !== currentUser.id)}
       />
     </div>
   );
