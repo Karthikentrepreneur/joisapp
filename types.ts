@@ -169,6 +169,13 @@ export interface LeaveRequest {
   requestDate: string;
 }
 
+export interface Attachment {
+  name: string;
+  url: string;
+  type: 'image' | 'document';
+  size?: string;
+}
+
 export interface Notice {
   id: string;
   title: string;
@@ -177,6 +184,7 @@ export interface Notice {
   targetGroup: 'All' | ProgramType;
   sender: string;
   date: string;
+  attachments?: Attachment[];
 }
 
 export interface ChatMessage {
@@ -190,4 +198,17 @@ export interface ChatMessage {
   isRead?: boolean;
   type?: 'Private' | 'Broadcast';
   role?: 'user' | 'model';
+  attachments?: Attachment[];
+}
+
+export interface ChatConversation {
+  id: string;
+  participants: {
+    id: string;
+    name: string;
+    role: UserRole;
+    image?: string;
+  }[];
+  lastMessage?: ChatMessage;
+  unreadCount: number;
 }
