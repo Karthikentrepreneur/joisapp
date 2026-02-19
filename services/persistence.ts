@@ -147,6 +147,7 @@ class PersistenceService {
   async create<K extends keyof DatabaseSchema>(collection: K, item: any): Promise<void> {
     const table = toSnakeTable(collection);
     
+    // Optimistically update local
     const dbLocal = this.getLocalDB();
     (dbLocal[collection] as any[]).push(item);
     this.saveLocalDB(dbLocal);
@@ -157,6 +158,12 @@ class PersistenceService {
       if (error) throw error;
     } catch (error: any) {
       console.error(`Supabase create error [${table}]:`, error.message || JSON.stringify(error));
+      
+      // Check if it's a schema cache issue
+      if (error.message && error.message.includes("Could not find the 'breakdown' column")) {
+         console.warn("HINT: If you just updated the SQL schema, go to Supabase Dashboard -> API Settings -> PostgREST -> Reload Schema Cache.");
+      }
+      
       throw new Error(`Cloud Sync Failed: ${error.message || 'Unknown database error'}`);
     }
   }

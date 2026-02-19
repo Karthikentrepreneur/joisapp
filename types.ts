@@ -61,7 +61,7 @@ export interface Student {
   parentPhone: string;
   parentEmail: string;
   address?: string;
-  password?: string; // Authentication field
+  password?: string;
 }
 
 export interface Staff {
@@ -93,38 +93,16 @@ export interface Staff {
     deductions: number;
     net: number;
   };
-  password?: string; // Authentication field
+  password?: string;
 }
 
-export interface FeeStructure {
-  id: string;
-  program: ProgramType;
-  amount: number;
-  description: string;
-}
-
-export interface Notice {
-  id: string;
-  title: string;
-  date: string;
-  priority: 'High' | 'Medium' | 'Low';
-  content: string;
-  sender: string;
-  targetGroup: 'All' | ProgramType;
-  attachmentUrl?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  senderId?: string;
-  receiverId?: string;
-  senderName?: string;
-  senderRole?: UserRole;
-  text: string;
-  timestamp: string;
-  isRead?: boolean;
-  type?: 'Private' | 'Everyone' | 'Broadcast';
-  role?: string;
+export interface FeeBreakdown {
+  application: number;
+  registration: number;
+  material: number;
+  term1: number;
+  term2: number;
+  term3: number;
 }
 
 export interface Invoice {
@@ -132,9 +110,13 @@ export interface Invoice {
   studentId: string;
   studentName: string;
   amount: number;
+  breakdown?: FeeBreakdown;
   dueDate: string;
   status: 'Paid' | 'Pending' | 'Overdue';
-  type: 'School Fee' | 'Bus' | 'Books' | 'Activity';
+  // Updated type to string to support dynamic bundle and component names
+  type: string;
+  paymentMethod?: 'Cash' | 'Online' | 'Cheque';
+  paidAt?: string;
 }
 
 export interface AttendanceRecord {
@@ -185,4 +167,27 @@ export interface LeaveRequest {
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   requestDate: string;
+}
+
+export interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'High' | 'Medium' | 'Low';
+  targetGroup: 'All' | ProgramType;
+  sender: string;
+  date: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId?: string;
+  receiverId?: string;
+  senderName?: string;
+  senderRole?: UserRole;
+  text: string;
+  timestamp: string;
+  isRead?: boolean;
+  type?: 'Private' | 'Broadcast';
+  role?: 'user' | 'model';
 }
