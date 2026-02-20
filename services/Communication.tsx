@@ -36,7 +36,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     setUnreadCount(totalUnread);
 
     if (activeTab === 'announcements') {
-      const data = await schoolService.getAnnouncements(role, currentUser.classAssigned || currentUser.childClassId, currentUser.id);
+      const userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id;
+      const data = await schoolService.getAnnouncements(role, userClassId, currentUser.id);
       setAnnouncements(data.sort((a, b) => {
         // Sort by pinned status first (pinned items come first)
         if (a.isPinned && !b.isPinned) return -1;
@@ -371,7 +372,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         }}
         onSubmit={handlePostNotice}
         userRole={role}
-        userClassId={currentUser.classAssigned || currentUser.childClassId}
+        userClassId={currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id}
         initialData={editingAnnouncement}
       />
 

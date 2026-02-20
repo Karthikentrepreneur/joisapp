@@ -186,7 +186,7 @@ export const schoolService = {
     const mapped = all.map((a: any) => ({
       ...a,
       // Handle both camelCase (legacy/local) and snake_case (DB)
-      classId: a.class_id || a.classId,
+      classId: a.class_id !== undefined ? a.class_id : a.classId,
       createdBy: a.created_by || a.createdBy,
       readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
       likes: Array.isArray(a.likes) ? a.likes : []
