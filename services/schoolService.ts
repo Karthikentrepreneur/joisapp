@@ -170,7 +170,7 @@ export const schoolService = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       // Map to snake_case for DB compatibility
-      class_id: announcement.classId === 'All' ? null : announcement.classId,
+      class_id: (announcement.classId === 'All' || !announcement.classId) ? null : announcement.classId,
       created_by: announcement.createdBy,
       read_by: [],
       likes: []
@@ -202,7 +202,7 @@ export const schoolService = {
       // Global announcements
       if (!a.classId || a.classId === 'All') return true;
       // Class specific
-      return a.classId === classId;
+      return String(a.classId) === String(classId);
     });
   },
 
