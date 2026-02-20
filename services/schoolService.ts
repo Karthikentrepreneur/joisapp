@@ -156,6 +156,12 @@ export const schoolService = {
     return await db.getAll(collection);
   },
 
+  // --- FILE UPLOAD ---
+  async uploadAttachment(file: File) {
+    const path = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+    return await db.uploadFile('attachments', path, file);
+  },
+
   // --- ANNOUNCEMENTS (NEW) ---
   async createAnnouncement(announcement: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>) {
     const newAnnouncement: Announcement = {

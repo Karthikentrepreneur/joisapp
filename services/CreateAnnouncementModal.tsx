@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Loader2, Paperclip, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { UserRole, ProgramType, Attachment } from '../types';
+import { schoolService } from './schoolService';
 
 interface CreateAnnouncementModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
   const [classId, setClassId] = useState<string>('All');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdminOrFounder = userRole === UserRole.ADMIN || userRole === UserRole.FOUNDER;
@@ -37,16 +39,24 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const newAttachment: Attachment = {
-        name: file.name,
-        url: URL.createObjectURL(file), // In a real app, upload to Supabase Storage here
-        type: file.type.startsWith('image/') ? 'image' : 'document',
-        size: `${(file.size / 1024).toFixed(1)} KB`
-      };
-      setAttachments(prev => [...prev, newAttachment]);
+      setIsUploading(true);
+      try {
+        const url = await schoolService.uploadAttachment(file);
+        const newAttachment: Attachment = {
+          name: file.name,
+          url: url,
+          type: file.type.startsWith('image/') ? 'image' : 'document',
+          size: `${(file.size / 1024).toFixed(1)} KB`
+        };
+        setAttachments(prev => [...prev, newAttachment]);
+      } catch (error) {
+        console.error("Upload failed", error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -149,10 +159,12 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Attachments</label>
               <button 
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !isUploading && fileInputRef.current?.click()}
+                disabled={isUploading}
                 className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
               >
-                <Paperclip className="w-3.5 h-3.5" /> Add File
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />} 
+                {isUploading ? 'Uploading...' : 'Add File'}
               </button>
               <input 
                 type="file" 
@@ -193,10 +205,10 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
           <div className="pt-4">
             <button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Post Announcement</>}
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> {isUploading ? 'Wait for Upload...' : 'Post Announcement'}</>}
             </button>
           </div>
         </form>

@@ -127,7 +127,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           </button>
         </div>
 
-        {activeTab === 'announcements' && (role === UserRole.ADMIN || role === UserRole.FOUNDER) && (
+        {activeTab === 'announcements' && (role === UserRole.ADMIN || role === UserRole.TEACHER) && (
           <button 
             onClick={() => setOpen(true)}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
