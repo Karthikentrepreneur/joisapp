@@ -116,7 +116,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           title: data.title,
           message: data.message,
           createdBy: currentUser.id,
-          role: currentUser.role,
+          role: role,
           classId: data.classId,
           attachments: data.attachments,
           isPinned: data.isPinned
