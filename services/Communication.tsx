@@ -209,15 +209,15 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       <div className="flex-1 overflow-hidden">
         {activeTab === 'announcements' ? (
           <div className="h-full overflow-y-auto p-6">
-            <div className="max-w-4xl mx-auto space-y-4">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {announcements.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
+                <div className="col-span-full text-center py-12 text-gray-400">
                   <Megaphone className="w-12 h-12 mx-auto mb-3 opacity-20" />
                   <p>No announcements yet</p>
                 </div>
               ) : (
                 announcements.map((item) => (
-                  <div key={item.id} className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${item.isPinned ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'}`}>
+                  <div key={item.id} className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full ${item.isPinned ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                       </div>
                     )}
 
-                    <div className="mt-3 flex items-center gap-4">
+                    <div className="mt-auto pt-4 flex items-center gap-4">
                       <button 
                         onClick={() => handleLikeAnnouncement(item.id)}
                         className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
