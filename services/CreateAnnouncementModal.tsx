@@ -80,7 +80,7 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
     setIsSubmitting(true);
     try {
       // Ensure correct classId for teachers even if state didn't update
-      const effectiveClassId = (!isAdminOrFounder && userClassId) ? userClassId : classId;
+      const effectiveClassId = (!isAdminOrFounder) ? (userClassId || 'All') : classId;
 
       await onSubmit({
         title,

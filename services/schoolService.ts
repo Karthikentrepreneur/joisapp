@@ -197,6 +197,36 @@ export const schoolService = {
     await db.update('announcements', id, { ...updates, updatedAt: new Date().toISOString() });
   },
 
+  async markAnnouncementAsRead(id: string, userId: string) {
+    const all = await db.getAll('announcements');
+    const announcement = all.find(a => a.id === id);
+    
+    if (announcement) {
+      const readBy = announcement.readBy || [];
+      if (!readBy.includes(userId)) {
+        await db.update('announcements', id, { readBy: [...readBy, userId] });
+      }
+    }
+  },
+
+  async toggleAnnouncementLike(id: string, userId: string) {
+    const all = await db.getAll('announcements');
+    const announcement = all.find(a => a.id === id);
+    
+    if (announcement) {
+      const likes = announcement.likes || [];
+      let newLikes;
+      if (likes.includes(userId)) {
+        newLikes = likes.filter(uid => uid !== userId);
+      } else {
+        newLikes = [...likes, userId];
+      }
+      await db.update('announcements', id, { likes: newLikes });
+      return newLikes;
+    }
+    return [];
+  },
+
   // --- MESSAGING HELPERS ---
   async getMessagesForThread(participantA: string, participantB: string) {
     const threadId = [participantA, participantB].sort().join(':');

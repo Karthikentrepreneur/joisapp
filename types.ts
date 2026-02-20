@@ -198,6 +198,8 @@ export interface Announcement {
   updatedAt: string;
   attachments?: Attachment[];
   isPinned?: boolean;
+  readBy?: string[];
+  likes?: string[];
 }
 
 export interface ChatMessage {

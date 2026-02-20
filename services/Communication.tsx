@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { schoolService } from '../services/schoolService';
-import { CreateAnnouncementModal } from '../services/CreateAnnouncementModal';
-import { ChatWindow } from '../services/ChatWindow';
-import { ChatSidebar } from '../components/ChatSidebar';
-import { NewChatModal } from '../components/NewChatModal';
+import { CreateAnnouncementModal } from './CreateAnnouncementModal';
+import { ChatWindow } from './ChatWindow';
+import { ChatSidebar } from './ChatSidebar';
+import { NewChatModal } from './NewChatModal';
 import { UserRole, Announcement } from '../types';
-import { Megaphone, MessageSquare, Plus, Trash2, Edit, Pin } from 'lucide-react';
+import { Megaphone, MessageSquare, Plus, Trash2, Edit, Pin, Eye, Heart } from 'lucide-react';
 
 interface CommunicationProps {
   role: UserRole;
@@ -66,6 +66,37 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       map[currentUser.id] = { name: currentUser.name, role: role };
       
       setUserMap(map);
+    }
+  };
+
+  // Mark announcements as read when viewed
+  useEffect(() => {
+    if (activeTab === 'announcements' && announcements.length > 0) {
+      const markAsRead = async () => {
+        const unread = announcements.filter(a => !a.readBy?.includes(currentUser.id));
+        if (unread.length > 0) {
+          await Promise.all(unread.map(a => schoolService.markAnnouncementAsRead(a.id, currentUser.id)));
+          // Update local state to reflect read status immediately
+          setAnnouncements(prev => prev.map(a => {
+             if (unread.find(u => u.id === a.id)) {
+                 return { ...a, readBy: [...(a.readBy || []), currentUser.id] };
+             }
+             return a;
+          }));
+        }
+      };
+      markAsRead();
+    }
+  }, [announcements, activeTab, currentUser.id]);
+
+  const handleLikeAnnouncement = async (id: string) => {
+    try {
+      const updatedLikes = await schoolService.toggleAnnouncementLike(id, currentUser.id);
+      setAnnouncements(prev => prev.map(a => 
+        a.id === id ? { ...a, likes: updatedLikes } : a
+      ));
+    } catch (error) {
+      console.error("Failed to like announcement:", error);
     }
   };
 
@@ -201,6 +232,11 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                           <span className="text-xs text-gray-500">
                             {new Date(item.createdAt).toLocaleDateString()}
                           </span>
+                          <span className="text-xs text-gray-400">•</span>
+                          <div className="flex items-center gap-1 text-xs text-gray-500" title="Read by">
+                            <Eye className="w-3 h-3" />
+                            <span>{item.readBy?.length || 0}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -246,6 +282,18 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                         ))}
                       </div>
                     )}
+
+                    <div className="mt-3 flex items-center gap-4">
+                      <button 
+                        onClick={() => handleLikeAnnouncement(item.id)}
+                        className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                          item.likes?.includes(currentUser.id) ? 'text-rose-500' : 'text-gray-400 hover:text-rose-500'
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 ${item.likes?.includes(currentUser.id) ? 'fill-current' : ''}`} />
+                        <span>{item.likes?.length || 0}</span>
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

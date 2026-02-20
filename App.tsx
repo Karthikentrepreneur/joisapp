@@ -10,7 +10,7 @@ import { AIAssistant } from './views/AIAssistant';
 import { Students } from './views/Students';
 import { Fees } from './views/Fees';
 import { Attendance } from './views/Attendance';
-import { Communication } from './views/Communication';
+import { Communication } from './services/Communication';
 import { Staff } from './views/Staff';
 import { Settings } from './views/Settings';
 import { Leave } from './views/Leave';
