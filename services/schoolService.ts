@@ -176,7 +176,7 @@ export const schoolService = {
     return { ...newAnnouncement, readBy: [] };
   },
 
-  async getAnnouncements(userRole: UserRole, classId?: string) {
+  async getAnnouncements(userRole: UserRole, classId?: string, userId?: string) {
     const all = await db.getAll('announcements');
     
     // Map DB columns (snake_case) to frontend properties (camelCase)
@@ -191,6 +191,8 @@ export const schoolService = {
     }
     
     return mapped.filter((a: any) => {
+      // Always show if created by the current user
+      if (userId && a.createdBy === userId) return true;
       // Global announcements
       if (!a.classId) return true;
       // Class specific

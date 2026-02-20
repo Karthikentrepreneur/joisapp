@@ -36,7 +36,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     setUnreadCount(totalUnread);
 
     if (activeTab === 'announcements') {
-      const data = await schoolService.getAnnouncements(role, currentUser.classAssigned || currentUser.childClassId);
+      const data = await schoolService.getAnnouncements(role, currentUser.classAssigned || currentUser.childClassId, currentUser.id);
       setAnnouncements(data.sort((a, b) => {
         // Sort by pinned status first (pinned items come first)
         if (a.isPinned && !b.isPinned) return -1;
@@ -151,11 +151,11 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* Header Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0 sticky top-0 z-10 shadow-sm md:shadow-none">
+        <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl w-full md:w-auto">
           <button
             onClick={() => setActiveTab('announcements')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 md:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'announcements' 
                 ? 'bg-white text-blue-600 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700'
@@ -166,7 +166,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           </button>
           <button
             onClick={() => setActiveTab('chats')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 md:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'chats' 
                 ? 'bg-white text-blue-600 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700'
@@ -188,7 +188,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
               setEditingAnnouncement(null);
               setOpen(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             New Announcement
@@ -199,8 +199,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'announcements' ? (
-          <div className="h-full overflow-y-auto p-6">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20 md:pb-0">
               {announcements.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-gray-400">
                   <Megaphone className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -211,15 +211,19 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                   <div 
                     key={item.id} 
                     onClick={() => handleMarkAsRead(item)}
-                    className={`border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full cursor-pointer ${(item.isPinned || !item.readBy?.includes(currentUser.id)) ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}
+                    className={`group relative border rounded-2xl p-5 md:p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full cursor-pointer ${
+                      (item.isPinned || !item.readBy?.includes(currentUser.id)) 
+                        ? 'bg-gradient-to-br from-yellow-50 to-orange-50/30 border-yellow-200' 
+                        : 'bg-white border-gray-100 hover:border-blue-100'
+                    }`}
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 min-w-0 pr-3">
                         <div className="flex items-center gap-2">
                           {item.isPinned && <Pin className="w-4 h-4 text-blue-600 fill-blue-600 rotate-45" />}
-                          <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
+                          <h3 className="text-lg font-bold text-gray-900 leading-tight">{item.title}</h3>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                             {item.role}
                           </span>
@@ -239,7 +243,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-end gap-2 shrink-0">
                         {item.classId ? (
                           <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
                             {item.classId}
@@ -249,30 +253,32 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                             All Classes
                           </span>
                         )}
-                        {item.createdBy === currentUser.id && (
-                          <>
+                        {(item.createdBy === currentUser.id || role === UserRole.ADMIN || role === UserRole.FOUNDER) && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {item.createdBy === currentUser.id && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingAnnouncement(item);
                                 setOpen(true);
                               }}
-                              className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-full hover:bg-blue-50"
+                              className="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50"
                               title="Edit Announcement"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
+                            )}
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteAnnouncement(item.id);
                               }}
-                              className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-full hover:bg-red-50"
                               title="Delete Announcement"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -294,19 +300,29 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                       </div>
                     )}
 
-                    <div className="mt-auto pt-4 flex items-center gap-4">
+                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-50/50 mt-4">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           handleLikeAnnouncement(item.id);
                         }}
-                        className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-                          item.likes?.includes(currentUser.id) ? 'text-rose-500' : 'text-gray-400 hover:text-rose-500'
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
+                          item.likes?.includes(currentUser.id) 
+                            ? 'bg-rose-50 text-rose-500 border border-rose-100' 
+                            : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100'
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${item.likes?.includes(currentUser.id) ? 'fill-current' : ''}`} />
-                        <span>{item.likes?.length || 0}</span>
+                        <Heart className={`w-3.5 h-3.5 ${item.likes?.includes(currentUser.id) ? 'fill-current' : ''}`} />
+                        <span>{item.likes?.includes(currentUser.id) ? 'Liked' : 'Like'}</span>
                       </button>
+                      
+                      {item.likes && item.likes.length > 0 && (
+                        <div className="flex -space-x-2">
+                           <div className="w-6 h-6 rounded-full bg-rose-100 border-2 border-white flex items-center justify-center text-[10px] text-rose-600 font-bold">
+                             {item.likes.length}
+                           </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
