@@ -190,8 +190,8 @@ export const schoolService = {
     const mapped = all.map((a: any) => ({
       ...a,
       // Handle both camelCase (legacy/local) and snake_case (DB)
-      // Priority: DB column > JSON property > null. Explicit check for undefined to allow null (Global) from DB.
-      classId: (a.class_id !== undefined) ? a.class_id : (a.classId || null),
+      // Fix: Use || to fallback to classId if class_id is null/undefined to handle legacy data correctly
+      classId: a.class_id || a.classId || null,
       createdBy: a.created_by || a.createdBy,
       readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
       likes: Array.isArray(a.likes) ? a.likes : []

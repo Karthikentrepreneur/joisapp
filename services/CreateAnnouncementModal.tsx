@@ -47,7 +47,7 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
         setMessage('');
         setAttachments([]);
         setIsPinned(false);
-        setClassId((!isAdminOrFounder && userClassId) ? userClassId : 'All');
+        setClassId((!isAdminOrFounder) ? (userClassId || '') : 'All');
       }
     }
   }, [isOpen, initialData, isAdminOrFounder, userClassId]);
@@ -80,7 +80,13 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
     setIsSubmitting(true);
     try {
       // Ensure correct classId for teachers even if state didn't update
-      const effectiveClassId = (!isAdminOrFounder) ? (userClassId || 'All') : classId;
+      const effectiveClassId = (!isAdminOrFounder) ? (userClassId || '') : classId;
+
+      if (!isAdminOrFounder && !effectiveClassId) {
+        console.error("No class assigned to user, cannot post.");
+        setIsSubmitting(false);
+        return;
+      }
 
       await onSubmit({
         title,
