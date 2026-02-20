@@ -211,7 +211,13 @@ export const schoolService = {
   },
 
   async updateAnnouncement(id: string, updates: Partial<Announcement>) {
-    await db.update('announcements', id, { ...updates, updatedAt: new Date().toISOString() });
+    const dbUpdates: any = { ...updates, updatedAt: new Date().toISOString() };
+    // Map classId to class_id for DB consistency
+    if ('classId' in updates) {
+      dbUpdates.class_id = updates.classId === 'All' ? null : updates.classId;
+      delete dbUpdates.classId;
+    }
+    await db.update('announcements', id, dbUpdates);
   },
 
   async markAnnouncementAsRead(id: string, userId: string) {
