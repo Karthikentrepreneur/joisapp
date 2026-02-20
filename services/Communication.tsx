@@ -36,7 +36,17 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     setUnreadCount(totalUnread);
 
     if (activeTab === 'announcements') {
-      const userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class;
+      let userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class;
+      
+      // Handle Parent with multiple children or nested children object
+      if (!userClassId && role === UserRole.PARENT && currentUser.children && Array.isArray(currentUser.children)) {
+         // Collect all class IDs from children
+         const childClasses = currentUser.children.map((c: any) => c.classId || c.class_id || c.program).filter(Boolean);
+         if (childClasses.length > 0) {
+           userClassId = childClasses;
+         }
+      }
+
       const data = await schoolService.getAnnouncements(role, userClassId, currentUser.id);
       setAnnouncements(data.sort((a, b) => {
         // Sort by pinned status first (pinned items come first)

@@ -183,15 +183,15 @@ export const schoolService = {
     return { ...newAnnouncement, classId: announcement.classId, readBy: [] };
   },
 
-  async getAnnouncements(userRole: UserRole, classId?: string, userId?: string) {
+  async getAnnouncements(userRole: UserRole, classId?: string | string[], userId?: string) {
     const all = await db.getAll('announcements');
     
     // Map DB columns (snake_case) to frontend properties (camelCase)
     const mapped = all.map((a: any) => ({
       ...a,
       // Handle both camelCase (legacy/local) and snake_case (DB)
-      // Fix: Use || to fallback to classId if class_id is null/undefined to handle legacy data correctly
-      classId: a.class_id || a.classId || null,
+      // Priority: DB column > JSON property > null. Explicit check for undefined to allow null (Global) from DB.
+      classId: (a.class_id !== undefined) ? a.class_id : (a.classId || null),
       createdBy: a.created_by || a.createdBy,
       readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
       likes: Array.isArray(a.likes) ? a.likes : []
@@ -206,13 +206,19 @@ export const schoolService = {
       if (userId && a.createdBy === userId) return true;
       
       // Global announcements
-      if (!a.classId || a.classId === 'All' || a.classId === 'null') return true;
+      if (!a.classId || a.classId === 'All' || String(a.classId) === 'null') return true;
       
       // If user has no class assigned, they shouldn't see class-specific announcements
-      if (!classId) return false;
+      if (!classId || (Array.isArray(classId) && classId.length === 0)) return false;
 
       // Class specific
-      return String(a.classId).trim() === String(classId).trim();
+      const announcementClass = String(a.classId).trim();
+      
+      if (Array.isArray(classId)) {
+        return classId.some(c => String(c).trim() === announcementClass);
+      }
+
+      return announcementClass === String(classId).trim();
     });
   },
 
