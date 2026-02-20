@@ -271,8 +271,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                               </button>
                             )}
                             
-                            {/* Delete: Admins/Founders can delete ALL. Teachers can delete THEIR OWN. */}
-                            {(role === UserRole.ADMIN || role === UserRole.FOUNDER || item.createdBy === currentUser.id) && (
+                            {/* Delete: Admins/Founders can delete ALL. Teachers can ONLY delete THEIR OWN. */}
+                            {((role === UserRole.ADMIN || role === UserRole.FOUNDER) || (role === UserRole.TEACHER && item.createdBy === currentUser.id)) && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
