@@ -253,31 +253,37 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                             All Classes
                           </span>
                         )}
-                        {(item.createdBy === currentUser.id || role === UserRole.ADMIN || role === UserRole.FOUNDER) && (
+                        {/* Action Buttons: Hidden for Parents completely */}
+                        {role !== UserRole.PARENT && (
                           <div className="flex items-center gap-1 mt-1">
+                            {/* Edit: Only the creator can edit */}
                             {item.createdBy === currentUser.id && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingAnnouncement(item);
-                                setOpen(true);
-                              }}
-                              className="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50"
-                              title="Edit Announcement"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingAnnouncement(item);
+                                  setOpen(true);
+                                }}
+                                className="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50"
+                                title="Edit Announcement"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
                             )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteAnnouncement(item.id);
-                              }}
-                              className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-full hover:bg-red-50"
-                              title="Delete Announcement"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            
+                            {/* Delete: Admins/Founders can delete ALL. Teachers can delete THEIR OWN. */}
+                            {(role === UserRole.ADMIN || role === UserRole.FOUNDER || item.createdBy === currentUser.id) && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAnnouncement(item.id);
+                                }}
+                                className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-full hover:bg-red-50"
+                                title="Delete Announcement"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
