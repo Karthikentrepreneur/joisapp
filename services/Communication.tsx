@@ -69,25 +69,16 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     }
   };
 
-  // Mark announcements as read when viewed
-  useEffect(() => {
-    if (activeTab === 'announcements' && announcements.length > 0) {
-      const markAsRead = async () => {
-        const unread = announcements.filter(a => !a.readBy?.includes(currentUser.id));
-        if (unread.length > 0) {
-          await Promise.all(unread.map(a => schoolService.markAnnouncementAsRead(a.id, currentUser.id)));
-          // Update local state to reflect read status immediately
-          setAnnouncements(prev => prev.map(a => {
-             if (unread.find(u => u.id === a.id)) {
-                 return { ...a, readBy: [...(a.readBy || []), currentUser.id] };
-             }
-             return a;
-          }));
-        }
-      };
-      markAsRead();
+  const handleMarkAsRead = async (announcement: Announcement) => {
+    if (!announcement.readBy?.includes(currentUser.id)) {
+      await schoolService.markAnnouncementAsRead(announcement.id, currentUser.id);
+      setAnnouncements(prev => prev.map(a => 
+        a.id === announcement.id 
+          ? { ...a, readBy: [...(a.readBy || []), currentUser.id] } 
+          : a
+      ));
     }
-  }, [announcements, activeTab, currentUser.id]);
+  };
 
   const handleLikeAnnouncement = async (id: string) => {
     try {
@@ -217,7 +208,11 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                 </div>
               ) : (
                 announcements.map((item) => (
-                  <div key={item.id} className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full ${item.isPinned ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'}`}>
+                  <div 
+                    key={item.id} 
+                    onClick={() => handleMarkAsRead(item)}
+                    className={`border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full cursor-pointer ${(item.isPinned || !item.readBy?.includes(currentUser.id)) ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -237,6 +232,11 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                             <Eye className="w-3 h-3" />
                             <span>{item.readBy?.length || 0}</span>
                           </div>
+                          <span className="text-xs text-gray-400">•</span>
+                          <div className="flex items-center gap-1 text-xs text-gray-500" title="Likes">
+                            <Heart className="w-3 h-3" />
+                            <span>{item.likes?.length || 0}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -252,7 +252,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                         {item.createdBy === currentUser.id && (
                           <>
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingAnnouncement(item);
                                 setOpen(true);
                               }}
@@ -262,7 +263,10 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handleDeleteAnnouncement(item.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteAnnouncement(item.id);
+                              }}
                               className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
                               title="Delete Announcement"
                             >
@@ -276,7 +280,14 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                     {item.attachments && item.attachments.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2 overflow-x-auto">
                         {item.attachments.map((att, idx) => (
-                          <a key={idx} href={att.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-100">
+                          <a 
+                            key={idx} 
+                            href={att.url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                          >
                             📎 {att.name}
                           </a>
                         ))}
@@ -285,7 +296,10 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
 
                     <div className="mt-auto pt-4 flex items-center gap-4">
                       <button 
-                        onClick={() => handleLikeAnnouncement(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikeAnnouncement(item.id);
+                        }}
                         className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
                           item.likes?.includes(currentUser.id) ? 'text-rose-500' : 'text-gray-400 hover:text-rose-500'
                         }`}
