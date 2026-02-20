@@ -182,8 +182,8 @@ export const schoolService = {
     // Map DB columns (snake_case) to frontend properties (camelCase)
     const mapped = all.map((a: any) => ({
       ...a,
-      readBy: a.read_by || a.readBy || [],
-      likes: a.likes || []
+      readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
+      likes: Array.isArray(a.likes) ? a.likes : []
     }));
 
     if (userRole === UserRole.FOUNDER || userRole === UserRole.ADMIN) {
@@ -211,7 +211,7 @@ export const schoolService = {
     const announcement = all.find(a => a.id === id);
     
     if (announcement) {
-      const readBy = announcement.read_by || announcement.readBy || [];
+      const readBy = Array.isArray(announcement.read_by) ? announcement.read_by : (Array.isArray(announcement.readBy) ? announcement.readBy : []);
       if (!readBy.includes(userId)) {
         await db.update('announcements', id, { read_by: [...readBy, userId] });
       }
@@ -223,7 +223,7 @@ export const schoolService = {
     const announcement = all.find(a => a.id === id);
     
     if (announcement) {
-      const likes = announcement.likes || [];
+      const likes = Array.isArray(announcement.likes) ? announcement.likes : [];
       let newLikes;
       if (likes.includes(userId)) {
         newLikes = likes.filter(uid => uid !== userId);
