@@ -36,7 +36,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     setUnreadCount(totalUnread);
 
     if (activeTab === 'announcements') {
-      const userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType;
+      const userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class;
       const data = await schoolService.getAnnouncements(role, userClassId, currentUser.id);
       setAnnouncements(data.sort((a, b) => {
         // Sort by pinned status first (pinned items come first)
@@ -372,7 +372,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         }}
         onSubmit={handlePostNotice}
         userRole={role}
-        userClassId={currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType}
+        userClassId={currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class}
         initialData={editingAnnouncement}
       />
 
