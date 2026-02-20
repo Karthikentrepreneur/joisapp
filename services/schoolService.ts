@@ -170,13 +170,17 @@ export const schoolService = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       // Map to snake_case for DB compatibility
-      class_id: (announcement.classId === 'All' || !announcement.classId) ? null : announcement.classId,
+      class_id: (announcement.classId === 'All' || !announcement.classId) ? null : String(announcement.classId).trim(),
       created_by: announcement.createdBy,
       read_by: [],
       likes: []
     };
+
+    // Remove camelCase classId to avoid persistence ambiguity
+    delete newAnnouncement.classId;
+
     await db.create('announcements', newAnnouncement);
-    return { ...newAnnouncement, readBy: [] };
+    return { ...newAnnouncement, classId: announcement.classId, readBy: [] };
   },
 
   async getAnnouncements(userRole: UserRole, classId?: string, userId?: string) {
@@ -186,7 +190,8 @@ export const schoolService = {
     const mapped = all.map((a: any) => ({
       ...a,
       // Handle both camelCase (legacy/local) and snake_case (DB)
-      classId: a.class_id !== undefined ? a.class_id : a.classId,
+      // If class_id is explicitly null, it's global. If undefined, check classId.
+      classId: a.class_id !== undefined ? a.class_id : (a.classId !== undefined ? a.classId : null),
       createdBy: a.created_by || a.createdBy,
       readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
       likes: Array.isArray(a.likes) ? a.likes : []
@@ -199,14 +204,15 @@ export const schoolService = {
     return mapped.filter((a: any) => {
       // Always show if created by the current user
       if (userId && a.createdBy === userId) return true;
+      
       // Global announcements
-      if (!a.classId || a.classId === 'All') return true;
+      if (!a.classId || a.classId === 'All' || a.classId === 'null') return true;
       
       // If user has no class assigned, they shouldn't see class-specific announcements
       if (!classId) return false;
 
       // Class specific
-      return String(a.classId) === String(classId);
+      return String(a.classId).trim() === String(classId).trim();
     });
   },
 
@@ -218,7 +224,8 @@ export const schoolService = {
     const dbUpdates: any = { ...updates, updatedAt: new Date().toISOString() };
     // Map classId to class_id for DB consistency
     if ('classId' in updates) {
-      dbUpdates.class_id = updates.classId === 'All' ? null : updates.classId;
+      const cid = updates.classId;
+      dbUpdates.class_id = (cid === 'All' || !cid) ? null : String(cid).trim();
       delete dbUpdates.classId;
     }
     await db.update('announcements', id, dbUpdates);
