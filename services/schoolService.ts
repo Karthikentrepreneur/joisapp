@@ -201,6 +201,10 @@ export const schoolService = {
       if (userId && a.createdBy === userId) return true;
       // Global announcements
       if (!a.classId || a.classId === 'All') return true;
+      
+      // If user has no class assigned, they shouldn't see class-specific announcements
+      if (!classId) return false;
+
       // Class specific
       return String(a.classId) === String(classId);
     });
