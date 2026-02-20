@@ -169,6 +169,9 @@ export const schoolService = {
       id: `ANC-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // Map to snake_case for DB compatibility
+      class_id: announcement.classId === 'All' ? null : announcement.classId,
+      created_by: announcement.createdBy,
       read_by: [],
       likes: []
     };
@@ -182,6 +185,9 @@ export const schoolService = {
     // Map DB columns (snake_case) to frontend properties (camelCase)
     const mapped = all.map((a: any) => ({
       ...a,
+      // Handle both camelCase (legacy/local) and snake_case (DB)
+      classId: a.class_id || a.classId,
+      createdBy: a.created_by || a.createdBy,
       readBy: Array.isArray(a.read_by) ? a.read_by : (Array.isArray(a.readBy) ? a.readBy : []),
       likes: Array.isArray(a.likes) ? a.likes : []
     }));
@@ -194,7 +200,7 @@ export const schoolService = {
       // Always show if created by the current user
       if (userId && a.createdBy === userId) return true;
       // Global announcements
-      if (!a.classId) return true;
+      if (!a.classId || a.classId === 'All') return true;
       // Class specific
       return a.classId === classId;
     });
