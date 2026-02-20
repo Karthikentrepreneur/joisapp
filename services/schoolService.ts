@@ -164,26 +164,33 @@ export const schoolService = {
 
   // --- ANNOUNCEMENTS (NEW) ---
   async createAnnouncement(announcement: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>) {
-    const newAnnouncement: Announcement = {
+    const newAnnouncement: any = {
       ...announcement,
       id: `ANC-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      readBy: [],
+      read_by: [],
       likes: []
     };
     await db.create('announcements', newAnnouncement);
-    return newAnnouncement;
+    return { ...newAnnouncement, readBy: [] };
   },
 
   async getAnnouncements(userRole: UserRole, classId?: string) {
     const all = await db.getAll('announcements');
     
+    // Map DB columns (snake_case) to frontend properties (camelCase)
+    const mapped = all.map((a: any) => ({
+      ...a,
+      readBy: a.read_by || a.readBy || [],
+      likes: a.likes || []
+    }));
+
     if (userRole === UserRole.FOUNDER || userRole === UserRole.ADMIN) {
-      return all;
+      return mapped;
     }
     
-    return all.filter(a => {
+    return mapped.filter((a: any) => {
       // Global announcements
       if (!a.classId) return true;
       // Class specific
@@ -204,9 +211,9 @@ export const schoolService = {
     const announcement = all.find(a => a.id === id);
     
     if (announcement) {
-      const readBy = announcement.readBy || [];
+      const readBy = announcement.read_by || announcement.readBy || [];
       if (!readBy.includes(userId)) {
-        await db.update('announcements', id, { readBy: [...readBy, userId] });
+        await db.update('announcements', id, { read_by: [...readBy, userId] });
       }
     }
   },
