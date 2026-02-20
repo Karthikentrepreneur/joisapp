@@ -168,7 +168,9 @@ export const schoolService = {
       ...announcement,
       id: `ANC-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      readBy: [],
+      likes: []
     };
     await db.create('announcements', newAnnouncement);
     return newAnnouncement;

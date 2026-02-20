@@ -230,12 +230,12 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                           <span className="text-xs text-gray-400">•</span>
                           <div className="flex items-center gap-1 text-xs text-gray-500" title="Read by">
                             <Eye className="w-3 h-3" />
-                            <span>{item.readBy?.length || 0}</span>
+                            <span>{(item.readBy && item.readBy.length) || 0}</span>
                           </div>
                           <span className="text-xs text-gray-400">•</span>
                           <div className="flex items-center gap-1 text-xs text-gray-500" title="Likes">
                             <Heart className="w-3 h-3" />
-                            <span>{item.likes?.length || 0}</span>
+                            <span>{(item.likes && item.likes.length) || 0}</span>
                           </div>
                         </div>
                       </div>
