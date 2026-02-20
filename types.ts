@@ -197,6 +197,7 @@ export interface Announcement {
   createdAt: string;
   updatedAt: string;
   attachments?: Attachment[];
+  isPinned?: boolean;
 }
 
 export interface ChatMessage {

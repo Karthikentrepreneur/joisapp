@@ -5,7 +5,7 @@ import { ChatWindow } from '../services/ChatWindow';
 import { ChatSidebar } from '../components/ChatSidebar';
 import { NewChatModal } from '../components/NewChatModal';
 import { UserRole, Announcement } from '../types';
-import { Megaphone, MessageSquare, Plus } from 'lucide-react';
+import { Megaphone, MessageSquare, Plus, Trash2, Edit, Pin } from 'lucide-react';
 
 interface CommunicationProps {
   role: UserRole;
@@ -16,6 +16,7 @@ interface CommunicationProps {
 export const Communication: React.FC<CommunicationProps> = ({ role, currentUser, showToast }) => {
   const [activeTab, setActiveTab] = useState<'announcements' | 'chats'>('announcements');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [threads, setThreads] = useState<any[]>([]);
   const [activeRecipient, setActiveRecipient] = useState<{ id: string; name: string; role: string; image?: string } | null>(null);
   const [userMap, setUserMap] = useState<Record<string, { name: string; role: string; image?: string }>>({});
@@ -36,7 +37,13 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
 
     if (activeTab === 'announcements') {
       const data = await schoolService.getAnnouncements(role, currentUser.classAssigned || currentUser.childClassId);
-      setAnnouncements(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setAnnouncements(data.sort((a, b) => {
+        // Sort by pinned status first (pinned items come first)
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        // Then sort by date (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }));
     } else {
       setThreads(myThreads);
       
@@ -62,21 +69,47 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     }
   };
 
-  const handlePostNotice = async (data: { title: string; message: string; classId: string | null; attachments: any[] }) => {
+  const handlePostNotice = async (data: { title: string; message: string; classId: string | null; attachments: any[]; isPinned: boolean }) => {
     try {
-      await schoolService.createAnnouncement({
-        title: data.title,
-        message: data.message,
-        createdBy: currentUser.id,
-        role: currentUser.role,
-        classId: data.classId,
-        attachments: data.attachments
-      });
-      showToast('Announcement posted successfully', 'success');
+      if (editingAnnouncement) {
+        await schoolService.updateAnnouncement(editingAnnouncement.id, {
+          title: data.title,
+          message: data.message,
+          classId: data.classId,
+          attachments: data.attachments,
+          isPinned: data.isPinned
+        });
+        showToast('Announcement updated successfully', 'success');
+      } else {
+        await schoolService.createAnnouncement({
+          title: data.title,
+          message: data.message,
+          createdBy: currentUser.id,
+          role: currentUser.role,
+          classId: data.classId,
+          attachments: data.attachments,
+          isPinned: data.isPinned
+        });
+        showToast('Announcement posted successfully', 'success');
+      }
       loadData();
+      setEditingAnnouncement(null);
     } catch (error) {
-      console.error("Failed to create announcement:", error);
-      showToast('Failed to post announcement', 'error');
+      console.error("Failed to save announcement:", error);
+      showToast('Failed to save announcement', 'error');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this announcement?')) {
+      try {
+        await schoolService.deleteAnnouncement(id);
+        showToast('Announcement deleted successfully', 'success');
+        loadData();
+      } catch (error) {
+        console.error("Failed to delete announcement:", error);
+        showToast('Failed to delete announcement', 'error');
+      }
     }
   };
 
@@ -129,7 +162,10 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
 
         {activeTab === 'announcements' && (role === UserRole.ADMIN || role === UserRole.TEACHER) && (
           <button 
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setEditingAnnouncement(null);
+              setOpen(true);
+            }}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
           >
             <Plus className="w-4 h-4" />
@@ -150,10 +186,13 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                 </div>
               ) : (
                 announcements.map((item) => (
-                  <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={item.id} className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${item.isPinned ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
+                        <div className="flex items-center gap-2">
+                          {item.isPinned && <Pin className="w-4 h-4 text-blue-600 fill-blue-600 rotate-45" />}
+                          <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                             {item.role}
@@ -164,15 +203,38 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                           </span>
                         </div>
                       </div>
-                      {item.classId ? (
-                        <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
-                          {item.classId}
-                        </span>
-                      ) : (
-                        <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
-                          All Classes
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {item.classId ? (
+                          <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
+                            {item.classId}
+                          </span>
+                        ) : (
+                          <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                            All Classes
+                          </span>
+                        )}
+                        {item.createdBy === currentUser.id && (
+                          <>
+                            <button 
+                              onClick={() => {
+                                setEditingAnnouncement(item);
+                                setOpen(true);
+                              }}
+                              className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-full hover:bg-blue-50"
+                              title="Edit Announcement"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteAnnouncement(item.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                              title="Delete Announcement"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <p className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">{item.message}</p>
                     {item.attachments && item.attachments.length > 0 && (
@@ -219,10 +281,14 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
 
       <CreateAnnouncementModal
         isOpen={isCreateModalOpen}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          setEditingAnnouncement(null);
+        }}
         onSubmit={handlePostNotice}
         userRole={role}
         userClassId={currentUser.classAssigned || currentUser.childClassId}
+        initialData={editingAnnouncement}
       />
 
       <NewChatModal 

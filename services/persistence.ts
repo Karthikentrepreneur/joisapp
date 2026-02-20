@@ -113,7 +113,7 @@ class PersistenceService {
   async uploadFile(bucket: string, path: string, file: Blob | File): Promise<string> {
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(path, file, { upsert: true, contentType: 'image/jpeg' });
+      .upload(path, file, { upsert: true, contentType: file.type || 'application/octet-stream' });
 
     if (error) throw error;
 
