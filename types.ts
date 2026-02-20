@@ -196,6 +196,7 @@ export interface Announcement {
   classId: string | null;
   createdAt: string;
   updatedAt: string;
+  attachments?: Attachment[];
 }
 
 export interface ChatMessage {
