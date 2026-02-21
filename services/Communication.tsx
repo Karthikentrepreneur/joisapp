@@ -24,6 +24,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [classTeacherMap, setClassTeacherMap] = useState<Record<string, string>>({});
+  const [contacts, setContacts] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -99,21 +100,54 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       const students = await schoolService.getAll('students');
       const staff = await schoolService.getAll('staff');
       const map: any = {};
-      
-      students.forEach((s: any) => {
-        map[s.id] = { name: s.name, role: 'Student', image: s.image };
-        // Also map parent ID to student name (or parent name if available)
-        if (s.parentId) map[s.parentId] = { name: `${s.name}'s Parent`, role: 'Parent' };
-      });
+      const allowedContacts: any[] = [];
+
+      const addContact = (id: string, info: any) => {
+        if (id !== currentUser.id && !allowedContacts.find(c => c.id === id)) {
+          allowedContacts.push({ id, ...info });
+        }
+      };
       
       staff.forEach((s: any) => {
         map[s.id] = { name: s.name, role: s.role, image: s.image };
+        
+        if (role === UserRole.ADMIN) {
+           if (s.role === 'Teacher' || s.role === 'Admin') addContact(s.id, map[s.id]);
+        } else if (role === UserRole.TEACHER) {
+           if (s.role === 'Admin') addContact(s.id, map[s.id]);
+        } else if (role === UserRole.PARENT) {
+           if (s.role === 'Admin') addContact(s.id, map[s.id]);
+           if (s.role === 'Teacher') {
+             const myChildren = students.filter((st: any) => st.parentId === currentUser.id);
+             const isMyTeacher = myChildren.some((child: any) => child.program === (s.classAssigned || s.class_assigned));
+             if (isMyTeacher) addContact(s.id, map[s.id]);
+           }
+        }
+      });
+      
+      students.forEach((s: any) => {
+        map[s.id] = { name: s.name, role: 'Student', image: s.image };
+        if (s.parentId) {
+           const pName = s.fatherName || s.motherName || `${s.name}'s Parent`;
+           const pInfo = { name: pName, role: 'Parent' };
+           map[s.parentId] = pInfo;
+           
+           if (role === UserRole.ADMIN) {
+             addContact(s.parentId, pInfo);
+           } else if (role === UserRole.TEACHER) {
+             const teacherClass = currentUser.classAssigned || currentUser.class_assigned;
+             if (s.program === teacherClass) {
+               addContact(s.parentId, pInfo);
+             }
+           }
+        }
       });
       
       // Add current user
       map[currentUser.id] = { name: currentUser.name, role: role };
       
       setUserMap(map);
+      setContacts(allowedContacts);
     }
   };
 
@@ -431,7 +465,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           setActiveRecipient(user);
           setIsNewChatOpen(false);
         }}
-        contacts={Object.entries(userMap).map(([id, u]) => ({ id, ...u })).filter(u => u.id !== currentUser.id)}
+        contacts={contacts}
       />
     </div>
   );
