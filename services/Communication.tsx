@@ -42,8 +42,9 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       const map: Record<string, string> = {};
       if (staff) {
         staff.forEach((s: any) => {
-          if (s.role === 'Teacher' && s.classAssigned) {
-            map[s.classAssigned] = s.name;
+          const assignedClass = s.classAssigned || s.class_assigned;
+          if (s.role === 'Teacher' && assignedClass) {
+            map[assignedClass] = s.name;
           }
         });
       }
@@ -51,15 +52,20 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     }
 
     if (activeTab === 'announcements') {
-      let userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class;
-      
-      // Handle Parent with multiple children or nested children object
-      if (!userClassId && role === UserRole.PARENT && currentUser.children && Array.isArray(currentUser.children)) {
-         // Collect all class IDs from children
-         const childClasses = currentUser.children.map((c: any) => c.classId || c.class_id || c.program).filter(Boolean);
-         if (childClasses.length > 0) {
-           userClassId = childClasses;
+      let userClassId: string | string[] | undefined;
+
+      // Strictly determine class ID based on role and schema to prevent incorrect visibility
+      if (role === UserRole.TEACHER) {
+         // Teachers are assigned via 'class_assigned' in staff table
+         userClassId = currentUser.classAssigned || currentUser.class_assigned;
+      } else if (role === UserRole.PARENT) {
+         // Parents are linked to students who have 'program' in students table
+         if (currentUser.children && Array.isArray(currentUser.children)) {
+            userClassId = currentUser.children.map((c: any) => c.program || c.programType || c.classId || c.class_id).filter(Boolean);
          }
+      } else {
+         // Fallback for Student or other roles
+         userClassId = currentUser.program || currentUser.programType || currentUser.classAssigned || currentUser.class_assigned;
       }
 
       const data = await schoolService.getAnnouncements(role, userClassId, currentUser.id);
