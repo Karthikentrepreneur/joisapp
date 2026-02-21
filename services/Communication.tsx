@@ -63,7 +63,23 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       }
 
       const data = await schoolService.getAnnouncements(role, userClassId, currentUser.id);
-      setAnnouncements(data.sort((a, b) => {
+      
+      // Filter announcements to ensure users only see relevant class content
+      const filteredData = data.filter((item: Announcement) => {
+        // Admins and Founders see everything
+        if (role === UserRole.ADMIN || role === UserRole.FOUNDER) return true;
+        
+        // Public announcements (All Classes) are visible to everyone
+        if (!item.classId || item.classId === 'All') return true;
+        
+        // Check if the announcement class matches the user's assigned class(es)
+        if (Array.isArray(userClassId)) {
+          return userClassId.includes(item.classId);
+        }
+        return item.classId === userClassId;
+      });
+
+      setAnnouncements(filteredData.sort((a, b) => {
         // Sort by pinned status first (pinned items come first)
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
