@@ -23,6 +23,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   const [isCreateModalOpen, setOpen] = useState(false);
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [classTeacherMap, setClassTeacherMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadData();
@@ -34,6 +35,20 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     const myThreads = allThreads.filter((t: any) => t.participants.includes(currentUser.id));
     const totalUnread = myThreads.reduce((sum: number, t: any) => sum + (t.unreadCount || 0), 0);
     setUnreadCount(totalUnread);
+
+    // Fetch teacher map for Admin/Founder to display in CreateAnnouncementModal
+    if (role === UserRole.ADMIN || role === UserRole.FOUNDER) {
+      const staff = await schoolService.getAll('staff');
+      const map: Record<string, string> = {};
+      if (staff) {
+        staff.forEach((s: any) => {
+          if (s.role === 'Teacher' && s.classAssigned) {
+            map[s.classAssigned] = s.name;
+          }
+        });
+      }
+      setClassTeacherMap(map);
+    }
 
     if (activeTab === 'announcements') {
       let userClassId = currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class;
@@ -384,6 +399,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         userRole={role}
         userClassId={currentUser.classAssigned || currentUser.class_assigned || currentUser.childClassId || currentUser.child_class_id || currentUser.classId || currentUser.class_id || currentUser.program || currentUser.programType || currentUser.class}
         initialData={editingAnnouncement}
+        classTeacherMap={classTeacherMap}
       />
 
       <NewChatModal 

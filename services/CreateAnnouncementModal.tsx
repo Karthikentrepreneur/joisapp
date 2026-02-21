@@ -10,6 +10,7 @@ interface CreateAnnouncementModalProps {
   userRole: UserRole;
   userClassId?: string;
   initialData?: { title: string; message: string; classId: string | null; attachments: Attachment[]; isPinned?: boolean } | null;
+  classTeacherMap?: Record<string, string>;
 }
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
@@ -20,7 +21,8 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
   onSubmit,
   userRole,
   userClassId,
-  initialData
+  initialData,
+  classTeacherMap = {}
 }) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -145,7 +147,9 @@ export const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = (
                 >
                   <option value="All">All Classes (Public)</option>
                   {PROGRAMS.map(p => (
-                    <option key={p} value={p}>{p}</option>
+                    <option key={p} value={p}>
+                      {p} {classTeacherMap[p] ? `(Teacher: ${classTeacherMap[p]})` : ''}
+                    </option>
                   ))}
                 </select>
                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
