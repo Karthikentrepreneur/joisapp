@@ -31,7 +31,8 @@ import {
   Heart,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Upload
 } from 'lucide-react';
 import { UserRole, Student, ProgramType, AttendanceLog } from '../types';
 import { ToastType } from '../components/Toast';
@@ -208,7 +209,6 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
     return { total: filteredStudents.length, present: presentToday, unpaid };
   }, [filteredStudents, attendanceLogs]);
 
-  // Helper to generate a random 8-character password
   const generatePassword = () => {
     return Math.random().toString(36).slice(-8).toUpperCase();
   };
@@ -217,11 +217,11 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
     firstName: '', middleName: '', lastName: '', dob: '', bloodGroup: 'O+',
     motherName: '', fatherName: '', fatherEmail: '',
     parentPhone: '', parentEmail: '', address: '', 
-    program: '' as any, // Removed default program value
+    program: '' as any,
     dateOfJoining: new Date().toISOString().split('T')[0], offer: 'Regular',
     feesStatus: 'Pending', busRoute: 'Self Pickup', image: '',
     emergencyContact: { name: '', relationship: '', phone: '' },
-    password: generatePassword() // Auto-generate on creation
+    password: generatePassword()
   };
 
   const [formData, setFormData] = useState<Partial<Student>>(initialFormData);
@@ -287,7 +287,18 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
     const sectionId = e.target.value;
     if (sectionId) {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      e.target.value = ""; // Reset dropdown after selection
+      e.target.value = ""; 
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -555,6 +566,27 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                     <Activity className="w-4 h-4 text-blue-600" />
                     <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Student Profile</h4>
                   </div>
+                  
+                  {/* Photo Upload Area */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="relative w-16 h-16 shrink-0 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
+                      {formData.image ? (
+                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-6 h-6 text-slate-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Photo</label>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Input label="First Name" required value={formData.firstName} onChange={(v: string) => setFormData({...formData, firstName: v})} />
                     <Input label="Middle Name" value={formData.middleName} onChange={(v: string) => setFormData({...formData, middleName: v})} />
