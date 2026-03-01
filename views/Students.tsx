@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../services/persistence';
 import { 
@@ -92,7 +91,20 @@ const DetailItem = ({ label, value, icon: Icon, isSecret }: { label: string, val
 const Input = ({ label, required, value, onChange, type = "text", placeholder, options, readOnly }: any) => {
   const [showPwd, setShowPwd] = useState(false);
   const isPassword = type === 'password';
+  const isPhone = type === 'tel';
   const inputType = isPassword && showPwd ? 'text' : type;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    let val = e.target.value;
+    
+    // Restrict phone numbers to exactly 10 digits
+    if (isPhone) {
+      val = val.replace(/\D/g, ''); // Remove non-numeric characters
+      if (val.length > 10) val = val.slice(0, 10);
+    }
+    
+    onChange(val);
+  };
 
   return (
     <div className="space-y-1 w-full">
@@ -105,7 +117,7 @@ const Input = ({ label, required, value, onChange, type = "text", placeholder, o
             value={value || ''} 
             required={required}
             disabled={readOnly}
-            onChange={e => onChange(e.target.value)}
+            onChange={handleChange}
             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm appearance-none disabled:opacity-70"
           >
             <option value="" disabled>Select {label}</option>
@@ -118,7 +130,9 @@ const Input = ({ label, required, value, onChange, type = "text", placeholder, o
               required={required} 
               value={value || ''} 
               readOnly={readOnly}
-              onChange={e => onChange(e.target.value)} 
+              onChange={handleChange} 
+              minLength={isPhone ? 10 : undefined}
+              maxLength={isPhone ? 10 : undefined}
               className={`w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300 shadow-sm read-only:opacity-70 ${isPassword ? 'pr-10' : ''}`} 
               placeholder={placeholder || `Enter ${label}`}
             />
@@ -178,7 +192,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
       const matchesSearch = (s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            s.id?.toLowerCase().includes(searchTerm.toLowerCase()));
+                             s.id?.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesFilter = activeFilter === 'All' || s.program === activeFilter;
       return matchesSearch && matchesFilter;
     });
@@ -201,8 +215,9 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
 
   const initialFormData: Partial<Student> = {
     firstName: '', middleName: '', lastName: '', dob: '', bloodGroup: 'O+',
-    motherName: '', motherEmail: '', fatherName: '', fatherEmail: '',
-    parentPhone: '', parentEmail: '', address: '', program: 'Little Seeds',
+    motherName: '', fatherName: '', fatherEmail: '',
+    parentPhone: '', parentEmail: '', address: '', 
+    program: '' as any, // Removed default program value
     dateOfJoining: new Date().toISOString().split('T')[0], offer: 'Regular',
     feesStatus: 'Pending', busRoute: 'Self Pickup', image: '',
     emergencyContact: { name: '', relationship: '', phone: '' },
@@ -225,8 +240,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
       
       const payload = {
         ...formData,
-        name: fullName,
-        parentEmail: formData.parentEmail || formData.motherEmail || formData.fatherEmail
+        name: fullName
       };
 
       if (isEditing && formData.id) {
@@ -266,6 +280,14 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
       showToast?.("Error", "error", "Deletion failed.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleScrollToSection = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const sectionId = e.target.value;
+    if (sectionId) {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      e.target.value = ""; // Reset dropdown after selection
     }
   };
 
@@ -472,8 +494,8 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
                    <DetailItem label="Mother's Name" value={selectedStudent.motherName} icon={User} />
                    <DetailItem label="Father's Name" value={selectedStudent.fatherName} icon={User} />
-                   <DetailItem label="Parent Email" value={selectedStudent.parentEmail || selectedStudent.fatherEmail} icon={Mail} />
-                   <DetailItem label="Contact Phone" value={selectedStudent.parentPhone} icon={Phone} />
+                   <DetailItem label="Mother's Email" value={selectedStudent.parentEmail} icon={Mail} />
+                   <DetailItem label="Mother's Phone" value={selectedStudent.parentPhone} icon={Phone} />
                 </div>
               </section>
 
@@ -510,11 +532,25 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col border border-slate-200 max-h-[95vh]">
             <div className="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">{isEditing ? 'Modify Student Record' : 'Enroll New Student'}</h3>
-              <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
+              <div className="flex items-center gap-3">
+                {/* Scroll Dropdown */}
+                <select 
+                  onChange={handleScrollToSection}
+                  className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-white border border-slate-200 rounded px-2 py-1 outline-none cursor-pointer shadow-sm hover:border-slate-300 transition-all"
+                >
+                  <option value="" disabled selected>Jump to section...</option>
+                  <option value="section-basic">Student Profile</option>
+                  <option value="section-credentials">Credentials</option>
+                  <option value="section-parents">Parent Info</option>
+                  <option value="section-admin">Emergency & Admin</option>
+                </select>
+                <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
+              </div>
             </div>
-            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white">
+            
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white relative scroll-smooth">
                {/* Section 1: Basic Information */}
-               <section className="space-y-4">
+               <section id="section-basic" className="space-y-4 pt-2">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
                     <Activity className="w-4 h-4 text-blue-600" />
                     <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Student Profile</h4>
@@ -532,7 +568,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                </section>
 
                {/* Access Credentials Section */}
-               <section className="space-y-4">
+               <section id="section-credentials" className="space-y-4 pt-2">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
                     <Lock className="w-4 h-4 text-emerald-600" />
                     <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Access Credentials</h4>
@@ -546,16 +582,17 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                </section>
 
                {/* Section 2: Parent Information */}
-               <section className="space-y-4">
+               <section id="section-parents" className="space-y-4 pt-2">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
                     <Users className="w-4 h-4 text-indigo-600" />
                     <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Parent / Guardian Information</h4>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                     <div className="space-y-4 p-4 bg-slate-50/50 rounded-lg border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mother's Details</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mother's Details (Primary)</p>
                       <Input label="Mother's Name" required value={formData.motherName} onChange={(v: string) => setFormData({...formData, motherName: v})} />
-                      <Input label="Mother's Email" type="email" value={formData.motherEmail} onChange={(v: string) => setFormData({...formData, motherEmail: v})} />
+                      <Input label="Mother's Phone (Primary)" type="tel" required value={formData.parentPhone} onChange={(v: string) => setFormData({...formData, parentPhone: v})} />
+                      <Input label="Mother's Email (Primary)" type="email" required value={formData.parentEmail} onChange={(v: string) => setFormData({...formData, parentEmail: v})} />
                     </div>
                     <div className="space-y-4 p-4 bg-slate-50/50 rounded-lg border border-slate-100">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Father's Details</p>
@@ -563,15 +600,11 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                       <Input label="Father's Email" type="email" value={formData.fatherEmail} onChange={(v: string) => setFormData({...formData, fatherEmail: v})} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Input label="Primary Phone" required value={formData.parentPhone} onChange={(v: string) => setFormData({...formData, parentPhone: v})} />
-                    <Input label="Primary Email" type="email" required value={formData.parentEmail} onChange={(v: string) => setFormData({...formData, parentEmail: v})} />
-                  </div>
                   <Input label="Residential Address" required value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} placeholder="Full residential address" />
                </section>
 
                {/* Section 3: Safety & Administration */}
-               <section className="space-y-4">
+               <section id="section-admin" className="space-y-4 pt-2">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
                     <ShieldAlert className="w-4 h-4 text-rose-600" />
                     <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Emergency & Administration</h4>
@@ -579,7 +612,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Input label="Emergency Contact Name" required value={formData.emergencyContact?.name} onChange={(v: string) => setFormData({...formData, emergencyContact: {...formData.emergencyContact!, name: v}})} />
                     <Input label="Relationship" required value={formData.emergencyContact?.relationship} onChange={(v: string) => setFormData({...formData, emergencyContact: {...formData.emergencyContact!, relationship: v}})} />
-                    <Input label="Emergency Phone" required value={formData.emergencyContact?.phone} onChange={(v: string) => setFormData({...formData, emergencyContact: {...formData.emergencyContact!, phone: v}})} />
+                    <Input label="Emergency Phone" type="tel" required value={formData.emergencyContact?.phone} onChange={(v: string) => setFormData({...formData, emergencyContact: {...formData.emergencyContact!, phone: v}})} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                     <Input label="Bus Route / Pickup" required value={formData.busRoute} onChange={(v: string) => setFormData({...formData, busRoute: v})} />
@@ -589,7 +622,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                </section>
                
                {isEditing && isAdmin && (
-                 <section className="pt-4 border-t border-slate-100">
+                 <section className="pt-4 border-t border-slate-100 pb-4">
                     <button 
                       type="button" 
                       onClick={() => setShowDeleteConfirm(true)}
