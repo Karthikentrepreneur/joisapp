@@ -457,7 +457,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
               <button onClick={() => setSelectedStudent(null)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4.5 h-4.5" /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-50 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <img src={selectedStudent.image} className="w-24 h-24 rounded-2xl object-cover border-4 border-slate-50 shadow-md" alt="Avatar" />
@@ -559,7 +559,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
               </div>
             </div>
             
-            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white relative scroll-smooth">
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 bg-white relative scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-50 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
                {/* Section 1: Basic Information */}
                <section id="section-basic" className="space-y-4 pt-2">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
