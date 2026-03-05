@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../services/persistence';
 import { schoolService } from '../services/schoolService';
@@ -422,7 +421,6 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <button onClick={() => setSelectedStaff(null)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4.5 h-4.5" /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar bg-white">
             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white">
               {/* Profile Header */}
               <div className="flex items-center gap-6">
@@ -513,7 +511,6 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">{isEditing ? 'Modify Staff Profile' : 'Register New Staff'}</h3>
               <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
             </div>
-            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white">
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 bg-white">
                {/* Profile Image Upload */}
                <div className="flex items-center gap-5">
