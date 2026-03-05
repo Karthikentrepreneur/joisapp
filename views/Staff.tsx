@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../services/persistence';
+import { schoolService } from '../services/schoolService';
 import { 
   Search, 
   Plus, 
@@ -32,7 +33,8 @@ import {
   Lock,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Upload
 } from 'lucide-react';
 import { UserRole, Staff as StaffType, ProgramType } from '../types';
 import { ToastType } from '../components/Toast';
@@ -40,6 +42,7 @@ import { ToastType } from '../components/Toast';
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 const ROLES = ['Teacher', 'Admin', 'Driver', 'Clerk', 'Principal'];
 const MARITAL_STATUS = ['Married', 'Unmarried'];
+const GENDERS = ['Male', 'Female', 'Other'];
 
 interface StaffProps {
   role?: UserRole;
@@ -147,6 +150,8 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = role === UserRole.ADMIN;
 
@@ -155,15 +160,15 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
     return Math.random().toString(36).slice(-8).toUpperCase();
   };
 
-  const initialFormData: Partial<StaffType> = {
+  const initialFormData: any = {
     firstName: '', middleName: '', lastName: '', phone: '', aadhaarNumber: '', email: '',
     dateOfJoining: new Date().toISOString().split('T')[0],
-    classAssigned: 'Little Seeds', maritalStatus: 'Unmarried', status: 'Active', role: 'Teacher', 
+    classAssigned: 'Little Seeds', maritalStatus: 'Unmarried', gender: 'Female', status: 'Active', role: 'Teacher', 
     image: '', emergencyContact: { firstName: '', lastName: '', relationship: '', phone: '' },
     password: generatePassword() // Auto-generate on creation
   };
 
-  const [formData, setFormData] = useState<Partial<StaffType>>(initialFormData);
+  const [formData, setFormData] = useState<any>(initialFormData);
 
   const loadData = async () => {
     setLoading(true);
@@ -226,6 +231,22 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
       showToast?.("Error", "error", "Failed to save staff data.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setIsUploading(true);
+      try {
+        const url = await schoolService.uploadAttachment(file);
+        setFormData((prev: any) => ({ ...prev, image: url }));
+      } catch (error) {
+        console.error("Upload failed", error);
+        showToast?.("Upload failed", "error");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -453,6 +474,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                    <DetailItem label="Marital Status" value={selectedStaff.maritalStatus} icon={Heart} />
                    <DetailItem label="Basic Salary" value={`₹${selectedStaff.salaryDetails?.basic?.toLocaleString() || '—'}`} icon={Wallet} />
+                   <DetailItem label="Gender" value={(selectedStaff as any).gender} icon={User} />
                    <DetailItem label="Net Pay" value={`₹${selectedStaff.salaryDetails?.net?.toLocaleString() || '—'}`} icon={Wallet} />
                 </div>
               </section>
@@ -491,6 +513,29 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
             </div>
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white">
+               {/* Profile Image Upload */}
+               <div className="flex items-center gap-5">
+                  <div className="relative w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden group shrink-0">
+                    {formData.image ? (
+                      <img src={formData.image} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-slate-300" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Profile Photo</h4>
+                    <p className="text-[10px] text-slate-400 font-medium mb-2">Recommended: Square JPG/PNG</p>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2">
+                      {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                      {isUploading ? 'Uploading...' : 'Upload Photo'}
+                    </button>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </div>
+               </div>
+
                {/* Section 1: Professional Profile */}
                <section className="space-y-4">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-2">
@@ -534,6 +579,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                     <Input label="Email Address" type="email" required value={formData.email} onChange={(v: string) => setFormData({...formData, email: v})} />
                     <Input label="Aadhaar Number" required value={formData.aadhaarNumber} onChange={(v: string) => setFormData({...formData, aadhaarNumber: v})} />
                     <Input label="Marital Status" options={MARITAL_STATUS} value={formData.maritalStatus} onChange={(v: string) => setFormData({...formData, maritalStatus: v as any})} />
+                    <Input label="Gender" options={GENDERS} value={formData.gender} onChange={(v: string) => setFormData({...formData, gender: v})} />
                   </div>
                </section>
 
