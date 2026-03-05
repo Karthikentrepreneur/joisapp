@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../services/persistence';
 import { schoolService } from '../services/schoolService';
@@ -421,7 +422,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <button onClick={() => setSelectedStaff(null)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4.5 h-4.5" /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
               {/* Profile Header */}
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -511,7 +512,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">{isEditing ? 'Modify Staff Profile' : 'Register New Staff'}</h3>
               <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
             </div>
-            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 bg-white">
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 bg-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
                {/* Profile Image Upload */}
                <div className="flex items-center gap-5">
                   <div className="relative w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden group shrink-0">
