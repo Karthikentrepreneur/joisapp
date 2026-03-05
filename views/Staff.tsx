@@ -423,6 +423,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white">
               {/* Profile Header */}
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -513,6 +514,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <button onClick={() => setShowFormModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><X className="w-4 h-4" /></button>
             </div>
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 no-scrollbar bg-white">
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-10 bg-white">
                {/* Profile Image Upload */}
                <div className="flex items-center gap-5">
                   <div className="relative w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden group shrink-0">
