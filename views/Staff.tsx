@@ -354,58 +354,23 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No staff found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-100 text-left">
-                  <tr className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                    <th className="px-5 py-3 w-10 text-center">#</th>
-                    <th className="px-5 py-3">Employee Name</th>
-                    <th className="px-5 py-3 hidden sm:table-cell">Role / Class</th>
-                    <th className="px-5 py-3 text-center">Status</th>
-                    <th className="px-5 py-3 text-center">Joining</th>
-                    <th className="px-5 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredStaff.map((s, idx) => (
-                    <tr 
-                      key={s.id} 
-                      onClick={() => setSelectedStaff(s)} 
-                      className="group cursor-pointer hover:bg-slate-50/80 transition-colors"
-                    >
-                      <td className="px-5 py-2.5 text-xs text-slate-300 font-bold text-center">{idx + 1}</td>
-                      <td className="px-5 py-2.5">
-                        <div className="flex items-center gap-3">
-                          <img src={s.image} className="w-8 h-8 rounded-lg border border-slate-100 object-cover shadow-sm" alt="Avatar" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-none mb-1">{s.name}</p>
-                            <span className="text-[9px] font-mono text-slate-400 uppercase">EMP: {s.id}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-2.5 hidden sm:table-cell">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase leading-none mb-1">{s.role}</span>
-                          <span className="text-[9px] text-slate-400 font-medium">{s.classAssigned || 'General'}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-2.5 text-center">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${
-                          s.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                        }`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-2.5 text-center">
-                        <span className="text-xs font-bold text-slate-800">{s.dateOfJoining}</span>
-                      </td>
-                      <td className="px-5 py-2.5 text-right">
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-200 group-hover:text-blue-500 ml-auto" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6">
+              {filteredStaff.map((s) => (
+                <div 
+                  key={s.id} 
+                  onClick={() => setSelectedStaff(s)} 
+                  className="group cursor-pointer flex flex-col items-center p-6 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="relative mb-4">
+                    <img 
+                      src={s.image} 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-sm group-hover:scale-105 transition-transform duration-300" 
+                      alt={s.name} 
+                    />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 text-center">{s.name}</h3>
+                </div>
+              ))}
             </div>
           )}
         </div>
