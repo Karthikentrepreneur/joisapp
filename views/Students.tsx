@@ -392,7 +392,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records match your search</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-6">
               {filteredStudents.map((s) => (
                 <div 
                   key={s.id} 
