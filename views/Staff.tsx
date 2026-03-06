@@ -354,21 +354,21 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No staff found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-6">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 p-3 md:gap-6 md:p-6">
               {filteredStaff.map((s) => (
                 <div 
                   key={s.id} 
                   onClick={() => setSelectedStaff(s)} 
-                  className="group cursor-pointer flex flex-col items-center p-6 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300"
+                  className="group cursor-pointer flex flex-col items-center p-3 md:p-6 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300"
                 >
-                  <div className="relative mb-4">
+                  <div className="relative mb-2 md:mb-4">
                     <img 
                       src={s.image} 
-                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-sm group-hover:scale-105 transition-transform duration-300" 
+                      className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover border-2 md:border-4 border-slate-50 shadow-sm group-hover:scale-105 transition-transform duration-300" 
                       alt={s.name} 
                     />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 text-center">{s.name}</h3>
+                  <h3 className="text-xs md:text-lg font-bold text-slate-900 text-center leading-tight">{s.name}</h3>
                 </div>
               ))}
             </div>
