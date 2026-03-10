@@ -43,8 +43,11 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
     if (role === UserRole.TEACHER) {
        userClassId = currentUser?.classAssigned;
     } else if (role === UserRole.PARENT) {
-       userClassId = currentUser?.children?.map((c: any) => c.program).filter(Boolean);
-       userStudentId = currentUser?.children?.map((c: any) => c.id).filter(Boolean);
+       // When a parent logs in, currentUser is the student object.
+       if (currentUser) {
+         userClassId = [currentUser.program];
+         userStudentId = [currentUser.id];
+       }
     }
     const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId, userStudentId);
     setHomeworkList(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));

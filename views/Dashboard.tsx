@@ -21,15 +21,16 @@ interface DashboardProps {
   role: UserRole;
   onNavigate: (view: View) => void;
   onFilterNavigate?: (program: ProgramType) => void;
+  currentUser?: any;
 }
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
-export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate, onFilterNavigate }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ role, onNavigate, onFilterNavigate, currentUser }) => {
   const renderContent = () => {
     switch (role) {
-      case UserRole.PARENT: return <ParentDashboard onNavigate={onNavigate} />;
-      case UserRole.TEACHER: return <TeacherDashboard onNavigate={onNavigate} />;
+      case UserRole.PARENT: return <ParentDashboard onNavigate={onNavigate} currentUser={currentUser} />;
+      case UserRole.TEACHER: return <TeacherDashboard onNavigate={onNavigate} currentUser={currentUser} />;
       default: return <AdminDashboard onNavigate={onNavigate} onFilterNavigate={onFilterNavigate} />;
     }
   };
@@ -148,7 +149,7 @@ const AdminDashboard = ({ onNavigate, onFilterNavigate }: { onNavigate: (view: V
   );
 };
 
-const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+const TeacherDashboard = ({ onNavigate, currentUser }: { onNavigate: (view: View) => void, currentUser?: any }) => {
   const [assignedStudents, setAssignedStudents] = useState<Student[]>([]);
   const [presenceToday, setPresenceToday] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -156,14 +157,12 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
 
   const loadTeacherData = useCallback(async () => {
     try {
-      const [allStudents, allStaff, allLogs] = await Promise.all([
+      const [allStudents, allLogs] = await Promise.all([
         db.getAll('students'),
-        db.getAll('staff'),
         db.getAll('attendanceLogs')
       ]);
 
-      const currentTeacher = allStaff.find(s => s.role === 'Teacher');
-      const assignedProgram = currentTeacher?.classAssigned as ProgramType || 'Little Seeds';
+      const assignedProgram = currentUser?.classAssigned as ProgramType || 'N/A';
       setProgram(assignedProgram);
 
       const myStudents = allStudents.filter(s => s.program === assignedProgram);
@@ -181,7 +180,7 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => { loadTeacherData(); }, [loadTeacherData]);
 
@@ -226,7 +225,7 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
   );
 };
 
-const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+const ParentDashboard = ({ onNavigate, currentUser }: { onNavigate: (view: View) => void, currentUser?: any }) => {
   const [child, setChild] = useState<Student | null>(null);
   const [homework, setHomework] = useState<Homework[]>([]);
   const [pendingFees, setPendingFees] = useState(0);
@@ -235,9 +234,7 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
   const loadParentData = useCallback(async () => {
     setLoading(true);
     try {
-      const students = await db.getAll('students');
-      
-      const myChild = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
+      const myChild = currentUser;
       setChild(myChild || null);
 
       if (myChild) {
@@ -256,7 +253,7 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => { loadParentData(); }, [loadParentData]);
 
