@@ -114,8 +114,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         if (role === UserRole.ADMIN) {
            if (s.role === 'Teacher' || s.role === 'Admin' || s.role === 'Founder') addContact(s.id, map[s.id]);
         } else if (role === UserRole.TEACHER) {
-           // Allow teachers to see other teachers, admins, and founders
-           if (s.role === 'Admin' || s.role === 'Teacher' || s.role === 'Founder') addContact(s.id, map[s.id]);
+           // For teachers, only show Admins from the staff list. Parents and students are added later.
+           if (s.role === 'Admin') addContact(s.id, map[s.id]);
         } else if (role === UserRole.PARENT) {
            if (s.role === 'Teacher') {
              // For parents, currentUser is the student object. Find the teacher for that student's class.
@@ -125,8 +125,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                addContact(s.id, map[s.id]);
              }
            }
-           // Allow parents to see admins and founders
-           if (s.role === 'Admin' || s.role === 'Founder') addContact(s.id, map[s.id]);
+           // Allow parents to see admins
+           if (s.role === 'Admin') addContact(s.id, map[s.id]);
         }
       });
       
@@ -142,7 +142,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
            } else if (role === UserRole.TEACHER) {
              const teacherClass = currentUser.classAssigned || currentUser.class_assigned;
              if (s.program === teacherClass) {
-               addContact(s.parentId, pInfo);
+               addContact(s.parentId, pInfo); // Add parent
+               addContact(s.id, map[s.id]); // Add student
              }
            }
         }
