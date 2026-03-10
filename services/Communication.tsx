@@ -261,7 +261,7 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* Header Tabs */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0 sticky top-0 z-10 shadow-sm md:shadow-none">
+      <div className={`bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex-col md:flex-row justify-between items-center gap-3 md:gap-0 sticky top-0 z-10 shadow-sm md:shadow-none ${activeTab === 'chats' && activeRecipient ? 'hidden md:flex' : 'flex'}`}>
         <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl w-full md:w-auto">
           <button
             onClick={() => setActiveTab('announcements')}
@@ -392,15 +392,17 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
           </div>
         ) : (
           <div className="h-full flex">
-            <ChatSidebar 
-              currentUser={{ id: currentUser.id, name: currentUser.name, role }}
-              threads={threads}
-              selectedThreadId={selectedThreadId}
-              onSelectThread={handleThreadSelect}
-              userMap={userMap}
-              onNewChat={() => setIsNewChatOpen(true)}
-            />
-            <div className="flex-1 bg-gray-50/50">
+            <div className={`h-full bg-white border-r border-gray-200 md:w-80 lg:w-96 flex-shrink-0 ${activeRecipient ? 'hidden md:block' : 'w-full'}`}>
+              <ChatSidebar 
+                currentUser={{ id: currentUser.id, name: currentUser.name, role }}
+                threads={threads}
+                selectedThreadId={selectedThreadId}
+                onSelectThread={handleThreadSelect}
+                userMap={userMap}
+                onNewChat={() => setIsNewChatOpen(true)}
+              />
+            </div>
+            <div className={`flex-1 bg-gray-50/50 h-full ${activeRecipient ? 'block' : 'hidden md:block'}`}>
               {activeRecipient ? (
                 <ChatWindow 
                   currentUser={{ id: currentUser.id, name: currentUser.name, role }}
