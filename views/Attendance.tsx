@@ -61,7 +61,7 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
   const [activeTab, setActiveTab] = useState<'register' | 'history'>('register');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [attendanceState, setAttendanceState] = useState<Record<string, 'Present' | 'Absent' | 'Late'>>({});
+  const [attendanceState, setAttendanceState] = useState<Record<string, 'Present' | 'Absent' | 'Late' | undefined>>({});
   const [allLogs, setAllLogs] = useState<AttendanceLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -96,7 +96,7 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
       setStudents(allStudents);
       setAllLogs(allLogsData);
       
-      const initial: Record<string, 'Present' | 'Absent' | 'Late'> = {};
+      const initial: Record<string, 'Present' | 'Absent' | 'Late' | undefined> = {};
       const existingLogsForDate = allLogsData.filter(l => l.date === selectedDate);
       
       allStudents.forEach(s => {
@@ -110,7 +110,9 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
             selectedDate >= lv.startDate && 
             selectedDate <= lv.endDate
           );
-          initial[s.id] = approvedLeave ? 'Absent' : 'Present';
+          if (approvedLeave) {
+            initial[s.id] = 'Absent';
+          }
         }
       });
 
@@ -125,13 +127,19 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
   const handleSaveRegister = async () => {
     setSaving(true);
     try {
-      const recordsToSave = activeProgram === 'All' 
-        ? attendanceState 
-        : Object.keys(attendanceState).reduce((acc, id) => {
-            const student = students.find(s => s.id === id);
-            if (student && (student.program === activeProgram)) acc[id] = attendanceState[id];
-            return acc;
-          }, {} as any);
+      const recordsToSave: Record<string, 'Present' | 'Absent' | 'Late'> = {};
+
+      for (const studentId in attendanceState) {
+        const status = attendanceState[studentId];
+        // Only save if status is defined (i.e., not 'Not Marked')
+        if (status) {
+          const student = students.find(s => s.id === studentId);
+          // And if it matches the active program filter
+          if (student && (activeProgram === 'All' || student.program === activeProgram)) {
+            recordsToSave[studentId] = status;
+          }
+        }
+      }
 
       await schoolService.markAttendance(date, recordsToSave);
       showToast?.("Attendance Saved", "success", `Records for ${date} have been updated.`);
@@ -476,7 +484,7 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                       <div className={`mt-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
                         status === 'Present' ? 'bg-emerald-100 text-emerald-700' : status === 'Absent' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'
                       }`}>
-                        {status || 'Pending'}
+                        {status || 'Not Marked'}
                       </div>
                     </div>
                   );
