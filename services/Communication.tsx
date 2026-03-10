@@ -167,10 +167,10 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
             if (studentProgram === teacherProgram) {
               addContact(s.id, map[s.id]);
             }
-           }
-        }
-      });
-      
+          }
+        });
+      }
+
       // Add current user
       map[currentUser.id] = { name: currentUser.name, role: role };
       
