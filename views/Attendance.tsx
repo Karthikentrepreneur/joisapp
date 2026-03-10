@@ -68,6 +68,7 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeProgram, setActiveProgram] = useState<'All' | ProgramType>('All');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
 
   const isParent = role === UserRole.PARENT;
   const isTeacher = role === UserRole.TEACHER;
@@ -243,6 +244,27 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
     showToast?.("Report Downloaded", "success", `History for ${student.name} generated.`);
   };
 
+  const toggleSelection = (id: string) => {
+    const newSet = new Set(selectedStudents);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedStudents(newSet);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.size === filteredStudents.length) setSelectedStudents(new Set());
+    else setSelectedStudents(new Set(filteredStudents.map(s => s.id)));
+  };
+
+  const handleBulkStatusUpdate = (status: 'Present' | 'Absent') => {
+    setAttendanceState(prev => {
+      const next = { ...prev };
+      selectedStudents.forEach(id => next[id] = status);
+      return next;
+    });
+    setSelectedStudents(new Set());
+  };
+
   if (isParent) {
     const myChild = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
     const childLogs = allLogs.filter(l => l.studentId === myChild?.id).sort((a, b) => b.date.localeCompare(a.date));
@@ -369,77 +391,97 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
               </div>
             </div>
 
-            {/* Date and Action Header */}
+            {/* Date and Bulk Actions Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-4">
                  <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg"><CalendarIcon className="w-5 h-5 md:w-6 md:h-6" /></div>
                  <div>
-                    <h2 className="text-sm md:text-lg font-black text-slate-900 leading-none">{new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h2>
-                    <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Roll Call Management</p>
+                    <h2 className="text-sm md:text-lg font-black text-slate-900 leading-none">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h2>
+                    <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Today's Roll Call</p>
                  </div>
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <input 
-                  type="date" 
-                  value={date} 
-                  onChange={e => setDate(e.target.value)}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
-                />
                 <button onClick={handleSaveRegister} disabled={saving} className="flex-1 sm:flex-none px-6 md:px-8 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50">
                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} <span className="hidden sm:inline">Save Register</span><span className="sm:hidden">Save</span>
                 </button>
               </div>
             </div>
 
-            {/* List */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-50">
+            {/* Bulk Selection Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+               <button onClick={handleSelectAll} className="px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">
+                 {selectedStudents.size === filteredStudents.length && filteredStudents.length > 0 ? 'Deselect All' : 'Select All'}
+               </button>
+               <div className="h-6 w-px bg-slate-200 mx-1"></div>
+               <button onClick={() => handleBulkStatusUpdate('Present')} disabled={selectedStudents.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                 <CheckCircle2 className="w-3.5 h-3.5" /> Mark Present
+               </button>
+               <button onClick={() => handleBulkStatusUpdate('Absent')} disabled={selectedStudents.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                 <AlertCircle className="w-3.5 h-3.5" /> Mark Absent
+               </button>
+               <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                 {selectedStudents.size} Selected
+               </span>
+            </div>
+
+            {/* Grid View */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 p-3 md:gap-6 md:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
               {loading ? (
-                <div className="py-20 flex flex-col items-center justify-center text-slate-300">
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-300">
                   <Loader2 className="w-8 h-8 animate-spin mb-3" />
                   <p className="text-[10px] font-bold uppercase tracking-widest">Compiling Roster...</p>
                 </div>
               ) : filteredStudents.length === 0 ? (
-                <div className="py-16 text-center">
+                <div className="col-span-full py-16 text-center">
                   <Activity className="w-10 h-10 text-slate-100 mx-auto mb-3" />
                   <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records match the filter</p>
                 </div>
               ) : (
-                filteredStudents.map((s) => (
-                  <div key={s.id} className="flex flex-col md:flex-row items-center justify-between p-4 md:p-5 hover:bg-slate-50/80 transition-all gap-4">
-                    <div className="flex items-center gap-4 flex-1 w-full">
-                      <img src={s.image} className="w-10 h-10 md:w-11 md:h-11 rounded-xl object-cover border border-slate-100 shadow-sm" alt="Student" />
-                      <div className="flex-1">
-                        <p className="font-bold text-slate-900 text-sm leading-tight mb-0.5">{s.name}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-1.5 py-0.5 rounded">{s.program}</span>
-                          <span className="text-[8px] font-mono text-slate-400 uppercase">ID: {s.id}</span>
-                        </div>
+                filteredStudents.map((s) => {
+                  const isSelected = selectedStudents.has(s.id);
+                  const status = attendanceState[s.id];
+                  return (
+                    <div 
+                      key={s.id} 
+                      onClick={() => toggleSelection(s.id)}
+                      className={`group cursor-pointer flex flex-col items-center p-3 md:p-4 rounded-2xl border-2 transition-all duration-200 relative overflow-hidden ${
+                        isSelected 
+                          ? 'border-blue-500 bg-blue-50/30' 
+                          : 'border-slate-100 bg-white hover:border-blue-200 hover:shadow-md'
+                      }`}
+                    >
+                      {/* Selection Indicator */}
+                      <div className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-slate-200 bg-white'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <button 
-                        onClick={() => downloadIndividualReport(s)}
-                        className="p-2.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100 transition-all"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
+
+                      {/* Status Badge */}
+                      <div className={`absolute top-2 left-2 w-2.5 h-2.5 rounded-full ${
+                        status === 'Present' ? 'bg-emerald-500' : status === 'Absent' ? 'bg-rose-500' : 'bg-slate-200'
+                      }`} />
+
+                      <div className="relative mb-2 md:mb-3 mt-2">
+                        <img 
+                          src={s.image} 
+                          className={`w-14 h-14 md:w-20 md:h-20 rounded-full object-cover border-4 shadow-sm transition-transform ${
+                            status === 'Present' ? 'border-emerald-100' : status === 'Absent' ? 'border-rose-100' : 'border-slate-50'
+                          }`} 
+                          alt={s.name} 
+                        />
+                      </div>
+                      <h3 className="text-[10px] md:text-sm font-bold text-slate-900 text-center leading-tight line-clamp-2 min-h-[2.5em]">{s.name}</h3>
+                      <p className="text-[8px] font-mono text-slate-400 uppercase mt-1">{s.id}</p>
+                      
+                      {/* Status Text */}
+                      <div className={`mt-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                        status === 'Present' ? 'bg-emerald-100 text-emerald-700' : status === 'Absent' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {status || 'Pending'}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      {['Present', 'Absent'].map((status) => (
-                        <button 
-                          key={status}
-                          onClick={() => setAttendanceState(p => ({...p, [s.id]: status as any}))} 
-                          className={`flex-1 md:flex-none md:w-32 py-2 md:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
-                            attendanceState[s.id] === status 
-                              ? `${status === 'Present' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-100'}` 
-                              : 'bg-white text-slate-400 border-slate-200 hover:border-blue-200 hover:text-blue-600'
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )
-              ))}
+                  );
+                })
+              )}
             </div>
           </>
         ) : (
