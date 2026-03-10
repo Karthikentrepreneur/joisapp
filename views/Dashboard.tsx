@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserRole, View, Student, Staff, ProgramType, LeaveRequest } from '../types';
+import { UserRole, View, Student, Staff, ProgramType, LeaveRequest, Homework } from '../types';
 import { db } from '../services/persistence';
+import { schoolService } from '../services/schoolService';
 import { 
   Users, 
   Loader2, 
   CalendarCheck,
   ArrowUpRight,
   CalendarDays,
+  BookOpen,
   Clock,
   Briefcase,
   GraduationCap,
   CreditCard,
   RefreshCw
 } from 'lucide-react';
+import { CURRENT_USER_ID } from '../data/mockData';
 
 interface DashboardProps {
   role: UserRole;
@@ -225,24 +228,30 @@ const TeacherDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) 
 
 const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const [child, setChild] = useState<Student | null>(null);
+  const [homework, setHomework] = useState<Homework[]>([]);
   const [pendingFees, setPendingFees] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const loadParentData = useCallback(async () => {
+    setLoading(true);
     try {
-      const [students, invoices] = await Promise.all([
-        db.getAll('students'),
-        db.getAll('invoices')
-      ]);
+      const students = await db.getAll('students');
       
-      const myChild = students[0]; 
+      const myChild = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
       setChild(myChild || null);
 
       if (myChild) {
+         const [invoices, homeworkData] = await Promise.all([
+           db.getAll('invoices'),
+           schoolService.getHomework(UserRole.PARENT, [myChild.program], [myChild.id])
+         ]);
+
          const dues = invoices
            .filter(i => i.studentId === myChild.id && i.status !== 'Paid')
            .reduce((sum, i) => sum + i.amount, 0);
          setPendingFees(dues);
+
+         setHomework(homeworkData.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()));
       }
     } finally {
       setLoading(false);
@@ -254,6 +263,8 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
   
   if (!child) return <div className="p-12 text-center text-slate-400 font-bold uppercase tracking-widest bg-white rounded-2xl border border-slate-200 shadow-sm mx-4">No linked student found.</div>;
+
+  const pendingHomework = homework.filter(h => h.status !== 'Closed');
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-700">
@@ -271,7 +282,7 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
          </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <StatCard 
             icon={CalendarCheck} 
             label="Attendance Rate" 
@@ -287,6 +298,33 @@ const ParentDashboard = ({ onNavigate }: { onNavigate: (view: View) => void }) =
             color={pendingFees > 0 ? "bg-orange-500" : "bg-blue-600"} 
             onClick={() => onNavigate(View.FEES)} 
          />
+         <StatCard 
+            icon={BookOpen} 
+            label="Pending Homework" 
+            value={pendingHomework.length}
+            subValue={pendingHomework.length > 0 ? `Due soon: ${pendingHomework[0]?.title}` : "All caught up!"}
+            color="bg-purple-600" 
+            onClick={() => onNavigate(View.ACADEMICS)} 
+         />
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 className="text-base font-bold text-slate-800 mb-4">Upcoming Assignments</h2>
+        {pendingHomework.length > 0 ? (
+          <div className="space-y-3">
+            {pendingHomework.slice(0, 3).map(hw => (
+              <div key={hw.id} className="p-4 border border-slate-100 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-2 hover:bg-slate-50/50 transition-colors">
+                <div>
+                  <p className="font-bold text-sm text-slate-800">{hw.title}</p>
+                  <p className="text-xs text-slate-500 font-medium">{hw.subject} • Due: <span className="font-bold">{new Date(hw.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span></p>
+                </div>
+                <button onClick={() => onNavigate(View.ACADEMICS)} className="bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg self-start sm:self-center">View Details</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 py-4 text-center">No pending homework. Great job!</p>
+        )}
       </div>
     </div>
   );
