@@ -57,7 +57,7 @@ const toSnakeCase = (obj: any): any => {
 /**
  * Recursive helper to convert snake_case Postgres record to camelCase for TypeScript
  */
-const toCamelCase = (obj: any): any => {
+export const toCamelCase = (obj: any): any => {
   if (!obj || typeof obj !== 'object' || obj instanceof Date) return obj;
   if (Array.isArray(obj)) return obj.map(toCamelCase);
   
@@ -76,6 +76,10 @@ const toCamelCase = (obj: any): any => {
 };
 
 class PersistenceService {
+  get client() {
+    return supabase;
+  }
+
   private getLocalDB(): DatabaseSchema {
     try {
       const data = localStorage.getItem(DB_KEY);

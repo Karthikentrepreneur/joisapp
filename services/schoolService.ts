@@ -1,5 +1,5 @@
 
-import { db } from './persistence';
+import { db, toCamelCase } from './persistence';
 import { cryptoService } from './cryptoService';
 import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType, Announcement, Homework } from '../types';
 
@@ -310,46 +310,47 @@ export const schoolService = {
 
   // --- MESSAGING HELPERS ---
   async getMessagesForThread(participantA: string, participantB: string) {
-    const threadId = [participantA, participantB].sort().join(':');
-    const allChats = await db.getAll('chats');
-    const messages = allChats.filter(msg => {
-      if (msg.type === 'Broadcast') return false;
-      if (!msg.senderId || !msg.receiverId) return false;
-      const currentThreadId = [msg.senderId, msg.receiverId].sort().join(':');
-      return currentThreadId === threadId;
-    }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const { data, error } = await db.client
+      .from('chats')
+      .select('*')
+      .or(`(sender_id.eq.${participantA},receiver_id.eq.${participantB}),(sender_id.eq.${participantB},receiver_id.eq.${participantA})`)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+
+    const messages = data.map(toCamelCase) as ChatMessage[];
+    const threadId = [participantA, participantB].sort().join(':'); // For decryption key
 
     return await Promise.all(messages.map(async (msg) => {
       try {
+        if (msg.type === 'Broadcast') return msg;
         const decryptedText = await cryptoService.decrypt(msg.text, threadId);
         return { ...msg, text: decryptedText };
       } catch (e) {
+        console.warn('Could not decrypt message, returning as is.', msg.id);
         return msg;
       }
     }));
   },
 
   async getAllThreads(currentUserId?: string) {
-    const allChats = await db.getAll('chats');
-    const threads: Record<string, ChatMessage[]> = {};
-    
-    allChats.forEach(msg => {
-      if (msg.type === 'Broadcast') return;
-      if (!msg.senderId || !msg.receiverId) return;
-      
-      const threadId = [msg.senderId, msg.receiverId].sort().join(':');
-      if (!threads[threadId]) threads[threadId] = [];
-      threads[threadId].push(msg);
+    if (!currentUserId) return [];
+
+    const { data, error } = await db.client.rpc('get_chat_threads', {
+      user_id: currentUserId
     });
-    
-    return Object.entries(threads).map(([threadId, messages]) => ({
-      threadId,
-      participants: threadId.split(':'),
-      lastMessage: messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0],
-      messageCount: messages.length,
-      unreadCount: currentUserId 
-        ? messages.filter(m => m.receiverId === currentUserId && !m.isRead).length 
-        : 0
+
+    if (error) {
+      console.error('Error fetching chat threads:', error);
+      return [];
+    }
+
+    return data.map((thread: any) => ({
+      threadId: thread.thread_id,
+      participants: thread.participants,
+      lastMessage: toCamelCase(thread.last_message),
+      unreadCount: thread.unread_count,
+      // messageCount is not in the new function, but it was not used in the UI anyway.
     }));
   }
 };
