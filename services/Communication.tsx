@@ -101,50 +101,72 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
       const staff = await schoolService.getAll('staff');
       const map: any = {};
       const allowedContacts: any[] = [];
-
+  
       const addContact = (id: string, info: any) => {
         if (id !== currentUser.id && !allowedContacts.find(c => c.id === id)) {
           allowedContacts.push({ id, ...info });
         }
       };
       
+      // Populate map with all staff and students first
       staff.forEach((s: any) => {
         map[s.id] = { name: s.name, role: s.role, image: s.image };
-        
-        if (role === UserRole.ADMIN) {
-           if (s.role === 'Teacher' || s.role === 'Admin' || s.role === 'Founder') addContact(s.id, map[s.id]);
-        } else if (role === UserRole.TEACHER) {
-           // For teachers, only show Admins from the staff list. Parents and students are added later.
-           if (s.role === 'Admin') addContact(s.id, map[s.id]);
-        } else if (role === UserRole.PARENT) {
-           if (s.role === 'Teacher') {
-             // For parents, currentUser is the student object. Find the teacher for that student's class.
-             const studentProgram = currentUser.program;
-             const teacherProgram = s.classAssigned || s.class_assigned;
-             if (studentProgram === teacherProgram) {
-               addContact(s.id, map[s.id]);
-             }
-           }
-           // Allow parents to see admins
-           if (s.role === 'Admin') addContact(s.id, map[s.id]);
-        }
       });
       
       students.forEach((s: any) => {
         map[s.id] = { name: s.name, role: 'Student', image: s.image };
         if (s.parentId) {
            const pName = s.fatherName || s.motherName || `${s.name}'s Parent`;
-           const pInfo = { name: pName, role: 'Parent' };
+           const pInfo = { name: pName, role: 'Parent', image: s.image }; // Use student image for parent if available
            map[s.parentId] = pInfo;
-           
-           if (role === UserRole.ADMIN) {
-             addContact(s.parentId, pInfo);
-           } else if (role === UserRole.TEACHER) {
-             const teacherClass = currentUser.classAssigned || currentUser.class_assigned;
-             if (s.program === teacherClass) {
-               addContact(s.parentId, pInfo); // Add parent
-               addContact(s.id, map[s.id]); // Add student
-             }
+        }
+      });
+
+      // Now, build allowedContacts based on the current user's role
+      if (role === UserRole.ADMIN) {
+        // Admin sees all staff (teachers, admins) and all parents
+        staff.forEach((s: any) => {
+          if (s.role === 'Teacher' || s.role === 'Admin') { // Exclude Founder as per previous request
+            addContact(s.id, map[s.id]);
+          }
+        });
+        students.forEach((s: any) => {
+          if (s.parentId) {
+            addContact(s.parentId, map[s.parentId]);
+          }
+        });
+      } else if (role === UserRole.TEACHER) {
+        const teacherClass = currentUser.classAssigned || currentUser.class_assigned;
+        // Teacher sees Admins
+        staff.forEach((s: any) => {
+          if (s.role === 'Admin') { // Exclude Founder
+            addContact(s.id, map[s.id]);
+          }
+        });
+        // Teacher sees students in their class and their parents
+        students.forEach((s: any) => {
+          if (s.program === teacherClass) {
+            addContact(s.id, map[s.id]); // Add student
+            if (s.parentId) {
+              addContact(s.parentId, map[s.parentId]); // Add parent
+            }
+          }
+        });
+      } else if (role === UserRole.PARENT) {
+        // Parent sees Admins
+        staff.forEach((s: any) => {
+          if (s.role === 'Admin') { // Exclude Founder
+            addContact(s.id, map[s.id]);
+          }
+        });
+        // Parent sees their child's teacher
+        const studentProgram = currentUser.program; // currentUser is the student object for parents
+        staff.forEach((s: any) => {
+          if (s.role === 'Teacher') {
+            const teacherProgram = s.classAssigned || s.class_assigned;
+            if (studentProgram === teacherProgram) {
+              addContact(s.id, map[s.id]);
+            }
            }
         }
       });
