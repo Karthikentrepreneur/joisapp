@@ -269,6 +269,11 @@ export const schoolService = {
 
   // --- HOMEWORK ---
   async createHomework(homework: Omit<Homework, 'id'>) {
+    // Ensure collection exists to prevent "reading 'push' of undefined" error
+    if ((db as any).data && !(db as any).data['homework']) {
+      (db as any).data['homework'] = [];
+    }
+
     const newHomework = {
       ...homework,
       id: `HW-${Date.now()}`,
@@ -280,7 +285,7 @@ export const schoolService = {
   },
 
   async getHomework(role: UserRole, classId?: string | string[], studentId?: string | string[]) {
-    const all = await db.getAll('homework');
+    const all = await db.getAll('homework') || [];
     
     if (role === UserRole.ADMIN || role === UserRole.FOUNDER) {
       return all;
