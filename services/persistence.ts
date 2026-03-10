@@ -1,6 +1,6 @@
 
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate, AttendanceRecord, AttendanceLog, Announcement } from '../types';
+import { Student, Staff, Invoice, LeaveRequest, Notice, ChatMessage, Certificate, AttendanceRecord, AttendanceLog, Announcement, Homework } from '../types';
 
 /**
  * PersistenceService handles all database interactions via Supabase.
@@ -24,6 +24,7 @@ interface DatabaseSchema {
   attendanceRecords: AttendanceRecord[];
   attendanceLogs: AttendanceLog[];
   announcements: Announcement[];
+  homework: Homework[];
 }
 
 // Helper to convert camelCase string (collection) to snake_case string (table)
@@ -80,14 +81,14 @@ class PersistenceService {
       const data = localStorage.getItem(DB_KEY);
       if (!data) return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: []
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: [], homework: []
       };
       return JSON.parse(data);
     } catch (e) {
       console.warn("Could not read from local storage", e);
       return { 
         students: [], staff: [], invoices: [], leaveRequests: [], 
-        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: []
+        notices: [], chats: [], certificates: [], attendanceRecords: [], attendanceLogs: [], announcements: [], homework: []
       };
     }
   }
@@ -135,7 +136,7 @@ class PersistenceService {
       
       const dbLocal = this.getLocalDB();
       dbLocal[collection] = parsedData as any;
-      this.saveLocalDB(dbLocal);
+      this.saveLocalDB(dbLocal); // Save the updated local DB with fetched data
 
       return parsedData as any;
     } catch (error: any) {
@@ -148,8 +149,11 @@ class PersistenceService {
   async create<K extends keyof DatabaseSchema>(collection: K, item: any): Promise<void> {
     const table = toSnakeTable(collection);
     
-    // Optimistically update local
+    // Ensure the collection exists and is an array before pushing
     const dbLocal = this.getLocalDB();
+    if (!dbLocal[collection]) {
+      dbLocal[collection] = [] as any;
+    }
     (dbLocal[collection] as any[]).push(item);
     this.saveLocalDB(dbLocal);
 
