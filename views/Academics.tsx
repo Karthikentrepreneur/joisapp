@@ -43,7 +43,7 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
     if (role === UserRole.TEACHER) {
        userClassId = currentUser?.classAssigned;
     } else if (role === UserRole.PARENT) {
-       // When a parent logs in, currentUser is the student object.
+         // When a parent logs in, currentUser is the student object.
        if (currentUser) {
          userClassId = [currentUser.program];
          userStudentId = [currentUser.id];
