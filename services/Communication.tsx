@@ -112,16 +112,21 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
         map[s.id] = { name: s.name, role: s.role, image: s.image };
         
         if (role === UserRole.ADMIN) {
-           if (s.role === 'Teacher' || s.role === 'Admin') addContact(s.id, map[s.id]);
+           if (s.role === 'Teacher' || s.role === 'Admin' || s.role === 'Founder') addContact(s.id, map[s.id]);
         } else if (role === UserRole.TEACHER) {
-           if (s.role === 'Admin') addContact(s.id, map[s.id]);
+           // Allow teachers to see other teachers, admins, and founders
+           if (s.role === 'Admin' || s.role === 'Teacher' || s.role === 'Founder') addContact(s.id, map[s.id]);
         } else if (role === UserRole.PARENT) {
-           if (s.role === 'Admin') addContact(s.id, map[s.id]);
            if (s.role === 'Teacher') {
-             const myChildren = students.filter((st: any) => st.parentId === currentUser.id);
-             const isMyTeacher = myChildren.some((child: any) => child.program === (s.classAssigned || s.class_assigned));
-             if (isMyTeacher) addContact(s.id, map[s.id]);
+             // For parents, currentUser is the student object. Find the teacher for that student's class.
+             const studentProgram = currentUser.program;
+             const teacherProgram = s.classAssigned || s.class_assigned;
+             if (studentProgram === teacherProgram) {
+               addContact(s.id, map[s.id]);
+             }
            }
+           // Allow parents to see admins and founders
+           if (s.role === 'Admin' || s.role === 'Founder') addContact(s.id, map[s.id]);
         }
       });
       
@@ -217,8 +222,8 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
     }
   };
 
-  const handleThreadSelect = (threadId: string) => {
-    const thread = threads.find(t => t.threadId === selectedThreadId);
+  const handleThreadSelect = (threadId: string) => { // Fix: Use the threadId argument
+    const thread = threads.find(t => t.threadId === threadId);
     if (thread) {
       const otherId = thread.participants.find((p: string) => p !== currentUser.id);
       if (otherId) {
