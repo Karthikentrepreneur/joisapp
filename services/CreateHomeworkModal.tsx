@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Paperclip, Image as ImageIcon, Trash2, Edit, Calendar } from 'lucide-react';
-import { UserRole, ProgramType, Attachment } from '../types';
+import { X, Send, Loader2, Paperclip, Image as ImageIcon, Trash2, Edit, Calendar, User } from 'lucide-react';
+import { UserRole, ProgramType, Attachment, Student } from '../types';
 import { schoolService } from './schoolService';
 
 interface CreateHomeworkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { title: string; description: string; subject: string; dueDate: string; program: string; attachments: Attachment[] }) => Promise<void>;
+  onSubmit: (data: { title: string; description: string; subject: string; dueDate: string; program: string; attachments: Attachment[]; studentId?: string | null }) => Promise<void>;
   userRole: UserRole;
   userClassId?: string;
   initialData?: any;
@@ -29,11 +29,18 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [program, setProgram] = useState<string>('Little Seeds');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdminOrFounder = userRole === UserRole.ADMIN || userRole === UserRole.FOUNDER;
+
+  useEffect(() => {
+    // Fetch students for the dropdown
+    schoolService.getAll('students').then((data) => setStudents(data || []));
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +51,7 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
         setDueDate(initialData.dueDate);
         setProgram(initialData.program || 'Little Seeds');
         setAttachments(initialData.attachments || []);
+        setSelectedStudent(initialData.studentId || '');
       } else {
         setTitle('');
         setDescription('');
@@ -51,6 +59,7 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
         setDueDate('');
         setAttachments([]);
         setProgram((!isAdminOrFounder) ? (userClassId || 'Little Seeds') : 'Little Seeds');
+        setSelectedStudent('');
       }
     }
   }, [isOpen, initialData, isAdminOrFounder, userClassId]);
@@ -90,7 +99,8 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
         subject,
         dueDate,
         program: effectiveProgram,
-        attachments
+        attachments,
+        studentId: selectedStudent || null
       });
       onClose();
     } catch (error) {
@@ -99,6 +109,9 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  // Filter students based on selected program
+  const availableStudents = students.filter(s => s.program === program);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -131,6 +144,14 @@ export const CreateHomeworkModal: React.FC<CreateHomeworkModalProps> = ({
                 {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assign to Specific Student (Optional)</label>
+            <select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-blue-500">
+              <option value="">Entire Class</option>
+              {availableStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
           </div>
 
           <div className="space-y-2">

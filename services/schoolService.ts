@@ -279,7 +279,7 @@ export const schoolService = {
     return newHomework;
   },
 
-  async getHomework(role: UserRole, classId?: string | string[]) {
+  async getHomework(role: UserRole, classId?: string | string[], studentId?: string | string[]) {
     const all = await db.getAll('homework');
     
     if (role === UserRole.ADMIN || role === UserRole.FOUNDER) {
@@ -287,6 +287,12 @@ export const schoolService = {
     }
 
     return all.filter((h: any) => {
+       // Check specific student assignment
+       if (h.studentId) {
+          if (Array.isArray(studentId)) return studentId.includes(h.studentId);
+          return h.studentId === studentId;
+       }
+
        if (!h.program || h.program === 'All') return true;
        if (Array.isArray(classId)) return classId.includes(h.program);
        return h.program === classId;

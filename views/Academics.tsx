@@ -39,12 +39,14 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
 
   const loadHomework = async () => {
     let userClassId: string | string[] | undefined;
+    let userStudentId: string | string[] | undefined;
     if (role === UserRole.TEACHER) {
        userClassId = currentUser?.classAssigned;
     } else if (role === UserRole.PARENT) {
        userClassId = currentUser?.children?.map((c: any) => c.program).filter(Boolean);
+       userStudentId = currentUser?.children?.map((c: any) => c.id).filter(Boolean);
     }
-    const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId);
+    const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId, userStudentId);
     setHomeworkList(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
@@ -128,7 +130,10 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
               ) : homeworkList.map(hw => (
                 <div key={hw.id} className="pro-card p-6 flex flex-col group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all">
                    <div className="flex justify-between items-start mb-4">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">{hw.subject}</span>
+                      <div className="flex gap-2">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">{hw.subject}</span>
+                        {(hw as any).studentId && <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest">Individual</span>}
+                      </div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase">{hw.dueDate}</span>
                    </div>
                    <h4 className="text-lg font-black text-slate-900 mb-2">{hw.title}</h4>
