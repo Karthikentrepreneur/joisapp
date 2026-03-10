@@ -247,7 +247,14 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
         await db.update('students', formData.id, payload);
         showToast?.("Profile Updated", "success", `${fullName}'s record has been saved.`);
       } else {
-        const studentId = `ST${Date.now().toString().slice(-6)}`;
+        const pCode = formData.program === 'Little Seeds' ? 'LS' : 
+                      formData.program === 'Curiosity Cubs' ? 'CC' :
+                      formData.program === 'Odyssey Owls' ? 'OO' :
+                      formData.program === 'Future Makers' ? 'FM' : 'GEN';
+        
+        const count = students.filter(s => s.program === formData.program).length + 1;
+        const studentId = `JS-${pCode}${count.toString().padStart(2, '0')}`;
+
         const newStudent: Student = {
           ...payload as any,
           id: studentId,

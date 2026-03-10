@@ -216,7 +216,14 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
         await db.update('staff', formData.id, payload);
         showToast?.("Staff Profile Updated", "success", `${fullName}'s record saved.`);
       } else {
-        const staffId = `EMP${Date.now().toString().slice(-6)}`;
+        const pCode = formData.classAssigned === 'Little Seeds' ? 'LS' : 
+                      formData.classAssigned === 'Curiosity Cubs' ? 'CC' :
+                      formData.classAssigned === 'Odyssey Owls' ? 'OO' :
+                      formData.classAssigned === 'Future Makers' ? 'FM' : 'GEN';
+        
+        const count = staffList.filter(s => s.classAssigned === formData.classAssigned).length + 1;
+        const staffId = `EMP-${pCode}${count.toString().padStart(2, '0')}`;
+
         const newStaff: StaffType = {
           ...payload as any,
           id: staffId,
