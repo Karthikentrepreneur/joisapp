@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Award, Clock, Plus, FileText, X, Save, Pencil, Trash2, Filter, GraduationCap } from 'lucide-react';
-import { mockHomework } from '../data/mockData';
 import { UserRole, Homework, ProgramType } from '../types';
+import { schoolService } from '../services/schoolService';
+import { CreateHomeworkModal } from '../services/CreateHomeworkModal';
 
 interface TimetableItem {
   id: string;
@@ -21,13 +22,47 @@ const initialTimetable: TimetableItem[] = [
   { id: '3', time: '12:30 PM', subject: 'Wrap-up Time (Play Group & Pre-KG)', desc: 'Storytime, reflection, and getting ready to go home', status: 'Upcoming', program: 'Little Seeds' },
 ];
 
-export const Academics: React.FC<{ role?: UserRole }> = ({ role }) => {
+export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ role, currentUser }) => {
   const [activeTab, setActiveTab] = useState<'timetable' | 'homework' | 'results'>('timetable');
   const [filterProgram, setFilterProgram] = useState<'All' | ProgramType>('All');
-  const [homeworkList, setHomeworkList] = useState<Homework[]>(mockHomework);
+  const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [timetableItems, setTimetableItems] = useState<TimetableItem[]>(initialTimetable);
+  const [isCreateModalOpen, setOpen] = useState(false);
   
   const canEdit = role === UserRole.ADMIN || role === UserRole.TEACHER;
+
+  useEffect(() => {
+    if (activeTab === 'homework') {
+      loadHomework();
+    }
+  }, [activeTab, role]);
+
+  const loadHomework = async () => {
+    let userClassId: string | string[] | undefined;
+    if (role === UserRole.TEACHER) {
+       userClassId = currentUser?.classAssigned;
+    } else if (role === UserRole.PARENT) {
+       userClassId = currentUser?.children?.map((c: any) => c.program).filter(Boolean);
+    }
+    const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId);
+    setHomeworkList(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  };
+
+  const handlePostHomework = async (data: any) => {
+    await schoolService.createHomework({
+      ...data,
+      assignedBy: currentUser?.name || 'Teacher',
+      status: 'Active'
+    });
+    loadHomework();
+  };
+
+  const handleDeleteHomework = async (id: string) => {
+    if (window.confirm('Delete this assignment?')) {
+      await schoolService.deleteHomework(id);
+      loadHomework();
+    }
+  };
 
   const filteredTimetable = timetableItems.filter(item => 
     filterProgram === 'All' || item.program === 'All' || item.program === filterProgram
@@ -40,6 +75,11 @@ export const Academics: React.FC<{ role?: UserRole }> = ({ role }) => {
            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Academic Hub</h2>
            <p className="text-slate-500 font-medium">Curriculum management and assessment tracking.</p>
         </div>
+        {activeTab === 'homework' && canEdit && (
+          <button onClick={() => setOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-md flex items-center gap-2">
+            <Plus className="w-3.5 h-3.5" /> Assign Homework
+          </button>
+        )}
         <div className="flex flex-col md:flex-row items-stretch gap-3 w-full xl:w-auto">
            <select value={filterProgram} onChange={e => setFilterProgram(e.target.value as any)} className="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest outline-none shadow-sm">
               <option value="All">All Programs</option>
@@ -80,23 +120,51 @@ export const Academics: React.FC<{ role?: UserRole }> = ({ role }) => {
          )}
          {activeTab === 'homework' && (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {homeworkList.map(hw => (
-                <div key={hw.id} className="pro-card p-6 flex flex-col">
+              {homeworkList.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-gray-400">
+                  <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p>No homework assigned yet</p>
+                </div>
+              ) : homeworkList.map(hw => (
+                <div key={hw.id} className="pro-card p-6 flex flex-col group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all">
                    <div className="flex justify-between items-start mb-4">
                       <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">{hw.subject}</span>
                       <span className="text-[10px] text-slate-400 font-bold uppercase">{hw.dueDate}</span>
                    </div>
                    <h4 className="text-lg font-black text-slate-900 mb-2">{hw.title}</h4>
                    <p className="text-slate-500 text-sm mb-6 flex-1">{hw.description}</p>
-                   <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+                   
+                   {hw.attachments && hw.attachments.length > 0 && (
+                      <div className="mb-4 flex gap-2 overflow-x-auto">
+                        {hw.attachments.map((att, idx) => (
+                          <a key={idx} href={att.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-100">
+                            📎 {att.name}
+                          </a>
+                        ))}
+                      </div>
+                   )}
+
+                   <div className="pt-4 border-t border-slate-50 flex justify-between items-center mt-auto">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned By: {hw.assignedBy}</span>
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded ${hw.status === 'Active' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{hw.status}</span>
+                      <div className="flex items-center gap-2">
+                        {canEdit && (
+                          <button onClick={() => handleDeleteHomework(hw.id)} className="text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                        )}
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded ${hw.status === 'Active' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{hw.status}</span>
+                      </div>
                    </div>
                 </div>
               ))}
            </div>
          )}
       </div>
+      <CreateHomeworkModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setOpen(false)}
+        onSubmit={handlePostHomework}
+        userRole={role || UserRole.PARENT}
+        userClassId={currentUser?.classAssigned}
+      />
     </div>
   );
 };

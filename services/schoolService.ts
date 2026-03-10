@@ -1,7 +1,7 @@
 
 import { db } from './persistence';
 import { cryptoService } from './cryptoService';
-import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType, Announcement } from '../types';
+import { Student, Invoice, AttendanceRecord, AttendanceLog, LeaveRequest, Certificate, Notice, ChatMessage, UserRole, Attachment, ProgramType, Announcement, Homework } from '../types';
 
 /**
  * schoolService contains all high-level business logic.
@@ -265,6 +265,36 @@ export const schoolService = {
       return newLikes;
     }
     return [];
+  },
+
+  // --- HOMEWORK ---
+  async createHomework(homework: Omit<Homework, 'id'>) {
+    const newHomework = {
+      ...homework,
+      id: `HW-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'Active'
+    };
+    await db.create('homework', newHomework);
+    return newHomework;
+  },
+
+  async getHomework(role: UserRole, classId?: string | string[]) {
+    const all = await db.getAll('homework');
+    
+    if (role === UserRole.ADMIN || role === UserRole.FOUNDER) {
+      return all;
+    }
+
+    return all.filter((h: any) => {
+       if (!h.program || h.program === 'All') return true;
+       if (Array.isArray(classId)) return classId.includes(h.program);
+       return h.program === classId;
+    });
+  },
+
+  async deleteHomework(id: string) {
+    await db.delete('homework', id);
   },
 
   // --- MESSAGING HELPERS ---

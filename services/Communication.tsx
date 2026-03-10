@@ -289,90 +289,23 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                   <p>No announcements yet</p>
                 </div>
               ) : (
-                announcements.map((item) => (
+                announcements.map((item) => {
+                  const isUnread = !item.readBy?.includes(currentUser.id);
+                  return (
                   <div 
                     key={item.id} 
                     onClick={() => handleMarkAsRead(item)}
-                    className={`group relative border rounded-2xl p-5 md:p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full cursor-pointer ${
-                      (item.isPinned || !item.readBy?.includes(currentUser.id)) 
-                        ? 'bg-gradient-to-br from-yellow-50 to-orange-50/30 border-yellow-200' 
-                        : 'bg-white border-gray-100 hover:border-blue-100'
-                    }`}
+                    className="pro-card p-6 flex flex-col group cursor-pointer bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2">
-                          {item.isPinned && <Pin className="w-4 h-4 text-blue-600 fill-blue-600 rotate-45" />}
-                          <h3 className="text-lg font-bold text-gray-900 leading-tight">{item.title}</h3>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                            {item.role}
-                          </span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(item.createdAt).toLocaleDateString()}
-                          </span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <div className="flex items-center gap-1 text-xs text-gray-500" title="Read by">
-                            <Eye className="w-3 h-3" />
-                            <span>{item.readBy?.length ?? 0}</span>
-                          </div>
-                          <span className="text-xs text-gray-400">•</span>
-                          <div className="flex items-center gap-1 text-xs text-gray-500" title="Likes">
-                            <Heart className="w-3 h-3" />
-                            <span>{item.likes?.length ?? 0}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        {item.classId ? (
-                          <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
-                            {item.classId}
-                          </span>
-                        ) : (
-                          <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
-                            All Classes
-                          </span>
-                        )}
-                        {/* Action Buttons: Hidden for Parents completely */}
-                        {role !== UserRole.PARENT && (
-                          <div className="flex items-center gap-1 mt-1">
-                            {/* Edit: Only the creator can edit */}
-                            {item.createdBy === currentUser.id && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingAnnouncement(item);
-                                  setOpen(true);
-                                }}
-                                className="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50"
-                                title="Edit Announcement"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            
-                            {/* Delete: Admins/Founders can delete ALL. Teachers can ONLY delete THEIR OWN. */}
-                            {((role === UserRole.ADMIN || role === UserRole.FOUNDER) || (role === UserRole.TEACHER && item.createdBy === currentUser.id)) && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteAnnouncement(item.id);
-                                }}
-                                className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-full hover:bg-red-50"
-                                title="Delete Announcement"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">{item.message}</p>
+                     <div className="flex justify-between items-start mb-4">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">{item.classId || 'All Classes'}</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">{new Date(item.createdAt).toLocaleDateString()}</span>
+                     </div>
+                     <h4 className="text-lg font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">{item.title}</h4>
+                     <p className="text-slate-500 text-sm mb-6 flex-1 whitespace-pre-wrap">{item.message}</p>
+
                     {item.attachments && item.attachments.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2 overflow-x-auto">
+                      <div className="mb-4 flex gap-2 overflow-x-auto">
                         {item.attachments.map((att, idx) => (
                           <a 
                             key={idx} 
@@ -388,32 +321,44 @@ export const Communication: React.FC<CommunicationProps> = ({ role, currentUser,
                       </div>
                     )}
 
-                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-50/50 mt-4">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLikeAnnouncement(item.id);
-                        }}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
-                          item.likes?.includes(currentUser.id) 
-                            ? 'bg-rose-50 text-rose-500 border border-rose-100' 
-                            : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100'
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${item.likes?.includes(currentUser.id) ? 'fill-current' : ''}`} />
-                        <span>{item.likes?.includes(currentUser.id) ? 'Liked' : 'Like'}</span>
-                      </button>
-                      
-                      {item.likes && item.likes.length > 0 && (
-                        <div className="flex -space-x-2">
-                           <div className="w-6 h-6 rounded-full bg-rose-100 border-2 border-white flex items-center justify-center text-[10px] text-rose-600 font-bold">
-                             {item.likes.length}
+                    <div className="pt-4 border-t border-slate-50 flex justify-between items-center mt-auto">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase">By: {item.role}</span>
+                       <div className="flex items-center gap-2">
+                         {role !== UserRole.PARENT && (
+                           <div className="flex items-center gap-1">
+                             {item.createdBy === currentUser.id && (
+                               <button onClick={(e) => { e.stopPropagation(); setEditingAnnouncement(item); setOpen(true); }} className="text-gray-400 hover:text-blue-500 p-1.5 rounded-full hover:bg-blue-50" title="Edit"><Edit className="w-3.5 h-3.5" /></button>
+                             )}
+                             {((role === UserRole.ADMIN || role === UserRole.FOUNDER) || (item.createdBy === currentUser.id)) && (
+                               <button onClick={(e) => { e.stopPropagation(); handleDeleteAnnouncement(item.id); }} className="text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                             )}
                            </div>
-                        </div>
-                      )}
+                         )}
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); handleLikeAnnouncement(item.id); }}
+                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold transition-all active:scale-95 ${
+                             item.likes?.includes(currentUser.id) 
+                               ? 'bg-rose-50 text-rose-500 border border-rose-100' 
+                               : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100'
+                           }`}
+                         >
+                           <Heart className={`w-3 h-3 ${item.likes?.includes(currentUser.id) ? 'fill-current' : ''}`} />
+                           <span>{item.likes?.length ?? 0}</span>
+                         </button>
+                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded ${
+                           item.isPinned 
+                             ? 'bg-blue-500 text-white' 
+                             : isUnread
+                               ? 'bg-amber-500 text-white'
+                               : 'bg-slate-100 text-slate-400'
+                         }`}>
+                           {item.isPinned ? 'Pinned' : isUnread ? 'New' : 'Read'}
+                         </span>
+                       </div>
                     </div>
                   </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
