@@ -139,31 +139,28 @@ const AdminDashboard = ({
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-7" style={{ animation: 'fadeUp .4s ease' }}>
 
-      {/* Header Banner */}
+      {/* Header Banner — white */}
       <div
         className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #FF4B8B 0%, #FF8C1A 50%, #FFB800 100%)' }}
+        style={{ background: '#FFFFFF', border: '1.5px solid #F0F4F8', boxShadow: '0 2px 14px rgba(0,0,0,0.06)' }}
       >
-        <div className="absolute right-6 top-3 w-24 h-24 rounded-full opacity-10" style={{ background: '#fff' }} />
-        <div className="absolute right-24 bottom-2 w-12 h-12 rounded-full opacity-10" style={{ background: '#fff' }} />
-
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
-            <School className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: '#FFF0F5' }}>
+            <School className="w-6 h-6" style={{ color: '#FF4B8B' }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">School Overview</h1>
-            <p className="text-white/70 text-xs font-medium mt-0.5">Monitoring academic & administrative activity</p>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: '#1A2340' }}>School Overview</h1>
+            <p className="text-xs font-medium mt-0.5" style={{ color: '#9AA5B4' }}>Monitoring academic & administrative activity</p>
           </div>
         </div>
 
         <button
           onClick={() => loadData()}
-          className="relative z-10 flex items-center gap-2 text-white px-4 py-2 rounded-xl text-xs font-bold
-                     transition-all active:scale-95"
-          style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
+          className="relative z-10 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold
+                     transition-all active:scale-95 hover:opacity-80"
+          style={{ background: '#F8FAFC', border: '1.5px solid #F0F4F8', color: '#1A2340' }}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} style={{ color: '#FF4B8B' }} />
           Refresh
         </button>
       </div>
