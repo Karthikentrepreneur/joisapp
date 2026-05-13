@@ -18,6 +18,7 @@ interface TimetableItem {
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
+// ─── Brand Colors from image_39dc84.jpg ──────────────────────────────────
 const JOIS_COLORS = {
   pink:   '#FF2D78', 
   yellow: '#FFC107', 
@@ -28,6 +29,7 @@ const JOIS_COLORS = {
   bg:     '#F9FBFC'  
 };
 
+// ─── Row Cycling Themes ──────────────────────────────────────────────────
 const ROW_THEMES = [
   { accent: JOIS_COLORS.blue,   light: '#EFF8FF', border: '#D3E9FF' },
   { accent: JOIS_COLORS.yellow, light: '#FFFBEA', border: '#FFE080' },
@@ -55,7 +57,17 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
   }, [activeTab, role]);
 
   const loadHomework = async () => {
-    const data = await schoolService.getHomework(role || UserRole.PARENT);
+    let userClassId: string | string[] | undefined;
+    let userStudentId: string | string[] | undefined;
+    
+    if (role === UserRole.TEACHER) {
+      userClassId = currentUser?.classAssigned;
+    } else if (role === UserRole.PARENT && currentUser) {
+      userClassId   = [currentUser.program];
+      userStudentId = [currentUser.id];
+    }
+    
+    const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId, userStudentId);
     setHomeworkList(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
 
@@ -81,7 +93,7 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
     <div className="w-full flex flex-col min-h-full pb-12" style={{ background: JOIS_COLORS.bg, animation: 'fadeUp .4s ease' }}>
       <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`}</style>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="bg-white px-8 pt-8 pb-6 shadow-sm border-b border-slate-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-5">
@@ -136,7 +148,9 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
         </div>
       </div>
 
+      {/* ── Body ── */}
       <div className="flex-1 overflow-y-auto max-w-7xl mx-auto w-full px-8 pt-10">
+
         {activeTab === 'timetable' && (
           <div className="bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden">
             <div className="px-8 py-6 flex items-center justify-between bg-white border-b border-slate-100">
@@ -150,19 +164,19 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
             </div>
 
             <div className="p-10 relative">
-              {/* CENTERED TIMELINE LINE */}
-              <div className="absolute left-16 top-12 bottom-12 w-[1.5px] -translate-x-1/2" style={{ background: '#F1F5F9' }}></div>
-              
+              {/* Center-aligned Timeline Line */}
+              <div className="absolute left-12 top-12 bottom-12 w-[1.5px]" style={{ background: '#F1F5F9' }}></div>
+
               <div className="space-y-8">
                 {filteredTimetable.map((slot, idx) => {
                   const theme = ROW_THEMES[idx % ROW_THEMES.length];
                   return (
-                    <div key={slot.id} className="flex items-start relative pl-12">
-                      {/* CENTER-ALIGNED ROUND DOT */}
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-[3px] bg-white z-10 shrink-0" 
+                    <div key={slot.id} className="flex gap-12 items-center relative">
+                      {/* Perfectly Center-Aligned Round Dot */}
+                      <div className="absolute left-[48px] -translate-x-1/2 w-5 h-5 rounded-full border-[3px] bg-white z-10 shrink-0" 
                            style={{ borderColor: theme.accent }}></div>
-                      
-                      <div className="flex-1 p-8 rounded-[24px] border shadow-sm" 
+
+                      <div className="flex-1 ml-12 p-8 rounded-[24px] border shadow-sm transition-all hover:shadow-md" 
                            style={{ background: theme.light, borderColor: theme.border }}>
                         <div className="flex justify-between items-start mb-3">
                           <span className="px-4 py-1 rounded-full text-[10px] font-black tracking-widest border"
@@ -185,6 +199,7 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
           </div>
         )}
 
+        {/* ── Homework Tab ── */}
         {activeTab === 'homework' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {homeworkList.map((hw, idx) => {
@@ -198,13 +213,20 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
                   </div>
                   <h4 className="text-xl font-bold mb-3" style={{ color: JOIS_COLORS.navy }}>{hw.title}</h4>
                   <p className="text-sm font-medium leading-relaxed text-slate-500 flex-1 mb-8">{hw.description}</p>
+                  
+                  {hw.attachments?.map((att, i) => (
+                    <a key={i} href={att.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 mb-2 text-xs font-bold text-blue-500 hover:underline">
+                      <FileText className="w-4 h-4" /> {att.name}
+                    </a>
+                  ))}
+
                   <div className="pt-6 flex items-center justify-between border-t border-slate-50 mt-auto">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-slate-400" />
                       <span className="text-[10px] font-black text-slate-400">{hw.dueDate}</span>
                     </div>
                     {canEdit && (
-                      <button onClick={() => handleDeleteHomework(hw.id)} className="p-2 rounded-lg text-rose-400">
+                      <button onClick={() => handleDeleteHomework(hw.id)} className="p-2 rounded-lg text-rose-400 transition-colors hover:bg-rose-50">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
@@ -215,6 +237,7 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
           </div>
         )}
 
+        {/* ── Results Tab ── */}
         {activeTab === 'results' && (
           <div className="bg-white rounded-[40px] flex flex-col items-center justify-center py-32 shadow-sm border border-slate-100">
             <div className="w-24 h-24 rounded-[32px] flex items-center justify-center mb-8 shadow-inner" style={{ background: JOIS_COLORS.yellow }}>
