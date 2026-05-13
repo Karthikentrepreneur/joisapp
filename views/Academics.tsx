@@ -54,12 +54,14 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
   const loadHomework = async () => {
     let userClassId: string | string[] | undefined;
     let userStudentId: string | string[] | undefined;
+    
     if (role === UserRole.TEACHER) {
       userClassId = currentUser?.classAssigned;
     } else if (role === UserRole.PARENT && currentUser) {
       userClassId   = [currentUser.program];
       userStudentId = [currentUser.id];
     }
+    
     const data = await schoolService.getHomework(role || UserRole.PARENT, userClassId, userStudentId);
     setHomeworkList(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
   };
