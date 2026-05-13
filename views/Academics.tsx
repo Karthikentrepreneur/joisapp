@@ -18,7 +18,7 @@ interface TimetableItem {
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
-// ─── Color Palette (Locked Hex Codes) ────────────────────────────────────────
+// ─── Locked Brand Palette from image_39dc84.jpg ─────────────────────────────
 const JOIS_COLORS = {
   pink:   '#FF2D78', 
   yellow: '#FFC107', 
@@ -29,14 +29,13 @@ const JOIS_COLORS = {
   bg:     '#F9FBFC'  
 };
 
-// ─── Theme Mapping (Content-Driven) ──────────────────────────────────────────
-const PROGRAM_THEMES: Record<string, { accent: string; light: string; border: string }> = {
-  'Little Seeds':   { accent: JOIS_COLORS.pink,   light: '#FFF5F8', border: '#FFD3E3' },
-  'Curiosity Cubs': { accent: JOIS_COLORS.yellow, light: '#FFFBEA', border: '#FFE080' },
-  'Odyssey Owls':   { accent: JOIS_COLORS.green,  light: '#F8FDF5', border: '#E2F3D8' },
-  'Future Makers':  { accent: JOIS_COLORS.blue,   light: '#EFF8FF', border: '#D3E9FF' },
-  'All':            { accent: JOIS_COLORS.yellow, light: '#FFFFFF', border: '#E2E8F0' },
-};
+// ─── Theme Array for Row Cycling ─────────────────────────────────────────────
+const ROW_THEMES = [
+  { accent: JOIS_COLORS.blue,   light: '#EFF8FF', border: '#D3E9FF' }, // Theme 1
+  { accent: JOIS_COLORS.yellow, light: '#FFFBEA', border: '#FFE080' }, // Theme 2
+  { accent: JOIS_COLORS.pink,   light: '#FFF5F8', border: '#FFD3E3' }, // Theme 3
+  { accent: JOIS_COLORS.green,  light: '#F8FDF5', border: '#E2F3D8' }, // Theme 4
+];
 
 const initialTimetable: TimetableItem[] = [
   { id: '1', time: '9:00 AM', subject: 'Starting the Day with Smiles', desc: 'Circle time, greetings, settling in with morning songs and activities', status: 'Current', program: 'All' },
@@ -167,8 +166,9 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
             <div className="p-10 relative">
               <div className="absolute left-[54px] top-12 bottom-12 w-[1.5px]" style={{ background: '#F1F5F9' }}></div>
               <div className="space-y-8">
-                {filteredTimetable.map((slot) => {
-                  const theme = PROGRAM_THEMES[slot.program || 'All'];
+                {filteredTimetable.map((slot, idx) => {
+                  {/* Cycles through the brand colors per row */}
+                  const theme = ROW_THEMES[idx % ROW_THEMES.length];
                   return (
                     <div key={slot.id} className="flex gap-12 items-start relative">
                       <div className="w-5 h-5 rounded-full border-[3px] bg-white z-10 mt-5 shrink-0" 
@@ -196,10 +196,11 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
           </div>
         )}
 
+        {/* ── Homework Tab ── */}
         {activeTab === 'homework' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {homeworkList.map(hw => {
-              const theme = PROGRAM_THEMES[hw.subject] || PROGRAM_THEMES['Little Seeds'];
+            {homeworkList.map((hw, idx) => {
+              const theme = ROW_THEMES[idx % ROW_THEMES.length];
               return (
                 <div key={hw.id} className="bg-white rounded-[32px] p-8 flex flex-col transition-all border border-slate-100 shadow-sm hover:shadow-xl">
                   <div className="flex items-start justify-between mb-5">
@@ -226,6 +227,7 @@ export const Academics: React.FC<{ role?: UserRole; currentUser?: any }> = ({ ro
           </div>
         )}
 
+        {/* ── Results Tab ── */}
         {activeTab === 'results' && (
           <div className="bg-white rounded-[40px] flex flex-col items-center justify-center py-32 shadow-sm border border-slate-100">
             <div className="w-24 h-24 rounded-[32px] flex items-center justify-center mb-8 shadow-inner" style={{ background: JOIS_COLORS.yellow }}>
