@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../services/persistence';
 import { schoolService } from '../services/schoolService';
@@ -31,6 +32,7 @@ import {
   Filter,
   CheckCircle2,
   AlertCircle,
+  Clock,
   FileBarChart,
   CalendarDays
 } from 'lucide-react';
@@ -45,13 +47,13 @@ interface AttendanceProps {
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 
 const SummaryStat = ({ icon: Icon, label, value, color }: any) => (
-  <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center gap-4 shrink-0 flex-1 min-w-[150px]">
-     <div className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${color} bg-opacity-10`}>
-       <Icon className={`w-5 h-5 ${color.replace('bg-', 'text-').replace('-600', '-600').replace('-500', '-600')}`} />
+  <div className="bg-white p-3.5 md:p-4 rounded-xl md:rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 shrink-0 flex-1 min-w-[125px] md:min-w-[150px]">
+     <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${color} text-white shadow-sm`}>
+       <Icon className="w-4 h-4 md:w-5 md:h-5" />
      </div>
      <div className="min-w-0">
-        <p className="text-xs font-medium text-gray-500 mb-1 truncate">{label}</p>
-        <p className="text-xl font-semibold text-gray-900 leading-none truncate">{value}</p>
+        <p className="text-[8px] md:text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-0.5 leading-none truncate">{label}</p>
+        <p className="text-base md:text-xl font-black text-slate-900 leading-none truncate">{value}</p>
      </div>
   </div>
 );
@@ -130,8 +132,10 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
 
       for (const studentId in attendanceState) {
         const status = attendanceState[studentId];
+        // Only save if status is defined (i.e., not 'Not Marked')
         if (status) {
           const student = students.find(s => s.id === studentId);
+          // And if it matches the active program filter
           if (student && (activeProgram === 'All' || student.program === activeProgram)) {
             recordsToSave[studentId] = status;
           }
@@ -276,49 +280,46 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
     const childLogs = allLogs.filter(l => l.studentId === myChild?.id).sort((a, b) => b.date.localeCompare(a.date));
     
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 h-full overflow-y-auto bg-gray-50 pb-24">
-        <div className="flex items-center gap-4 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <img src={myChild?.image} className="w-16 h-16 rounded-full object-cover border border-gray-200" alt="Student" />
+      <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 h-full overflow-y-auto no-scrollbar pb-24 animate-in fade-in duration-500">
+        <div className="flex items-center gap-4 bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <img src={myChild?.image} className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover border border-slate-100" alt="Student" />
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900">{myChild?.name}</h2>
-            <p className="text-gray-500 text-sm mt-1">{myChild?.program} • Academic Year 2025</p>
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">{myChild?.name}</h2>
+            <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">{myChild?.program} • Academic Year 2025</p>
           </div>
           <button 
             onClick={() => myChild && downloadIndividualReport(myChild)}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md border border-gray-300 transition-colors text-sm font-medium"
+            className="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl border border-slate-200 transition-all active:scale-95"
             title="Download History"
           >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Export History</span>
+            <Download className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-gray-500" /> Attendance Ledger
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-blue-600" /> Attendance Ledger
               </h3>
            </div>
-           <div className="divide-y divide-gray-200">
+           <div className="divide-y divide-slate-100">
               {childLogs.length === 0 ? (
                 <div className="p-12 text-center">
-                  <Activity className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm font-medium">No attendance records found</p>
+                  <Activity className="w-12 h-12 text-slate-100 mx-auto mb-3" />
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No logs found</p>
                 </div>
               ) : childLogs.slice(0, 20).map((log) => (
-                 <div key={log.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                 <div key={log.id} className="p-4 md:p-5 flex items-center justify-between group hover:bg-slate-50 transition-all">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${log.status === 'Present' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${log.status === 'Present' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
                         {log.status === 'Present' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                       </div>
                       <div>
-                         <p className="text-sm font-semibold text-gray-900">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                         <p className="text-xs text-gray-500 mt-0.5">Checked In: 08:30 AM</p>
+                         <p className="text-sm font-bold text-slate-800 leading-none">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                         <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-wider">Checked In: 08:30 AM</p>
                       </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${log.status === 'Present' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                      {log.status}
-                    </span>
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${log.status === 'Present' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-rose-500 text-white shadow-sm'}`}>{log.status}</span>
                  </div>
               ))}
            </div>
@@ -328,32 +329,32 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
   }
 
   return (
-    <div className="w-full flex flex-col bg-gray-50 min-h-full pb-8">
+    <div className="w-full flex flex-col bg-slate-50 animate-in fade-in duration-300 min-h-full pb-8">
       {/* Tab Header */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
+      <div className="bg-white border-b border-slate-200 px-4 md:px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl mx-auto w-full">
-          <div className="flex bg-gray-100 p-1 rounded-md w-full md:w-auto">
-             <button onClick={() => setActiveTab('register')} className={`flex-1 md:px-6 py-1.5 rounded text-sm font-medium transition-colors ${activeTab === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Daily Register</button>
-             <button onClick={() => setActiveTab('history')} className={`flex-1 md:px-6 py-1.5 rounded text-sm font-medium transition-colors ${activeTab === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>History & Reports</button>
+          <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+             <button onClick={() => setActiveTab('register')} className={`flex-1 md:px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'register' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Mark Register</button>
+             <button onClick={() => setActiveTab('history')} className={`flex-1 md:px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>History</button>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar">
             {activeTab === 'register' && (
-              <div className="hidden md:flex items-center gap-1 bg-white border border-gray-300 p-1 rounded-md">
-                <button onClick={() => setActiveProgram('All')} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeProgram === 'All' ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>All</button>
+              <div className="hidden md:flex items-center gap-1.5 bg-white border border-slate-200 p-1 rounded-lg">
+                <button onClick={() => setActiveProgram('All')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${activeProgram === 'All' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>All</button>
                 {PROGRAMS.map(prog => (
-                  <button key={prog} onClick={() => setActiveProgram(prog)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${activeProgram === prog ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{prog}</button>
+                  <button key={prog} onClick={() => setActiveProgram(prog)} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activeProgram === prog ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>{prog}</button>
                 ))}
               </div>
             )}
             
             {activeTab === 'register' && (
               <div className="md:hidden flex-1 relative min-w-[120px]">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <select 
                   value={activeProgram}
                   onChange={(e) => setActiveProgram(e.target.value as any)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 outline-none appearance-none"
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-700 outline-none appearance-none shadow-sm"
                 >
                   <option value="All">All Classes</option>
                   {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
@@ -362,13 +363,13 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
             )}
 
             {canManage && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <button 
                   onClick={() => setShowReportModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all active:scale-95 shrink-0"
                 >
-                  <FileBarChart className="w-4 h-4 text-gray-500" /> 
-                  <span className="hidden sm:inline">Export Reports</span>
+                  <FileBarChart className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Reports</span>
                 </button>
               </div>
             )}
@@ -376,25 +377,25 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 space-y-6">
+      <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pt-6 space-y-6">
         {activeTab === 'register' ? (
           <>
-            {/* Stats Row */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-              <div className="w-full overflow-x-auto pb-2 md:pb-0">
-                <div className="flex gap-4 min-w-max md:min-w-0">
+            {/* Stats Row - Explicitly scrollable on mobile to ensure absentee count is never hidden */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                <div className="flex gap-3 md:gap-4 min-w-max md:min-w-0 md:flex-1">
                   <SummaryStat icon={Users} label="Enrolled" value={stats.total} color="bg-blue-600" />
-                  <SummaryStat icon={CheckCircle2} label="Present" value={stats.present} color="bg-green-600" />
-                  <SummaryStat icon={AlertCircle} label="Absent" value={stats.absent} color="bg-red-500" />
-                  <SummaryStat icon={Clock} label="Late" value={stats.late} color="bg-yellow-500" />
+                  <SummaryStat icon={CheckCircle2} label="Present" value={stats.present} color="bg-emerald-600" />
+                  <SummaryStat icon={AlertCircle} label="Absent" value={stats.absent} color="bg-rose-500" />
+                  <SummaryStat icon={Clock} label="Late" value={stats.late} color="bg-amber-500" />
                 </div>
               </div>
-              <div className="relative w-full md:w-72 shrink-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="relative md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="Search students..." 
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  placeholder="Search roster..." 
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold shadow-sm outline-none focus:border-blue-500"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                 />
@@ -402,59 +403,52 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
             </div>
 
             {/* Date and Bulk Actions Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-4">
-                 <div className="w-10 h-10 bg-gray-100 text-gray-600 rounded-md flex items-center justify-center border border-gray-200">
-                    <CalendarIcon className="w-5 h-5" />
-                 </div>
+                 <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 text-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg"><CalendarIcon className="w-5 h-5 md:w-6 md:h-6" /></div>
                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 leading-none">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h2>
-                    <p className="text-sm text-gray-500 mt-1">Today's Attendance</p>
+                    <h2 className="text-sm md:text-lg font-black text-slate-900 leading-none">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h2>
+                    <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Today's Roll Call</p>
                  </div>
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button 
-                  onClick={handleSaveRegister} 
-                  disabled={saving} 
-                  className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                >
-                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
-                   <span>Save Register</span>
+                <button onClick={handleSaveRegister} disabled={saving} className="flex-1 sm:flex-none px-6 md:px-8 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50">
+                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} <span className="hidden sm:inline">Save Register</span><span className="sm:hidden">Save</span>
                 </button>
               </div>
             </div>
 
             {/* Bulk Selection Toolbar */}
-            <div className="flex flex-wrap items-center gap-2 bg-white p-2 md:p-3 rounded-lg border border-gray-200 shadow-sm">
-               <button onClick={handleSelectAll} className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+            <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+               <button onClick={handleSelectAll} className="px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">
                  {selectedStudents.size === filteredStudents.length && filteredStudents.length > 0 ? 'Deselect All' : 'Select All'}
                </button>
-               <div className="h-5 w-px bg-gray-300 mx-2"></div>
-               <button onClick={() => handleBulkStatusUpdate('Present')} disabled={selectedStudents.size === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-green-200">
-                 <CheckCircle2 className="w-4 h-4" /> Mark Present
+               <div className="h-6 w-px bg-slate-200 mx-1"></div>
+               <button onClick={() => handleBulkStatusUpdate('Present')} disabled={selectedStudents.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                 <CheckCircle2 className="w-3.5 h-3.5" /> Mark Present
                </button>
-               <button onClick={() => handleBulkStatusUpdate('Absent')} disabled={selectedStudents.size === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-red-200">
-                 <AlertCircle className="w-4 h-4" /> Mark Absent
+               <button onClick={() => handleBulkStatusUpdate('Absent')} disabled={selectedStudents.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                 <AlertCircle className="w-3.5 h-3.5" /> Mark Absent
                </button>
-               <button onClick={() => handleBulkStatusUpdate('Late')} disabled={selectedStudents.size === 0} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-yellow-200">
-                 <Clock className="w-4 h-4" /> Mark Late
+               <button onClick={() => handleBulkStatusUpdate('Late')} disabled={selectedStudents.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                 <Clock className="w-3.5 h-3.5" /> Mark Late
                </button>
-               <span className="ml-auto text-sm text-gray-500 px-2 font-medium">
+               <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
                  {selectedStudents.size} Selected
                </span>
             </div>
 
             {/* Grid View */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 p-3 md:gap-6 md:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
               {loading ? (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400">
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-300">
                   <Loader2 className="w-8 h-8 animate-spin mb-3" />
-                  <p className="text-sm font-medium">Loading Roster...</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest">Compiling Roster...</p>
                 </div>
               ) : filteredStudents.length === 0 ? (
-                <div className="col-span-full py-16 text-center border border-dashed border-gray-300 rounded-lg bg-white">
-                  <Users className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium text-sm">No records match the current filters.</p>
+                <div className="col-span-full py-16 text-center">
+                  <Activity className="w-10 h-10 text-slate-100 mx-auto mb-3" />
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records match the filter</p>
                 </div>
               ) : (
                 filteredStudents.map((s) => {
@@ -464,35 +458,39 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                     <div 
                       key={s.id} 
                       onClick={() => toggleSelection(s.id)}
-                      className={`group cursor-pointer flex flex-col bg-white p-4 rounded-lg border transition-all relative ${
+                      className={`group cursor-pointer flex flex-col items-center p-3 md:p-4 rounded-2xl border-2 transition-all duration-200 relative overflow-hidden ${
                         isSelected 
-                          ? 'border-blue-500 ring-1 ring-blue-500 shadow-sm' 
-                          : 'border-gray-200 hover:border-gray-300 shadow-sm'
+                          ? 'border-blue-500 bg-blue-50/30' 
+                          : 'border-slate-100 bg-white hover:border-blue-200 hover:shadow-md'
                       }`}
                     >
                       {/* Selection Indicator */}
-                      <div className={`absolute top-3 right-3 w-5 h-5 rounded flex items-center justify-center transition-colors border ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
-                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                      <div className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-slate-200 bg-white'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
 
-                      <div className="flex flex-col items-center mt-2">
+                      {/* Status Badge */}
+                      <div className={`absolute top-2 left-2 w-2.5 h-2.5 rounded-full ${
+                        status === 'Present' ? 'bg-emerald-500' : status === 'Absent' ? 'bg-rose-500' : status === 'Late' ? 'bg-amber-500' : 'bg-slate-200'
+                      }`} />
+
+                      <div className="relative mb-2 md:mb-3 mt-2">
                         <img 
                           src={s.image} 
-                          className="w-16 h-16 rounded-full object-cover border border-gray-200 mb-3" 
+                          className={`w-14 h-14 md:w-20 md:h-20 rounded-full object-cover border-4 shadow-sm transition-transform ${
+                            status === 'Present' ? 'border-emerald-100' : status === 'Absent' ? 'border-rose-100' : status === 'Late' ? 'border-amber-100' : 'border-slate-50'
+                          }`} 
                           alt={s.name} 
                         />
-                        <h3 className="text-sm font-semibold text-gray-900 text-center leading-tight truncate w-full">{s.name}</h3>
-                        <p className="text-xs text-gray-500 mt-1">{s.id}</p>
-                        
-                        {/* Status Text */}
-                        <div className={`mt-3 w-full text-center px-2 py-1 rounded text-xs font-medium border ${
-                          status === 'Present' ? 'bg-green-50 text-green-700 border-green-200' : 
-                          status === 'Absent' ? 'bg-red-50 text-red-700 border-red-200' : 
-                          status === 'Late' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 
-                          'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>
-                          {status || 'Not Marked'}
-                        </div>
+                      </div>
+                      <h3 className="text-[10px] md:text-sm font-bold text-slate-900 text-center leading-tight line-clamp-2 min-h-[2.5em]">{s.name}</h3>
+                      <p className="text-[8px] font-mono text-slate-400 uppercase mt-1">{s.id}</p>
+                      
+                      {/* Status Text */}
+                      <div className={`mt-2 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                        status === 'Present' ? 'bg-emerald-100 text-emerald-700' : status === 'Absent' ? 'bg-rose-100 text-rose-700' : status === 'Late' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {status || 'Not Marked'}
                       </div>
                     </div>
                   );
@@ -501,54 +499,48 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
             </div>
           </>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 text-sm">Attendance Archive</h3>
+          <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <h3 className="font-black text-slate-900 text-xs uppercase tracking-widest">Attendance Archive</h3>
              </div>
              
              {/* Desktop Table */}
-             <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                   <thead className="bg-white text-xs font-medium text-gray-500 border-b border-gray-200">
+             <div className="hidden md:block">
+                <table className="w-full text-left">
+                   <thead className="bg-slate-50 text-[9px] font-bold uppercase tracking-[0.2em] border-b border-slate-100 text-slate-400">
                      <tr>
-                       <th className="px-6 py-3 font-medium">Session Date</th>
-                       <th className="px-6 py-3 font-medium text-center">Present</th>
-                       <th className="px-6 py-3 font-medium text-center">Absent</th>
-                       <th className="px-6 py-3 font-medium text-right">Actions</th>
+                       <th className="px-8 py-4">Session Date</th>
+                       <th className="px-8 py-4 text-center">Present</th>
+                       <th className="px-8 py-4 text-center">Absent</th>
+                       <th className="px-8 py-4 text-right">Actions</th>
                      </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-100">
+                   <tbody className="divide-y divide-slate-100">
                       {historyList.map((rec) => (
-                        <tr key={rec.date} className="hover:bg-gray-50 transition-colors group">
-                           <td className="px-6 py-4">
-                             <p className="font-medium text-gray-900 text-sm">{rec.label}</p>
-                             <p className="text-xs text-gray-500 mt-0.5">{rec.date}</p>
+                        <tr key={rec.date} className="hover:bg-slate-50/80 transition-all group">
+                           <td className="px-8 py-5">
+                             <p className="font-bold text-slate-900 text-sm leading-none mb-1">{rec.label}</p>
+                             <p className="text-[9px] text-slate-400 font-mono tracking-wider uppercase">{rec.date}</p>
                            </td>
-                           <td className="px-6 py-4 text-center">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                {rec.present}
-                              </span>
+                           <td className="px-8 py-5 text-center text-emerald-600 font-black text-sm">
+                              <span className="bg-emerald-50 px-3 py-1 rounded-full">{rec.present}</span>
                            </td>
-                           <td className="px-6 py-4 text-center">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                {rec.absent}
-                              </span>
+                           <td className="px-8 py-5 text-center text-rose-600 font-black text-sm">
+                              <span className="bg-rose-50 px-3 py-1 rounded-full">{rec.absent}</span>
                            </td>
-                           <td className="px-6 py-4 text-right">
-                             <div className="flex justify-end gap-2">
+                           <td className="px-8 py-5 text-right">
+                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                   onClick={() => downloadDailyClassReport(rec.date)}
-                                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                  title="Download Report"
+                                  className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
                                 >
                                   <Download className="w-4 h-4" />
                                 </button>
                                 <button 
                                   onClick={() => { setDate(rec.date); setActiveTab('register'); }} 
-                                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                  title="View Details"
+                                  className="p-2.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
                                 >
-                                  <ChevronRight className="w-4 h-4" />
+                                  <ChevronRight className="w-5 h-5" />
                                 </button>
                              </div>
                            </td>
@@ -559,33 +551,39 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
              </div>
 
              {/* Mobile Card List */}
-             <div className="md:hidden divide-y divide-gray-100">
+             <div className="md:hidden divide-y divide-slate-100">
                 {historyList.map((rec) => (
-                  <div key={rec.date} className="p-4 flex items-center justify-between hover:bg-gray-50" onClick={() => { setDate(rec.date); setActiveTab('register'); }}>
+                  <div key={rec.date} className="p-5 flex items-center justify-between hover:bg-slate-50 active:bg-slate-100" onClick={() => { setDate(rec.date); setActiveTab('register'); }}>
                     <div className="flex flex-col">
-                      <p className="font-medium text-gray-900 text-sm mb-1">{rec.label}</p>
-                      <div className="flex gap-3">
-                         <span className="text-xs font-medium text-green-600">{rec.present} Present</span>
-                         <span className="text-xs font-medium text-red-600">{rec.absent} Absent</span>
+                      <p className="font-black text-slate-900 text-sm leading-none mb-2">{rec.label}</p>
+                      <div className="flex gap-4">
+                         <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{rec.present} Present</span>
+                         </div>
+                         <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{rec.absent} Absent</span>
+                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                        <button 
                          onClick={(e) => { e.stopPropagation(); downloadDailyClassReport(rec.date); }}
-                         className="p-2 text-gray-400 rounded-md border border-gray-200 hover:bg-gray-50"
-                       >
+                         className="p-2 bg-slate-50 text-slate-400 rounded-lg"
+                        >
                          <Download className="w-4 h-4" />
                        </button>
-                       <ChevronRight className="w-5 h-5 text-gray-400" />
+                       <ChevronRight className="w-5 h-5 text-slate-300" />
                     </div>
                   </div>
                 ))}
              </div>
 
              {historyList.length === 0 && (
-                <div className="py-20 text-center">
-                  <History className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium text-sm">No historical data available.</p>
+                <div className="py-24 text-center">
+                  <History className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No historical data found</p>
                 </div>
              )}
           </div>
@@ -594,44 +592,45 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
 
       {/* FULLY RESPONSIVE REPORT GENERATION MODAL */}
       {showReportModal && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
-           <div className="bg-white rounded-xl p-6 md:p-8 max-w-lg w-full shadow-xl relative border border-gray-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+           <div className="bg-white rounded-[2rem] p-5 md:p-8 max-w-lg w-full shadow-2xl relative border border-slate-200 max-h-[90vh] overflow-y-auto no-scrollbar">
               <div className="flex justify-between items-start mb-6 sticky top-0 bg-white z-10 pb-2">
                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">Export Reports</h3>
-                    <p className="text-sm text-gray-500 mt-1">Download attendance records as CSV</p>
+                    <h3 className="text-xl md:text-2xl font-black text-slate-900 leading-tight">Generate Reports</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Export attendance spreadsheets</p>
                  </div>
-                 <button onClick={() => setShowReportModal(false)} className="w-8 h-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md flex items-center justify-center transition-colors shrink-0">
-                    <X className="w-5 h-5" />
+                 <button onClick={() => setShowReportModal(false)} className="w-9 h-9 md:w-10 md:h-10 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-full flex items-center justify-center transition-all border border-slate-100 shrink-0">
+                    <X className="w-5 h-5 md:w-6 md:h-6" />
                  </button>
               </div>
 
-              <div className="space-y-6 pb-2">
+              <div className="space-y-6 md:space-y-8 pb-4">
                  {/* DAILY REPORT GENERATOR */}
-                 <div className="p-5 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                 <div className="p-4 md:p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-white border border-gray-200 text-gray-700 rounded-md flex items-center justify-center shadow-sm">
-                          <CalendarIcon className="w-4 h-4" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <CalendarIcon className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
-                          <h4 className="font-semibold text-gray-900 text-sm">Daily Class Report</h4>
+                          <h4 className="font-black text-slate-900 text-sm">Daily Class Report</h4>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase">Attendance for a specific day</p>
                        </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-gray-700">Select Date</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Date</label>
                           <input 
                             type="date" 
                             defaultValue={date}
                             id="report-daily-date"
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none shadow-sm focus:border-blue-500 transition-all"
                           />
                        </div>
-                       <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-gray-700">Select Class</label>
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
                           <select 
                             id="report-daily-program"
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none shadow-sm focus:border-blue-500 transition-all"
                           >
                             <option value="All">All Classes</option>
                             {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
@@ -644,37 +643,38 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         const p = (document.getElementById('report-daily-program') as HTMLSelectElement).value;
                         downloadDailyClassReport(d, p);
                       }}
-                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                      className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
-                       <Download className="w-4 h-4" /> Export Daily CSV
+                       <Download className="w-4 h-4" /> Download Daily
                     </button>
                  </div>
 
                  {/* MONTHLY REPORT GENERATOR */}
-                 <div className="p-5 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                 <div className="p-4 md:p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-white border border-gray-200 text-gray-700 rounded-md flex items-center justify-center shadow-sm">
-                          <FileBarChart className="w-4 h-4" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <FileBarChart className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
-                          <h4 className="font-semibold text-gray-900 text-sm">Monthly Summary</h4>
+                          <h4 className="font-black text-slate-900 text-sm">Monthly Summary</h4>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase">Consolidated monthly report</p>
                        </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-gray-700">Select Month</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Month</label>
                           <input 
                             type="month" 
                             defaultValue={date.substring(0, 7)}
                             id="report-monthly-date"
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none shadow-sm focus:border-indigo-500 transition-all"
                           />
                        </div>
-                       <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-gray-700">Select Class</label>
+                       <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
                           <select 
                             id="report-monthly-program"
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase outline-none shadow-sm focus:border-indigo-500 transition-all"
                           >
                             <option value="All">All Classes</option>
                             {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
@@ -687,29 +687,30 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         const p = (document.getElementById('report-monthly-program') as HTMLSelectElement).value;
                         downloadMonthlyClassReport(m, p);
                       }}
-                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                      className="w-full bg-indigo-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
-                       <Download className="w-4 h-4" /> Export Monthly CSV
+                       <Download className="w-4 h-4" /> Download Monthly
                     </button>
                  </div>
 
                  {/* INDIVIDUAL SEARCH REPORT */}
-                 <div className="p-5 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                 <div className="p-4 md:p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-white border border-gray-200 text-gray-700 rounded-md flex items-center justify-center shadow-sm">
-                          <User className="w-4 h-4" />
+                       <div className="w-9 h-9 md:w-10 md:h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                          <User className="w-4 h-4 md:w-5 md:h-5" />
                        </div>
                        <div>
-                          <h4 className="font-semibold text-gray-900 text-sm">Individual Record</h4>
+                          <h4 className="font-black text-slate-900 text-sm">Individual Search</h4>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase">Export single student history</p>
                        </div>
                     </div>
-                    <div className="space-y-1.5">
-                       <label className="text-xs font-medium text-gray-700">Search Student</label>
+                    <div className="space-y-1">
+                       <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Student</label>
                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
                           <select 
                             id="report-individual-id"
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-md text-sm outline-none appearance-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none appearance-none shadow-sm focus:border-emerald-500 transition-all"
                           >
                             <option value="">Select Student...</option>
                             {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.id})</option>)}
@@ -723,9 +724,9 @@ export const Attendance: React.FC<AttendanceProps> = ({ role, showToast }) => {
                         if (student) downloadIndividualReport(student);
                         else showToast?.("Error", "error", "Please select a student.");
                       }}
-                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                      className="w-full bg-emerald-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
-                       <Download className="w-4 h-4" /> Export Student CSV
+                       <Download className="w-4 h-4" /> Export History
                     </button>
                  </div>
               </div>
