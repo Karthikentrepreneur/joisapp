@@ -355,30 +355,33 @@ const TeacherDashboard = ({
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-7" style={{ animation: 'fadeUp .4s ease' }}>
 
-      {/* Hero */}
+      {/* Hero — white */}
       <div
         className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #4BC83A 0%, #3BB5F0 100%)' }}
+        style={{ background: '#FFFFFF', border: '1.5px solid #F0F4F8', boxShadow: '0 2px 14px rgba(0,0,0,0.06)' }}
       >
-        <div className="absolute right-6 top-4 w-24 h-24 rounded-full opacity-10" style={{ background: '#fff' }} />
-        <div className="absolute right-24 bottom-2 w-12 h-12 rounded-full opacity-10" style={{ background: '#fff' }} />
-        <div className="relative z-10">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-1">Teacher Portal</p>
-          <h1 className="text-xl font-bold text-white tracking-tight mb-1">
-            {currentUser?.name ?? 'Teacher'}'s Classroom
-          </h1>
-          <p className="text-white/80 text-sm font-medium">
-            Assigned: <span className="font-bold text-white">{program}</span>
-          </p>
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: '#F0FBF0' }}>
+            <GraduationCap className="w-6 h-6" style={{ color: '#4BC83A' }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: '#9AA5B4' }}>Teacher Portal</p>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: '#1A2340' }}>
+              {currentUser?.name ?? 'Teacher'}'s Classroom
+            </h1>
+            <p className="text-xs font-medium mt-0.5" style={{ color: '#9AA5B4' }}>
+              Assigned: <span className="font-bold" style={{ color: '#4BC83A' }}>{program}</span>
+            </p>
+          </div>
         </div>
         <div
-          className="relative z-10 flex items-center gap-3 rounded-xl px-5 py-3"
-          style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.25)' }}
+          className="flex items-center gap-3 rounded-xl px-5 py-3"
+          style={{ background: '#F0FBF0', border: '1.5px solid #A8E8A2' }}
         >
-          <Clock className="w-5 h-5 text-white" />
+          <Clock className="w-5 h-5" style={{ color: '#4BC83A' }} />
           <div>
-            <p className="text-sm font-bold text-white leading-none mb-0.5">Session Active</p>
-            <p className="text-[10px] font-medium text-white/70 uppercase tracking-wider">Attendance window open</p>
+            <p className="text-sm font-bold leading-none mb-0.5" style={{ color: '#217A15' }}>Session Active</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#4BC83A' }}>Attendance window open</p>
           </div>
         </div>
       </div>
@@ -500,44 +503,42 @@ const ParentDashboard = ({
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6" style={{ animation: 'fadeUp .4s ease' }}>
 
-      {/* Student Hero */}
+      {/* Student Hero — white */}
       <div
         className="rounded-2xl p-6 md:p-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #FF4B8B 0%, #FF8C1A 55%, #FFB800 100%)' }}
+        style={{ background: '#FFFFFF', border: '1.5px solid #F0F4F8', boxShadow: '0 2px 14px rgba(0,0,0,0.06)' }}
       >
-        <div className="absolute right-8 top-4 w-28 h-28 rounded-full opacity-10" style={{ background: '#fff' }} />
-        <div className="absolute right-28 bottom-2 w-14 h-14 rounded-full opacity-10" style={{ background: '#fff' }} />
-        <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <div className="flex-shrink-0">
             {child.image ? (
               <img
                 src={child.image}
                 alt={child.name}
                 className="w-24 h-24 rounded-2xl object-cover shadow-xl"
-                style={{ border: '3px solid rgba(255,255,255,0.3)' }}
+                style={{ border: '3px solid #F0F4F8' }}
               />
             ) : (
               <div
-                className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold text-white select-none"
-                style={{ background: 'rgba(255,255,255,0.2)', border: '3px solid rgba(255,255,255,0.3)' }}
+                className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold select-none"
+                style={{ background: '#FFF0F5', border: '3px solid #FFB3CE', color: '#FF4B8B' }}
               >
                 {child.name?.[0] ?? '?'}
               </div>
             )}
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-1">Student Account</p>
-            <h1 className="text-2xl font-bold text-white tracking-tight mb-3">{child.name}</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#9AA5B4' }}>Student Account</p>
+            <h1 className="text-2xl font-bold tracking-tight mb-3" style={{ color: '#1A2340' }}>{child.name}</h1>
             <div className="flex flex-wrap justify-center sm:justify-start gap-2">
               <span
-                className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider text-white"
-                style={{ background: 'rgba(255,255,255,0.2)' }}
+                className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
+                style={{ background: '#FFF0F5', color: '#CC1A5A', border: '1px solid #FFB3CE' }}
               >
                 {child.program}
               </span>
               <span
-                className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider text-white"
-                style={{ background: 'rgba(255,255,255,0.2)' }}
+                className="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
+                style={{ background: '#EEF8FE', color: '#1270A0', border: '1px solid #99D8F8' }}
               >
                 ID: {child.id}
               </span>
