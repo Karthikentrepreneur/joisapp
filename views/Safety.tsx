@@ -40,91 +40,94 @@ export const Safety: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-slate-50 overflow-hidden animate-in fade-in duration-500">
+    <div className="flex h-full bg-slate-50 overflow-hidden animate-in fade-in duration-300">
       {/* Surveillance Sidebar */}
       <aside className="hidden xl:flex flex-col w-72 bg-white border-r border-slate-200 shrink-0">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Device Manager</h3>
+        <div className="p-6 border-b border-slate-200 bg-white">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Device Manager</h3>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
             <input 
               type="text" 
               placeholder="Search cameras..."
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-blue-500 transition-all"
+              className="w-full pl-8.5 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm placeholder:text-slate-300"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-slate-50/30">
           {filteredCameras.map((cam) => (
             <button
               key={cam.id}
               onClick={() => { setSelectedCamId(cam.id); setGridSize(1); }}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border group ${selectedCamId === cam.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white border-slate-100 hover:border-blue-200 text-slate-600'}`}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border group ${selectedCamId === cam.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-sm text-slate-700'}`}
             >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedCamId === cam.id ? 'bg-white/20' : 'bg-slate-50 group-hover:bg-blue-50'}`}>
-                <Camera className={`w-4 h-4 ${selectedCamId === cam.id ? 'text-white' : 'text-slate-400'}`} />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${selectedCamId === cam.id ? 'bg-white/20 border-white/10' : 'bg-slate-50 border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100'}`}>
+                <Camera className={`w-4 h-4 ${selectedCamId === cam.id ? 'text-white' : 'text-slate-400 group-hover:text-blue-500'}`} />
               </div>
               <div className="text-left min-w-0">
-                <p className="text-[11px] font-black truncate leading-none mb-1">{cam.name}</p>
-                <p className={`text-[9px] font-bold uppercase tracking-wider ${selectedCamId === cam.id ? 'text-white/60' : 'text-slate-400'}`}>{cam.location}</p>
+                <p className="text-sm font-semibold truncate leading-none mb-1.5">{cam.name}</p>
+                <p className={`text-[9px] font-bold uppercase tracking-widest ${selectedCamId === cam.id ? 'text-blue-100' : 'text-slate-400'}`}>{cam.location}</p>
               </div>
             </button>
           ))}
         </div>
-        <div className="p-4 bg-slate-50 border-t border-slate-100">
-           <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Master Link: Active</span>
+        <div className="p-4 bg-white border-t border-slate-200">
+           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-3">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Master Link: Active</span>
            </div>
         </div>
       </aside>
 
       {/* Main Monitoring Deck */}
-      <div className="flex-1 flex flex-col min-w-0 p-4 md:p-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 shrink-0">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <Shield className="w-8 h-8 text-blue-600" /> Security Console
-            </h2>
-            <p className="text-slate-500 font-medium text-sm">Monitoring Junior Odyssey campus safety zones in real-time.</p>
+      <div className="flex-1 flex flex-col min-w-0 p-4 md:p-6 bg-slate-50">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 shrink-0 bg-white border border-slate-200 rounded-2xl p-4 md:px-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 border border-blue-100 shadow-sm shrink-0">
+               <Shield className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">Security Console</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Monitoring Junior Odyssey campus safety zones in real-time.</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-200 p-1 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 p-1.5 rounded-xl shadow-sm">
              <button 
                onClick={() => { setSelectedCamId(null); setGridSize(1); }}
-               className={`p-2.5 rounded-xl transition-all ${gridSize === 1 && !selectedCamId ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+               className={`p-1.5 rounded-lg transition-all ${gridSize === 1 && !selectedCamId ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200'}`}
                title="Focus View"
              >
-               <Monitor className="w-5 h-5" />
+               <Monitor className="w-4.5 h-4.5" />
              </button>
              <button 
                onClick={() => { setSelectedCamId(null); setGridSize(4); }}
-               className={`p-2.5 rounded-xl transition-all ${gridSize === 4 && !selectedCamId ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+               className={`p-1.5 rounded-lg transition-all ${gridSize === 4 && !selectedCamId ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200'}`}
                title="Quad Layout"
              >
-               <LayoutGrid className="w-5 h-5" />
+               <LayoutGrid className="w-4.5 h-4.5" />
              </button>
              <button 
                onClick={() => { setSelectedCamId(null); setGridSize(9); }}
-               className={`p-2.5 rounded-xl transition-all ${gridSize === 9 && !selectedCamId ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+               className={`p-1.5 rounded-lg transition-all ${gridSize === 9 && !selectedCamId ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200'}`}
                title="9-Grid Layout"
              >
-               <Grid3X3 className="w-5 h-5" />
+               <Grid3X3 className="w-4.5 h-4.5" />
              </button>
-             <div className="w-px h-6 bg-slate-200 mx-1"></div>
-             <button className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
-               <Settings className="w-5 h-5" />
+             <div className="w-px h-5 bg-slate-200 mx-1"></div>
+             <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg transition-all">
+               <Settings className="w-4.5 h-4.5" />
              </button>
           </div>
         </div>
 
         {/* Dynamic Grid Container */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className={`grid ${gridClasses[gridSize]} gap-4 h-full auto-rows-fr overflow-y-auto no-scrollbar pb-8`}>
+        <div className="flex-1 min-h-0 flex flex-col bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div className={`grid ${gridClasses[gridSize]} gap-4 h-full auto-rows-fr overflow-y-auto no-scrollbar`}>
             {displayedCameras.map((cam) => (
-              <div key={cam.id} className="relative aspect-video xl:aspect-auto">
+              <div key={cam.id} className="relative aspect-video xl:aspect-auto rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
                 <CctvPlayer 
                   url={cam.streamUrl} 
                   name={cam.name} 
@@ -139,25 +142,25 @@ export const Safety: React.FC = () => {
 
       {/* Full Screen Monitor Modal */}
       {fullScreenCam && (
-        <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col p-4 animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col p-4 animate-in fade-in zoom-in-95 duration-200">
            <div className="flex justify-between items-center mb-4 px-2">
               <div className="flex items-center gap-4">
-                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg border border-blue-500">
                     <Monitor className="w-5 h-5" />
                  </div>
                  <div>
-                    <h3 className="text-xl font-black text-white leading-none">{fullScreenCam.name}</h3>
-                    <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] mt-1">{fullScreenCam.location}</p>
+                    <h3 className="text-xl font-bold text-white leading-tight">{fullScreenCam.name}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{fullScreenCam.location}</p>
                  </div>
               </div>
               <button 
                 onClick={() => setFullScreenCam(null)}
-                className="w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-all border border-white/10"
+                className="w-10 h-10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-xl flex items-center justify-center transition-all border border-white/10"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
            </div>
-           <div className="flex-1 relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+           <div className="flex-1 relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black">
               <CctvPlayer 
                 url={fullScreenCam.streamUrl} 
                 name={fullScreenCam.name} 
@@ -167,18 +170,18 @@ export const Safety: React.FC = () => {
            </div>
            <div className="mt-4 flex justify-between items-center px-4">
               <div className="flex items-center gap-6">
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Signal: Excellent</span>
+                 <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Signal: Excellent</span>
                  </div>
-                 <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">HLS v3 • 1080p • 30fps</span>
+                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">HLS v3 • 1080p • 30fps</span>
               </div>
-              <div className="flex gap-4">
-                 <button className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+              <div className="flex gap-3">
+                 <button className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-rose-900/20 border border-rose-500">
                     <ShieldAlert className="w-3.5 h-3.5" /> Flag Event
                  </button>
-                 <button className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all active:scale-95">
-                    Capture Still
+                 <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all active:scale-95 flex items-center gap-2">
+                    <Camera className="w-3.5 h-3.5" /> Capture Still
                  </button>
               </div>
            </div>
