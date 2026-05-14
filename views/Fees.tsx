@@ -114,6 +114,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const isParent = role === UserRole.PARENT;
 
   const loadData = useCallback(async () => {
+    setSyncing(true); // Added to show the loading spinner during refresh
     try {
       const [invs, stds] = await Promise.all([db.getAll('invoices'), db.getAll('students')]);
       setInvoices(invs || []);
@@ -122,6 +123,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
       console.error('Finance fetch error:', err);
     } finally {
       setLoading(false);
+      setSyncing(false); // Added to hide the loading spinner after fetch
     }
   }, []);
 
