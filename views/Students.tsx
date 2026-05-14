@@ -422,11 +422,26 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                   <div
                     key={s.id}
                     onClick={() => setSelectedStudent(s)}
-                    className="group cursor-pointer flex flex-col items-center p-3 md:p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1"
+                    className="group relative cursor-pointer flex flex-col items-center p-3 md:p-5 rounded-2xl transition-all duration-200 hover:-translate-y-1"
                     style={{ border: `1.5px solid #F0F4F8`, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = meta.border)}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#F0F4F8')}
                   >
+                    {/* Inline Delete Action (Admin Only) */}
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData(s); 
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg text-[#9AA5B4] hover:text-[#FF4B8B] hover:bg-[#FFF0F5] transition-all opacity-0 group-hover:opacity-100 z-10"
+                        title="Delete Student"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     <div className="relative mb-2 md:mb-3">
                       <img
                         src={s.image}
@@ -505,7 +520,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                     <DetailItem label="Date of Birth"  value={selectedStudent.dob}            icon={Calendar}     />
-                    <DetailItem label="Blood Group"    value={selectedStudent.bloodGroup}      icon={Droplets}     />
+                    <DetailItem label="Blood Group"    value={selectedStudent.bloodGroup}       icon={Droplets}     />
                     <DetailItem label="Joining Date"   value={selectedStudent.dateOfJoining}   icon={UserPlus}     />
                     <DetailItem label="Offer Type"     value={selectedStudent.offer}           icon={Activity}     />
                     <DetailItem label="Bus Route"      value={selectedStudent.busRoute}        icon={MapPin}       />
@@ -643,7 +658,7 @@ export const Students: React.FC<StudentsProps> = ({ role, showToast, initialFilt
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <Input label="Date of Birth" type="date" required value={formData.dob}         onChange={(v: string) => setFormData({ ...formData, dob: v })} />
-                  <Input label="Blood Group"   options={BLOOD_GROUPS}            value={formData.bloodGroup} onChange={(v: string) => setFormData({ ...formData, bloodGroup: v })} />
+                  <Input label="Blood Group"   options={BLOOD_GROUPS}             value={formData.bloodGroup} onChange={(v: string) => setFormData({ ...formData, bloodGroup: v })} />
                   <Input label="Program"       options={PROGRAMS}      required  value={formData.program}    onChange={(v: string) => setFormData({ ...formData, program: v as any })} />
                 </div>
               </section>
