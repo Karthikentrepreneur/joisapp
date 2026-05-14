@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../services/persistence';
 import { schoolService } from '../services/schoolService';
@@ -366,8 +365,23 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                 <div 
                   key={s.id} 
                   onClick={() => setSelectedStaff(s)} 
-                  className="group cursor-pointer flex flex-col items-center p-3 md:p-6 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300"
+                  className="group relative cursor-pointer flex flex-col items-center p-3 md:p-6 bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300"
                 >
+                  {/* Inline Delete Action (Admin Only) */}
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData(s); 
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                      title="Delete Staff"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   <div className="relative mb-2 md:mb-4">
                     <img 
                       src={s.image} 
