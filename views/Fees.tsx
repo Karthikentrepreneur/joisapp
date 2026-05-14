@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../services/persistence';
 import { UserRole, ProgramType, Invoice, Student, FeeBreakdown } from '../types';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Loader2,
   Settings,
-  X, 
+  X,
   RefreshCw,
   Save,
   Receipt,
@@ -25,10 +24,18 @@ import {
   Search,
   Filter,
   ChevronRight,
-  Wallet
+  Wallet,
 } from 'lucide-react';
 import { CURRENT_USER_ID } from '../data/mockData';
 import { ToastType } from '../components/Toast';
+
+// ─── Jois Brand Palette ───────────────────────────────────────────────────────
+// Pink   #FF4B8B  light #FFF0F5  text #CC1A5A  border #FFB3CE
+// Yellow #FFB800  light #FFFBEA  text #A07000  border #FFE080
+// Green  #4BC83A  light #F0FBF0  text #217A15  border #A8E8A2
+// Blue   #3BB5F0  light #EEF8FE  text #1270A0  border #99D8F8
+// Orange #FF8C1A  light #FFF4EA  text #A05010  border #FFD0A0
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface FeesProps {
   role?: UserRole;
@@ -47,7 +54,7 @@ const INITIAL_BREAKDOWN: FeeBreakdown = {
   material: 3000,
   term1: 10000,
   term2: 10000,
-  term3: 10000
+  term3: 10000,
 };
 
 const DEFAULT_FEE_MATRIX: FeeMatrix = PROGRAMS.reduce((acc, prog) => {
@@ -58,52 +65,67 @@ const DEFAULT_FEE_MATRIX: FeeMatrix = PROGRAMS.reduce((acc, prog) => {
   return acc;
 }, {} as any);
 
-const SummaryStat = ({ icon: Icon, label, value, color }: any) => (
-  <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 flex-1 min-w-[140px] hover:shadow-md transition-all">
-     <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${color} text-white shadow-lg`}>
-       <Icon className="w-5 h-5 md:w-7 md:h-7" />
-     </div>
-     <div className="min-w-0">
-        <p className="text-[8px] md:text-[10px] font-black uppercase text-slate-400 tracking-wider mb-0.5 md:mb-1.5 leading-none">{label}</p>
-        <p className="text-lg md:text-2xl font-black text-slate-900 leading-none truncate tracking-tight">₹{value.toLocaleString()}</p>
-     </div>
+const PROGRAM_COLORS: Record<string, { dot: string; light: string; text: string; border: string }> = {
+  'Little Seeds':   { dot: '#FF4B8B', light: '#FFF0F5', text: '#CC1A5A', border: '#FFB3CE' },
+  'Curiosity Cubs': { dot: '#FFB800', light: '#FFFBEA', text: '#A07000', border: '#FFE080' },
+  'Odyssey Owls':   { dot: '#4BC83A', light: '#F0FBF0', text: '#217A15', border: '#A8E8A2' },
+  'Future Makers':  { dot: '#3BB5F0', light: '#EEF8FE', text: '#1270A0', border: '#99D8F8' },
+};
+
+// ─── Summary Stat Card ────────────────────────────────────────────────────────
+
+const SummaryStat = ({ icon: Icon, label, value, accentColor, lightColor }: any) => (
+  <div
+    className="bg-white p-4 md:p-6 rounded-2xl flex items-center gap-3 md:gap-4 flex-1 min-w-[140px] transition-all relative overflow-hidden"
+    style={{ border: `1.5px solid ${accentColor}28`, boxShadow: `0 2px 14px ${accentColor}12` }}
+  >
+    <span className="absolute inset-x-0 top-0 h-1 rounded-t-2xl" style={{ background: accentColor }} />
+    <div
+      className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0"
+      style={{ background: lightColor }}
+    >
+      <Icon className="w-5 h-5 md:w-7 md:h-7" style={{ color: accentColor }} />
+    </div>
+    <div className="min-w-0">
+      <p className="text-[8px] md:text-[10px] font-black uppercase tracking-wider mb-0.5 md:mb-1.5 leading-none" style={{ color: '#9AA5B4' }}>{label}</p>
+      <p className="text-lg md:text-2xl font-black leading-none truncate tracking-tight" style={{ color: '#1A2340' }}>₹{value.toLocaleString()}</p>
+    </div>
   </div>
 );
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [matrix, setMatrix] = useState<FeeMatrix>(DEFAULT_FEE_MATRIX);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeProgram, setActiveProgram] = useState<'All' | ProgramType>('All');
-  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [invoices, setInvoices]                   = useState<Invoice[]>([]);
+  const [students, setStudents]                   = useState<Student[]>([]);
+  const [matrix, setMatrix]                       = useState<FeeMatrix>(DEFAULT_FEE_MATRIX);
+  const [loading, setLoading]                     = useState(true);
+  const [searchTerm, setSearchTerm]               = useState('');
+  const [activeProgram, setActiveProgram]         = useState<'All' | ProgramType>('All');
+  const [showConfigModal, setShowConfigModal]     = useState(false);
   const [configActiveProgram, setConfigActiveProgram] = useState<ProgramType>('Little Seeds');
   const [configActiveOffer, setConfigActiveOffer] = useState<OfferType>('Regular');
-  const [showBillModal, setShowBillModal] = useState<Student | null>(null);
+  const [showBillModal, setShowBillModal]         = useState<Student | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<Set<keyof FeeBreakdown>>(new Set());
-  const [syncing, setSyncing] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [syncing, setSyncing]                     = useState(false);
+  const [selectedInvoice, setSelectedInvoice]     = useState<Invoice | null>(null);
 
-  const isAdmin = role === UserRole.ADMIN || role === UserRole.FOUNDER;
+  const isAdmin  = role === UserRole.ADMIN || role === UserRole.FOUNDER;
   const isParent = role === UserRole.PARENT;
 
   const loadData = useCallback(async () => {
     try {
-      const [invs, stds] = await Promise.all([
-        db.getAll('invoices'), 
-        db.getAll('students')
-      ]);
+      const [invs, stds] = await Promise.all([db.getAll('invoices'), db.getAll('students')]);
       setInvoices(invs || []);
       setStudents(stds || []);
     } catch (err) {
-      console.error("Finance fetch error:", err);
+      console.error('Finance fetch error:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { 
+  useEffect(() => {
     loadData();
     const savedMatrix = localStorage.getItem('JOIS_FEE_MATRIX_V2');
     if (savedMatrix) setMatrix(JSON.parse(savedMatrix));
@@ -111,7 +133,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
 
   const getBreakdownForStudent = useCallback((student: Student) => {
     const pRates = matrix[student.program] || DEFAULT_FEE_MATRIX[student.program];
-    const offer = (student.offer as OfferType) || 'Regular';
+    const offer  = (student.offer as OfferType) || 'Regular';
     return pRates[offer] || pRates['Regular'];
   }, [matrix]);
 
@@ -120,37 +142,33 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     const studentInvoices = invoices.filter(i => i.studentId === showBillModal.id);
     const billedKeys = new Set<string>();
     studentInvoices.forEach(inv => {
-      if (inv.breakdown) {
-        Object.keys(inv.breakdown).forEach(k => billedKeys.add(k));
-      }
+      if (inv.breakdown) Object.keys(inv.breakdown).forEach(k => billedKeys.add(k));
     });
     return billedKeys;
   }, [showBillModal, invoices]);
 
-  const filteredStudents = useMemo(() => {
-    return students.filter(s => {
-      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.id.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredStudents = useMemo(() =>
+    students.filter(s => {
+      const matchesSearch  = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesProgram = activeProgram === 'All' || s.program === activeProgram;
       return matchesSearch && matchesProgram;
-    });
-  }, [students, searchTerm, activeProgram]);
+    }),
+  [students, searchTerm, activeProgram]);
 
   const stats = useMemo(() => {
-    const collected = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0);
+    const collected   = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0);
     const receivables = invoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + i.amount, 0);
     return { collected, receivables, total: collected + receivables };
   }, [invoices]);
 
   const handleGenerateInvoice = async (student: Student) => {
-    const fullBreakdown = getBreakdownForStudent(student);
+    const fullBreakdown     = getBreakdownForStudent(student);
     const selectedBreakdown: Partial<FeeBreakdown> = {};
     let total = 0;
-
     selectedComponents.forEach(comp => {
       selectedBreakdown[comp] = fullBreakdown[comp];
       total += fullBreakdown[comp];
     });
-    
     const newInvoice: Invoice = {
       id: `INV-${Date.now()}`,
       studentId: student.id,
@@ -159,17 +177,16 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
       breakdown: selectedBreakdown as FeeBreakdown,
       dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'Pending',
-      type: selectedComponents.size > 1 ? 'School Fee Bundle' : `${(Array.from(selectedComponents)[0] as string).toUpperCase()} Fee`
+      type: selectedComponents.size > 1 ? 'School Fee Bundle' : `${(Array.from(selectedComponents)[0] as string).toUpperCase()} Fee`,
     };
-
     setSyncing(true);
     try {
       await db.create('invoices', newInvoice);
-      showToast?.("Bill Created", "success", `Fees for ${student.name} have been billed.`);
+      showToast?.('Bill Created', 'success', `Fees for ${student.name} have been billed.`);
       setShowBillModal(null);
       loadData();
-    } catch (e: any) {
-      showToast?.("Sync Error", "error", "Could not save bill to database.");
+    } catch {
+      showToast?.('Sync Error', 'error', 'Could not save bill to database.');
     } finally {
       setSyncing(false);
     }
@@ -178,459 +195,700 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const processPayment = async (invoice: Invoice, method: 'Cash' | 'Online') => {
     setSyncing(true);
     try {
-      await db.update('invoices', invoice.id, { 
-        status: 'Paid', 
-        paymentMethod: method,
-        paidAt: new Date().toISOString()
-      });
-      
+      await db.update('invoices', invoice.id, { status: 'Paid', paymentMethod: method, paidAt: new Date().toISOString() });
       const otherPending = invoices.filter(i => i.studentId === invoice.studentId && i.id !== invoice.id && i.status !== 'Paid').length;
-      if (otherPending === 0) {
-        await db.update('students', invoice.studentId, { feesStatus: 'Paid' });
-      }
-
-      showToast?.("Paid Successfully", "success", `Received ₹${invoice.amount.toLocaleString()} via ${method}.`);
+      if (otherPending === 0) await db.update('students', invoice.studentId, { feesStatus: 'Paid' });
+      showToast?.('Paid Successfully', 'success', `Received ₹${invoice.amount.toLocaleString()} via ${method}.`);
       loadData();
-    } catch (e) {
-      showToast?.("Error", "error", "Failed to update payment.");
+    } catch {
+      showToast?.('Error', 'error', 'Failed to update payment.');
     } finally {
       setSyncing(false);
     }
   };
 
+  // ─── Parent View ──────────────────────────────────────────────────────────
+
   if (isParent) {
-    const myChild = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
-    const myInvoices = myChild ? invoices.filter(i => i.studentId === myChild.id).sort((a,b) => b.id.localeCompare(a.id)) : [];
+    const myChild    = students.find(s => s.parentId === CURRENT_USER_ID) || students[0];
+    const myInvoices = myChild
+      ? invoices.filter(i => i.studentId === myChild.id).sort((a, b) => b.id.localeCompare(a.id))
+      : [];
+    const unpaidBalance = myInvoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0);
 
     return (
-      <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 overflow-y-auto no-scrollbar pb-32">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-8 gap-6">
+      <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 overflow-y-auto no-scrollbar pb-32" style={{ animation: 'fadeUp .4s ease' }}>
+
+        {/* Header */}
+        <div
+          className="bg-white p-6 md:p-8 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-end gap-6"
+          style={{ border: '1.5px solid #F0F4F8', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+        >
           <div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Fee Wallet</h2>
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Payments for {myChild?.name}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#EEF8FE' }}>
+                <Wallet className="w-4 h-4" style={{ color: '#3BB5F0' }} />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: '#1A2340' }}>Fee Wallet</h2>
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest mt-1 ml-10" style={{ color: '#9AA5B4' }}>Payments for {myChild?.name}</p>
           </div>
           <div className="text-left md:text-right">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Unpaid Balance</p>
-            <h3 className="text-4xl md:text-5xl font-black text-rose-500 tracking-tight">₹{myInvoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</h3>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#9AA5B4' }}>Unpaid Balance</p>
+            <h3
+              className="text-4xl md:text-5xl font-black tracking-tight"
+              style={{ color: unpaidBalance > 0 ? '#FF4B8B' : '#4BC83A' }}
+            >
+              ₹{unpaidBalance.toLocaleString()}
+            </h3>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-           {myInvoices.map((inv) => (
-             <div key={inv.id} className={`p-6 md:p-8 rounded-3xl border-2 transition-all relative overflow-hidden group ${inv.status === 'Paid' ? 'bg-white border-emerald-100 shadow-sm' : 'bg-slate-900 border-slate-900 shadow-xl'}`}>
-                {inv.status === 'Paid' && <div className="absolute top-0 right-0 bg-emerald-500 text-white px-5 py-2 rounded-bl-2xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2"><Check className="w-3 h-3" /> PAID</div>}
-                
-                <div className="flex justify-between items-start mb-6 md:mb-10">
-                   <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center ${inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-white/10 text-white'}`}>
-                      <Receipt className="w-6 h-6 md:w-8 md:h-8" />
-                   </div>
-                   <div className="text-right">
-                      <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${inv.status === 'Paid' ? 'text-slate-400' : 'text-blue-400'}`}>Bill Date</p>
-                      <p className={`font-bold ${inv.status === 'Paid' ? 'text-slate-600' : 'text-white'}`}>{inv.dueDate}</p>
-                   </div>
+        {/* Invoice Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {myInvoices.map(inv => {
+            const isPaid = inv.status === 'Paid';
+            return (
+              <div
+                key={inv.id}
+                className="bg-white rounded-3xl p-6 md:p-8 relative overflow-hidden transition-all"
+                style={{
+                  border: isPaid ? '1.5px solid #A8E8A2' : '1.5px solid #FFB3CE',
+                  boxShadow: isPaid ? '0 2px 12px #4BC83A10' : '0 4px 20px #FF4B8B14',
+                }}
+              >
+                {/* Top accent */}
+                <span
+                  className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
+                  style={{ background: isPaid ? '#4BC83A' : '#FF4B8B' }}
+                />
+
+                {isPaid && (
+                  <div
+                    className="absolute top-3 right-4 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest text-white flex items-center gap-1.5"
+                    style={{ background: '#4BC83A' }}
+                  >
+                    <Check className="w-3 h-3" /> Paid
+                  </div>
+                )}
+
+                <div className="flex justify-between items-start mb-6 md:mb-8">
+                  <div
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center"
+                    style={{ background: isPaid ? '#F0FBF0' : '#FFF0F5' }}
+                  >
+                    <Receipt className="w-6 h-6 md:w-7 md:h-7" style={{ color: isPaid ? '#4BC83A' : '#FF4B8B' }} />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: '#9AA5B4' }}>Due Date</p>
+                    <p className="font-bold text-sm" style={{ color: '#1A2340' }}>{inv.dueDate}</p>
+                  </div>
                 </div>
 
-                <div className="mb-8 md:mb-12">
-                   <h3 className={`text-xl md:text-2xl font-black mb-3 tracking-tight ${inv.status === 'Paid' ? 'text-slate-900' : 'text-white'}`}>{inv.type}</h3>
-                   <div className="space-y-1.5">
-                      {inv.breakdown && Object.entries(inv.breakdown).map(([k,v]) => (
-                        <div key={k} className="flex justify-between text-xs font-medium">
-                           <span className={inv.status === 'Paid' ? 'text-slate-400' : 'text-white/40 uppercase tracking-widest text-[9px]'}>{k.replace('term', 'Term ')}</span>
-                           <span className={inv.status === 'Paid' ? 'text-slate-600' : 'text-white/80'}>₹{(v as number).toLocaleString()}</span>
-                        </div>
-                      ))}
-                   </div>
+                <div className="mb-6 md:mb-8">
+                  <h3 className="text-lg md:text-xl font-black mb-3 tracking-tight" style={{ color: '#1A2340' }}>{inv.type}</h3>
+                  <div className="space-y-1.5">
+                    {inv.breakdown && Object.entries(inv.breakdown).map(([k, v]) => (
+                      <div key={k} className="flex justify-between text-xs font-medium">
+                        <span style={{ color: '#9AA5B4' }}>{k.replace('term', 'Term ')}</span>
+                        <span style={{ color: '#4A5568' }}>₹{(v as number).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-white/10">
-                   <div>
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${inv.status === 'Paid' ? 'text-slate-400' : 'text-white/40'}`}>Amount</p>
-                      <p className={`text-2xl md:text-3xl font-black tracking-tight ${inv.status === 'Paid' ? 'text-slate-900' : 'text-white'}`}>₹{inv.amount.toLocaleString()}</p>
-                   </div>
-                   {inv.status !== 'Paid' ? (
-                     <button 
-                       onClick={() => processPayment(inv, 'Online')} 
-                       className="bg-blue-600 hover:bg-blue-500 text-white px-6 md:px-8 py-3.5 md:py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center gap-2"
-                     >
-                       <CreditCard className="w-4 h-4" /> Pay Now
-                     </button>
-                   ) : (
-                     <button 
-                       onClick={() => setSelectedInvoice(inv)}
-                       className="bg-slate-50 text-slate-400 hover:text-blue-600 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-100"
-                     >
-                       <Printer className="w-4 h-4" /> Receipt
-                     </button>
-                   )}
+                <div className="flex items-center justify-between pt-5" style={{ borderTop: `1px solid ${isPaid ? '#A8E8A2' : '#FFB3CE'}` }}>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Amount</p>
+                    <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
+                  </div>
+                  {!isPaid ? (
+                    <button
+                      onClick={() => processPayment(inv, 'Online')}
+                      className="px-6 md:px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
+                      style={{ background: '#3BB5F0', boxShadow: '0 4px 14px #3BB5F030' }}
+                    >
+                      <CreditCard className="w-4 h-4" /> Pay Now
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedInvoice(inv)}
+                      className="px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2"
+                      style={{ background: '#F0FBF0', color: '#217A15', border: '1.5px solid #A8E8A2' }}
+                    >
+                      <Printer className="w-4 h-4" /> Receipt
+                    </button>
+                  )}
                 </div>
-             </div>
-           ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   }
 
+  // ─── Admin / Staff View ───────────────────────────────────────────────────
+
   return (
-    <div className="w-full bg-slate-50 min-h-full pb-20 animate-in fade-in duration-300">
-      <div className="bg-white border-b border-slate-200 px-6 md:px-8 py-6 md:py-10">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <Banknote className="w-8 h-8 md:w-10 md:h-10 text-emerald-600" /> Payments & Fees
-            </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Manage school bills and collections</p>
+    <div className="w-full min-h-full pb-20" style={{ background: '#F8FAFC', animation: 'fadeUp .4s ease' }}>
+
+      {/* Page Header */}
+      <div className="bg-white px-6 md:px-8 py-6 md:py-8" style={{ borderBottom: '1.5px solid #F0F4F8' }}>
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: '#F0FBF0', border: '1.5px solid #A8E8A2' }}>
+              <Banknote className="w-6 h-6" style={{ color: '#4BC83A' }} />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black tracking-tight" style={{ color: '#1A2340' }}>Payments & Fees</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest mt-0.5" style={{ color: '#9AA5B4' }}>Manage school bills and collections</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 md:gap-3">
-             <button onClick={() => setShowConfigModal(true)} className="flex-1 md:flex-none bg-slate-900 text-white px-5 md:px-8 py-3 md:py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2"><Settings className="w-4 h-4" /> Set Fees</button>
-             <button onClick={loadData} className="flex-1 md:flex-none bg-white border-2 border-slate-100 px-5 md:px-8 py-3 md:py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">{syncing ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <RefreshCw className="w-4 h-4" />} Refresh</button>
+            <button
+              onClick={() => setShowConfigModal(true)}
+              className="flex-1 md:flex-none px-5 md:px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 text-white"
+              style={{ background: '#1A2340', boxShadow: '0 4px 14px rgba(26,35,64,0.25)' }}
+            >
+              <Settings className="w-4 h-4" /> Set Fees
+            </button>
+            <button
+              onClick={loadData}
+              className="flex-1 md:flex-none px-5 md:px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+              style={{ background: '#fff', color: '#4A5568', border: '1.5px solid #F0F4F8' }}
+            >
+              {syncing ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#3BB5F0' }} /> : <RefreshCw className="w-4 h-4" />}
+              Refresh
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12 space-y-8 md:space-y-12">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-           <SummaryStat icon={CheckCircle} label="Fees Collected" value={stats.collected} color="bg-emerald-600" />
-           <SummaryStat icon={TrendingUp} label="Money to Collect" value={stats.receivables} color="bg-orange-500" />
-           <SummaryStat icon={Target} label="Total Year Expected" value={stats.total} color="bg-blue-600" />
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10 space-y-8">
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
+          <SummaryStat icon={CheckCircle} label="Fees Collected"      value={stats.collected}   accentColor="#4BC83A" lightColor="#F0FBF0" />
+          <SummaryStat icon={TrendingUp}  label="Money to Collect"    value={stats.receivables} accentColor="#FF8C1A" lightColor="#FFF4EA" />
+          <SummaryStat icon={Target}      label="Total Year Expected"  value={stats.total}       accentColor="#3BB5F0" lightColor="#EEF8FE" />
         </div>
 
-        {/* Directory Controls */}
+        {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
-           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              <button onClick={() => setActiveProgram('All')} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activeProgram === 'All' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200'}`}>All Classes</button>
-              {PROGRAMS.map(p => <button key={p} onClick={() => setActiveProgram(p)} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activeProgram === p ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200'}`}>{p}</button>)}
-           </div>
-           <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-              <input 
-                type="text" 
-                placeholder="Search student name..."
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-           </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setActiveProgram('All')}
+              className="px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+              style={activeProgram === 'All'
+                ? { background: '#3BB5F0', color: '#fff', boxShadow: '0 2px 8px #3BB5F030' }
+                : { background: '#fff', color: '#9AA5B4', border: '1.5px solid #F0F4F8' }}
+            >
+              All Classes
+            </button>
+            {PROGRAMS.map(p => {
+              const pc = PROGRAM_COLORS[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => setActiveProgram(p)}
+                  className="px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+                  style={activeProgram === p
+                    ? { background: pc.dot, color: '#fff', boxShadow: `0 2px 8px ${pc.dot}30` }
+                    : { background: '#fff', color: '#9AA5B4', border: '1.5px solid #F0F4F8' }}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#9AA5B4' }} />
+            <input
+              type="text"
+              placeholder="Search student name..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold outline-none transition-all"
+              style={{ background: '#fff', border: '1.5px solid #F0F4F8', color: '#1A2340' }}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Main List */}
-        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-          {/* Desktop Table View */}
+        {/* Student List */}
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #F0F4F8' }}>
+
+          {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
-             <table className="w-full text-left">
-                <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                   <tr>
-                      <th className="px-10 py-6">Student</th>
-                      <th className="px-10 py-6 text-center">Unpaid Bills</th>
-                      <th className="px-10 py-6 text-right">Actions</th>
-                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                   {filteredStudents.map((s) => {
-                      const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
-                      return (
-                        <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors">
-                           <td className="px-10 py-8">
-                              <div className="flex items-center gap-5">
-                                 <img src={s.image} className="w-14 h-14 rounded-2xl object-cover border-4 border-white shadow-md" />
-                                 <div>
-                                    <p className="text-base font-black text-slate-900 leading-none mb-1.5">{s.name}</p>
-                                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">{s.program}</span>
-                                 </div>
-                              </div>
-                           </td>
-                           <td className="px-10 py-8 text-center">
-                              {pendingInvoices.length > 0 ? (
-                                <div className="space-y-2">
-                                   {pendingInvoices.map(inv => (
-                                     <div key={inv.id} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-2xl shadow-sm">
-                                        <div className="text-left"><span className="text-[9px] font-bold text-slate-400 uppercase block leading-none mb-1">{inv.type}</span><span className="text-sm font-black text-slate-900">₹{inv.amount.toLocaleString()}</span></div>
-                                        <button onClick={() => processPayment(inv, 'Cash')} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-50 hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2"><Coins className="w-3.5 h-3.5" /> Collect Cash</button>
-                                     </div>
-                                   ))}
+            <table className="w-full text-left">
+              <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #F0F4F8' }}>
+                <tr>
+                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Student</th>
+                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-center" style={{ color: '#9AA5B4' }}>Unpaid Bills</th>
+                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-right" style={{ color: '#9AA5B4' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.map(s => {
+                  const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
+                  const pc = PROGRAM_COLORS[s.program] ?? PROGRAM_COLORS['Little Seeds'];
+                  return (
+                    <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors" style={{ borderBottom: '1px solid #F0F4F8' }}>
+                      <td className="px-10 py-7">
+                        <div className="flex items-center gap-5">
+                          <img src={s.image} className="w-14 h-14 rounded-2xl object-cover shadow-md" style={{ border: '3px solid #F0F4F8' }} />
+                          <div>
+                            <p className="text-base font-black leading-none mb-2" style={{ color: '#1A2340' }}>{s.name}</p>
+                            <span
+                              className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                              style={{ background: pc.light, color: pc.text, border: `1px solid ${pc.border}` }}
+                            >
+                              {s.program}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-10 py-7 text-center">
+                        {pendingInvoices.length > 0 ? (
+                          <div className="space-y-2">
+                            {pendingInvoices.map(inv => (
+                              <div
+                                key={inv.id}
+                                className="flex items-center justify-between p-3 rounded-2xl"
+                                style={{ background: '#FFF0F5', border: '1px solid #FFB3CE' }}
+                              >
+                                <div className="text-left">
+                                  <span className="text-[9px] font-bold uppercase block leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</span>
+                                  <span className="text-sm font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</span>
                                 </div>
-                              ) : <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-4 py-2 rounded-full">All Paid</span>}
-                           </td>
-                           <td className="px-10 py-8 text-right">
-                              <button onClick={() => { setSelectedComponents(new Set()); setShowBillModal(s); }} className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all active:scale-95 flex items-center gap-2 ml-auto"><Plus className="w-4 h-4" /> Create Bill</button>
-                           </td>
-                        </tr>
-                      );
-                   })}
-                </tbody>
-             </table>
+                                <button
+                                  onClick={() => processPayment(inv, 'Cash')}
+                                  className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
+                                  style={{ background: '#4BC83A', boxShadow: '0 2px 8px #4BC83A30' }}
+                                >
+                                  <Coins className="w-3.5 h-3.5" /> Collect Cash
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span
+                            className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full"
+                            style={{ background: '#F0FBF0', color: '#217A15' }}
+                          >
+                            All Paid
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-10 py-7 text-right">
+                        <button
+                          onClick={() => { setSelectedComponents(new Set()); setShowBillModal(s); }}
+                          className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 ml-auto text-white"
+                          style={{ background: '#FF4B8B', boxShadow: '0 2px 10px #FF4B8B28' }}
+                        >
+                          <Plus className="w-4 h-4" /> Create Bill
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden divide-y divide-slate-100">
-             {filteredStudents.length === 0 ? (
-               <div className="p-12 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No students found</div>
-             ) : filteredStudents.map(s => {
-               const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
-               return (
-                 <div key={s.id} className="p-5 space-y-6">
-                    <div className="flex items-center gap-4">
-                       <img src={s.image} className="w-12 h-12 rounded-xl object-cover border-2 border-slate-100 shadow-sm" />
-                       <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black text-slate-900 truncate">{s.name}</p>
-                          <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">{s.program}</span>
-                       </div>
-                       <button onClick={() => { setSelectedComponents(new Set()); setShowBillModal(s); }} className="p-2.5 bg-slate-900 text-white rounded-xl shadow-md active:scale-90 transition-all"><Plus className="w-5 h-5" /></button>
+          {/* Mobile Cards */}
+          <div className="md:hidden">
+            {filteredStudents.length === 0 ? (
+              <div className="p-12 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9AA5B4' }}>No students found</div>
+            ) : filteredStudents.map(s => {
+              const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
+              const pc = PROGRAM_COLORS[s.program] ?? PROGRAM_COLORS['Little Seeds'];
+              return (
+                <div key={s.id} className="p-5 space-y-5" style={{ borderBottom: '1px solid #F0F4F8' }}>
+                  <div className="flex items-center gap-4">
+                    <img src={s.image} className="w-12 h-12 rounded-xl object-cover" style={{ border: '2px solid #F0F4F8' }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black truncate" style={{ color: '#1A2340' }}>{s.name}</p>
+                      <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: pc.text }}>{s.program}</span>
                     </div>
+                    <button
+                      onClick={() => { setSelectedComponents(new Set()); setShowBillModal(s); }}
+                      className="p-2.5 rounded-xl active:scale-90 transition-all text-white"
+                      style={{ background: '#FF4B8B' }}
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
 
-                    {pendingInvoices.length > 0 ? (
-                      <div className="space-y-3">
-                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pending Payments</p>
-                         {pendingInvoices.map(inv => (
-                           <div key={inv.id} className="bg-slate-50 p-4 rounded-2xl flex items-center justify-between">
-                              <div className="flex-1">
-                                 <p className="text-[9px] font-bold text-slate-500 uppercase leading-none mb-1">{inv.type}</p>
-                                 <p className="text-lg font-black text-slate-900">₹{inv.amount.toLocaleString()}</p>
-                              </div>
-                              <button onClick={() => processPayment(inv, 'Cash')} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-50 active:scale-95 transition-all"><Coins className="w-4 h-4" /></button>
-                           </div>
-                         ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
-                         <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                         <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Account Clear</span>
-                      </div>
-                    )}
-                 </div>
-               );
-             })}
+                  {pendingInvoices.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Pending Payments</p>
+                      {pendingInvoices.map(inv => (
+                        <div key={inv.id} className="p-4 rounded-2xl flex items-center justify-between" style={{ background: '#FFF0F5', border: '1px solid #FFB3CE' }}>
+                          <div className="flex-1">
+                            <p className="text-[9px] font-bold uppercase leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</p>
+                            <p className="text-lg font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
+                          </div>
+                          <button
+                            onClick={() => processPayment(inv, 'Cash')}
+                            className="p-2.5 rounded-xl text-white active:scale-95 transition-all"
+                            style={{ background: '#4BC83A' }}
+                          >
+                            <Coins className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: '#F0FBF0', border: '1px solid #A8E8A2' }}>
+                      <ShieldCheck className="w-4 h-4" style={{ color: '#4BC83A' }} />
+                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#217A15' }}>Account Clear</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* BILL CREATION MODAL */}
+      {/* ── Bill Creation Modal ── */}
       {showBillModal && (
-         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl md:rounded-[3.5rem] w-full max-w-xl shadow-2xl relative border border-white/20 overflow-hidden">
-               <div className="p-6 md:p-12 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Create a Bill</h3>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">Charging {showBillModal.name}</p>
-                  </div>
-                  <button onClick={() => setShowBillModal(null)} className="w-10 h-10 md:w-14 md:h-14 bg-white text-slate-400 hover:text-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center border border-slate-200 transition-all shadow-sm"><X className="w-6 h-6 md:w-7 md:h-7" /></button>
-               </div>
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,30,60,0.55)', backdropFilter: 'blur(10px)', animation: 'fadeUp .25s ease' }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl relative overflow-hidden" style={{ border: '1.5px solid #F0F4F8' }}>
 
-               <div className="p-6 md:p-12 space-y-6 md:space-y-8 overflow-y-auto max-h-[60vh] no-scrollbar">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">Choose items to include</p>
-                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter hidden sm:inline">Grey items are already billed</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 md:gap-4">
-                     {Object.entries(getBreakdownForStudent(showBillModal)).map(([key, val]) => {
-                       const isBilled = alreadyBilledComponents.has(key);
-                       const isSelected = selectedComponents.has(key as any);
-
-                       return (
-                         <button 
-                           key={key} 
-                           disabled={isBilled}
-                           onClick={() => {
-                             const next = new Set(selectedComponents);
-                             if (next.has(key as any)) next.delete(key as any);
-                             else next.add(key as any);
-                             setSelectedComponents(next);
-                           }}
-                           className={`flex items-center justify-between px-6 md:px-8 py-4 md:py-6 rounded-2xl md:rounded-[1.8rem] border-2 transition-all ${
-                             isBilled 
-                             ? 'bg-slate-50 border-slate-50 opacity-40 cursor-not-allowed' 
-                             : isSelected 
-                                ? 'border-blue-600 bg-blue-50/50 shadow-lg' 
-                                : 'border-slate-100 bg-white hover:border-slate-200'
-                           }`}
-                         >
-                            <div className="flex items-center gap-4 md:gap-5">
-                               <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center border-2 transition-all ${
-                                 isBilled 
-                                 ? 'bg-slate-200 border-slate-200' 
-                                 : isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-200'
-                               }`}>
-                                  {isBilled ? <ShieldCheck className="w-4 h-4 text-slate-400" /> : isSelected && <Check className="w-5 h-5 text-white" />}
-                               </div>
-                               <span className={`text-sm md:text-base font-black uppercase tracking-widest ${isBilled ? 'text-slate-400' : 'text-slate-700'}`}>
-                                 {key.replace('term', 'Term ')}
-                               </span>
-                            </div>
-                            <div className="text-right">
-                               <span className={`text-sm md:text-base font-black ${isBilled ? 'text-slate-300' : 'text-slate-900'}`}>₹{val.toLocaleString()}</span>
-                            </div>
-                         </button>
-                       );
-                     })}
-                  </div>
-               </div>
-
-               <div className="p-6 md:p-12 bg-white border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
-                  <div className="text-center md:text-left">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Bill Amount</p>
-                     <p className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">₹{Array.from(selectedComponents).reduce((sum, key) => sum + getBreakdownForStudent(showBillModal!)[key], 0).toLocaleString()}</p>
-                  </div>
-                  <button 
-                    onClick={() => handleGenerateInvoice(showBillModal)}
-                    disabled={selectedComponents.size === 0 || syncing}
-                    className="w-full md:w-auto bg-blue-600 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl md:rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3"
-                  >
-                     {syncing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Receipt className="w-5 h-5" /> Send Bill</>}
-                  </button>
-               </div>
+            {/* Modal Header */}
+            <div className="p-6 md:p-10 flex justify-between items-start" style={{ borderBottom: '1px solid #F0F4F8', background: '#F8FAFC' }}>
+              <div>
+                <h3 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: '#1A2340' }}>Create a Bill</h3>
+                <p className="text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Charging {showBillModal.name}</p>
+              </div>
+              <button
+                onClick={() => setShowBillModal(null)}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all"
+                style={{ background: '#FFF0F5', color: '#FF4B8B', border: '1.5px solid #FFB3CE' }}
+              >
+                <X className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
             </div>
-         </div>
+
+            {/* Items */}
+            <div className="p-6 md:p-10 space-y-4 overflow-y-auto max-h-[55vh] no-scrollbar">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Choose items to include</p>
+                <span className="text-[8px] font-bold uppercase tracking-tighter hidden sm:inline" style={{ color: '#CBD5E1' }}>Grey = already billed</span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {Object.entries(getBreakdownForStudent(showBillModal)).map(([key, val]) => {
+                  const isBilled   = alreadyBilledComponents.has(key);
+                  const isSelected = selectedComponents.has(key as any);
+                  return (
+                    <button
+                      key={key}
+                      disabled={isBilled}
+                      onClick={() => {
+                        const next = new Set(selectedComponents);
+                        if (next.has(key as any)) next.delete(key as any); else next.add(key as any);
+                        setSelectedComponents(next);
+                      }}
+                      className="flex items-center justify-between px-5 md:px-6 py-4 rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        border: isBilled ? '1.5px solid #F0F4F8'
+                          : isSelected ? '1.5px solid #3BB5F0'
+                          : '1.5px solid #F0F4F8',
+                        background: isBilled ? '#F8FAFC'
+                          : isSelected ? '#EEF8FE'
+                          : '#fff',
+                        boxShadow: isSelected ? '0 2px 10px #3BB5F020' : 'none',
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-7 h-7 rounded-xl flex items-center justify-center transition-all"
+                          style={isBilled
+                            ? { background: '#F0F4F8', border: '2px solid #E2E8F0' }
+                            : isSelected
+                              ? { background: '#3BB5F0', border: '2px solid #3BB5F0' }
+                              : { background: '#fff', border: '2px solid #E2E8F0' }}
+                        >
+                          {isBilled
+                            ? <ShieldCheck className="w-4 h-4" style={{ color: '#CBD5E1' }} />
+                            : isSelected && <Check className="w-4 h-4 text-white" />}
+                        </div>
+                        <span
+                          className="text-sm font-black uppercase tracking-widest"
+                          style={{ color: isBilled ? '#9AA5B4' : '#1A2340' }}
+                        >
+                          {key.replace('term', 'Term ')}
+                        </span>
+                      </div>
+                      <span className="text-sm font-black" style={{ color: isBilled ? '#CBD5E1' : '#1A2340' }}>
+                        ₹{(val as number).toLocaleString()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="p-6 md:p-10 bg-white flex flex-col md:flex-row justify-between items-center gap-4"
+              style={{ borderTop: '1px solid #F0F4F8' }}
+            >
+              <div className="text-center md:text-left">
+                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Total Bill Amount</p>
+                <p className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: '#1A2340' }}>
+                  ₹{Array.from(selectedComponents).reduce((sum, key) => sum + getBreakdownForStudent(showBillModal!)[key], 0).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => handleGenerateInvoice(showBillModal)}
+                disabled={selectedComponents.size === 0 || syncing}
+                className="w-full md:w-auto px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-30 flex items-center justify-center gap-3 text-white active:scale-95"
+                style={{ background: '#3BB5F0', boxShadow: '0 4px 16px #3BB5F030' }}
+              >
+                {syncing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Receipt className="w-5 h-5" /> Send Bill</>}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* SETTINGS MODAL (SET FEES) */}
+      {/* ── Set Fees Modal ── */}
       {showConfigModal && (
-         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl md:rounded-[4rem] w-full max-w-5xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden border border-white/20">
-               <div className="p-8 md:p-12 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Setup School Fees</h3>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">Define how much each term costs for various programs</p>
-                  </div>
-                  <button onClick={() => setShowConfigModal(false)} className="w-10 h-10 md:w-16 md:h-16 bg-white text-slate-400 hover:text-slate-900 rounded-xl md:rounded-3xl flex items-center justify-center border border-slate-200 transition-all shadow-sm"><X className="w-6 h-6 md:w-8 md:h-8" /></button>
-               </div>
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,30,60,0.55)', backdropFilter: 'blur(10px)', animation: 'fadeUp .25s ease' }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden" style={{ border: '1.5px solid #F0F4F8' }}>
 
-               <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 md:space-y-12 no-scrollbar">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
-                     <div className="space-y-4">
-                        <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">1. Pick a Program</label>
-                        <div className="grid grid-cols-2 gap-2 md:gap-3">
-                           {PROGRAMS.map(p => (
-                             <button key={p} onClick={() => setConfigActiveProgram(p)} className={`px-4 md:px-6 py-4 md:py-5 rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border-2 ${configActiveProgram === p ? 'bg-blue-600 text-white border-blue-600 shadow-xl' : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200'}`}>{p}</button>
-                           ))}
-                        </div>
-                     </div>
-                     <div className="space-y-4">
-                        <label className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">2. Pick a Category</label>
-                        <div className="grid grid-cols-2 gap-2 md:gap-3">
-                           {OFFERS.map(o => (
-                             <button key={o} onClick={() => setConfigActiveOffer(o)} className={`px-4 md:px-6 py-4 md:py-5 rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border-2 ${configActiveOffer === o ? 'bg-emerald-500 text-white border-emerald-500 shadow-xl' : 'bg-white text-slate-400 border-slate-100 hover:border-emerald-200'}`}>{o}</button>
-                           ))}
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="bg-slate-50 p-6 md:p-12 rounded-3xl md:rounded-[3.5rem] border-2 border-slate-100">
-                     <h4 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight mb-8 md:mb-12 flex items-center gap-3"><Coins className="w-6 h-6" /> Editing Costs for {configActiveProgram}</h4>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-                        {(['application', 'registration', 'material', 'term1', 'term2', 'term3'] as const).map((field) => (
-                           <div key={field} className="space-y-2 group">
-                              <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 group-focus-within:text-blue-600 transition-colors">{field.replace('term', 'Term ')} Cost</label>
-                              <div className="relative">
-                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 font-black text-lg">₹</span>
-                                 <input 
-                                   type="number"
-                                   value={matrix[configActiveProgram][configActiveOffer][field]}
-                                   onChange={e => setMatrix(prev => ({
-                                      ...prev,
-                                      [configActiveProgram]: {
-                                         ...prev[configActiveProgram],
-                                         [configActiveOffer]: {
-                                            ...prev[configActiveProgram][configActiveOffer],
-                                            [field]: Number(e.target.value)
-                                         }
-                                      }
-                                   }))}
-                                   className="w-full pl-12 md:pl-14 pr-6 md:pr-8 py-4 md:py-6 bg-white border-2 border-slate-100 rounded-2xl md:rounded-3xl text-base md:text-lg font-black outline-none focus:border-blue-600 shadow-sm transition-all focus:shadow-xl"
-                                 />
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-               </div>
-
-               <div className="p-8 md:p-12 bg-white border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
-                  <div className="flex items-baseline gap-4 md:gap-6">
-                     <span className="text-slate-400 text-[10px] md:text-sm font-black uppercase tracking-widest whitespace-nowrap">Total Year Plan:</span>
-                     <span className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">₹{Object.values(matrix[configActiveProgram][configActiveOffer]).reduce((a: number, b: any) => a + (b as number), 0).toLocaleString()}</span>
-                  </div>
-                  <button onClick={() => { localStorage.setItem('JOIS_FEE_MATRIX_V2', JSON.stringify(matrix)); showToast?.("Prices Updated", "success", "The new costs have been saved."); setShowConfigModal(false); }} className="w-full md:w-auto bg-slate-900 text-white px-10 md:px-16 py-5 md:py-7 rounded-2xl md:rounded-[2.5rem] text-xs font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-xl flex items-center justify-center gap-4"><Save className="w-6 h-6" /> Save All Costs</button>
-               </div>
+            <div className="p-8 md:p-10 flex justify-between items-start" style={{ borderBottom: '1px solid #F0F4F8', background: '#F8FAFC' }}>
+              <div>
+                <h3 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: '#1A2340' }}>Setup School Fees</h3>
+                <p className="text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest" style={{ color: '#9AA5B4' }}>
+                  Define how much each term costs for various programs
+                </p>
+              </div>
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="w-10 h-10 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-all"
+                style={{ background: '#FFF0F5', color: '#FF4B8B', border: '1.5px solid #FFB3CE' }}
+              >
+                <X className="w-5 h-5 md:w-7 md:h-7" />
+              </button>
             </div>
-         </div>
+
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 no-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                {/* Program Picker */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: '#9AA5B4' }}>1. Pick a Program</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PROGRAMS.map(p => {
+                      const pc = PROGRAM_COLORS[p];
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setConfigActiveProgram(p)}
+                          className="px-4 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all"
+                          style={configActiveProgram === p
+                            ? { background: pc.dot, color: '#fff', border: `1.5px solid ${pc.dot}`, boxShadow: `0 4px 14px ${pc.dot}30` }
+                            : { background: '#fff', color: '#9AA5B4', border: '1.5px solid #F0F4F8' }}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Offer Picker */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1" style={{ color: '#9AA5B4' }}>2. Pick a Category</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {OFFERS.map(o => (
+                      <button
+                        key={o}
+                        onClick={() => setConfigActiveOffer(o)}
+                        className="px-4 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all"
+                        style={configActiveOffer === o
+                          ? { background: '#4BC83A', color: '#fff', border: '1.5px solid #4BC83A', boxShadow: '0 4px 14px #4BC83A30' }
+                          : { background: '#fff', color: '#9AA5B4', border: '1.5px solid #F0F4F8' }}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fee Inputs */}
+              <div className="p-6 md:p-8 rounded-2xl" style={{ background: '#F8FAFC', border: '1.5px solid #F0F4F8' }}>
+                <h4 className="text-lg font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: '#1A2340' }}>
+                  <Coins className="w-5 h-5" style={{ color: '#FFB800' }} /> Editing Costs for {configActiveProgram}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {(['application', 'registration', 'material', 'term1', 'term2', 'term3'] as const).map(field => (
+                    <div key={field} className="space-y-2 group">
+                      <label className="text-[9px] font-black uppercase tracking-widest ml-1" style={{ color: '#9AA5B4' }}>
+                        {field.replace('term', 'Term ')} Cost
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg" style={{ color: '#CBD5E1' }}>₹</span>
+                        <input
+                          type="number"
+                          value={matrix[configActiveProgram][configActiveOffer][field]}
+                          onChange={e => setMatrix(prev => ({
+                            ...prev,
+                            [configActiveProgram]: {
+                              ...prev[configActiveProgram],
+                              [configActiveOffer]: {
+                                ...prev[configActiveProgram][configActiveOffer],
+                                [field]: Number(e.target.value),
+                              },
+                            },
+                          }))}
+                          className="w-full pl-10 pr-5 py-4 rounded-2xl text-base font-black outline-none transition-all"
+                          style={{ background: '#fff', border: '1.5px solid #F0F4F8', color: '#1A2340' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              className="p-7 md:p-10 bg-white flex flex-col md:flex-row items-center justify-between gap-5"
+              style={{ borderTop: '1px solid #F0F4F8' }}
+            >
+              <div className="flex items-baseline gap-4">
+                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap" style={{ color: '#9AA5B4' }}>Total Year Plan:</span>
+                <span className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: '#1A2340' }}>
+                  ₹{Object.values(matrix[configActiveProgram][configActiveOffer]).reduce((a: number, b: any) => a + (b as number), 0).toLocaleString()}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  localStorage.setItem('JOIS_FEE_MATRIX_V2', JSON.stringify(matrix));
+                  showToast?.('Prices Updated', 'success', 'The new costs have been saved.');
+                  setShowConfigModal(false);
+                }}
+                className="w-full md:w-auto px-10 md:px-14 py-4 md:py-5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3 text-white"
+                style={{ background: '#4BC83A', boxShadow: '0 4px 16px #4BC83A30' }}
+              >
+                <Save className="w-5 h-5" /> Save All Costs
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* RECEIPT VIEW */}
+      {/* ── Receipt Modal ── */}
       {selectedInvoice && (
-         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-slate-950/95 backdrop-blur-3xl p-2 md:p-4 animate-in fade-in duration-300 print:p-0 print:bg-white print:fixed print:inset-0">
-            <div className="bg-white rounded-3xl md:rounded-[4rem] w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col print:rounded-none print:shadow-none print:max-w-none print:h-screen">
-               <div className="flex justify-between items-center p-6 md:p-12 bg-slate-50 border-b border-slate-100 print:hidden">
-                  <h4 className="font-black text-slate-900 text-[10px] uppercase tracking-widest">Official Receipt</h4>
-                  <div className="flex gap-2 md:gap-4">
-                     <button onClick={() => window.print()} className="w-12 h-12 md:w-16 md:h-16 bg-white text-slate-600 hover:text-blue-600 rounded-xl md:rounded-3xl flex items-center justify-center border-2 border-slate-100 transition-all shadow-sm"><Printer className="w-6 h-6" /></button>
-                     <button onClick={() => setSelectedInvoice(null)} className="w-12 h-12 md:w-16 md:h-16 bg-white text-slate-400 hover:text-rose-600 rounded-xl md:rounded-3xl flex items-center justify-center border-2 border-slate-100 transition-all shadow-sm"><X className="w-8 h-8" /></button>
-                  </div>
-               </div>
+        <div
+          className="fixed inset-0 z-[250] flex items-center justify-center p-2 md:p-4 print:p-0 print:bg-white print:fixed print:inset-0"
+          style={{ background: 'rgba(15,30,60,0.92)', backdropFilter: 'blur(16px)', animation: 'fadeUp .25s ease' }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col print:rounded-none print:shadow-none print:max-w-none print:h-screen" style={{ border: '1.5px solid #F0F4F8' }}>
 
-               <div className="p-10 md:p-20 space-y-12 md:space-y-16 overflow-y-auto no-scrollbar print:p-12">
-                  <div className="flex flex-col md:flex-row justify-between items-start gap-8 md:gap-0">
-                     <div>
-                        <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" className="h-16 md:h-24 w-auto mb-6 md:mb-8" />
-                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tight leading-none">Junior Odyssey</h1>
-                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2 md:mt-4">Payment Confirmation</p>
-                     </div>
-                     <div className="text-left md:text-right w-full md:w-auto">
-                        <h2 className="text-5xl md:text-7xl font-black text-slate-100 uppercase tracking-tighter mb-6 md:mb-10 leading-none">PAID</h2>
-                        <div className="space-y-1 md:space-y-2">
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bill ID</p>
-                           <p className="text-sm md:text-base font-black text-slate-900 uppercase">{selectedInvoice.id}</p>
-                        </div>
-                        <div className="space-y-1 md:space-y-2 mt-4 md:mt-8">
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Paid</p>
-                           <p className="text-sm md:text-base font-black text-slate-900">{selectedInvoice.paidAt ? new Date(selectedInvoice.paidAt).toLocaleDateString() : '—'}</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 border-y-2 border-slate-50 py-10 md:py-16">
-                     <div className="space-y-3">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Details</p>
-                        <p className="text-2xl md:text-3xl font-black text-slate-900 uppercase leading-none">{selectedInvoice.studentName}</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">ID: {selectedInvoice.studentId}</p>
-                     </div>
-                     <div className="space-y-3 text-left md:text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paid Via</p>
-                        <p className={`text-2xl md:text-3xl font-black uppercase leading-none text-emerald-500`}>{selectedInvoice.paymentMethod || 'CASH'}</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status: Fully Settled</p>
-                     </div>
-                  </div>
-
-                  <div className="space-y-8 md:space-y-10">
-                     <div className="grid grid-cols-3 text-[10px] font-black text-slate-400 uppercase tracking-widest pb-4 md:pb-8 border-b-4 border-slate-900">
-                        <span className="col-span-2">Item Description</span>
-                        <span className="text-right">Amount (₹)</span>
-                     </div>
-                     
-                     <div className="space-y-6 md:space-y-8">
-                        {selectedInvoice.breakdown && (Object.entries(selectedInvoice.breakdown) as [string, number][]).map(([k, v]) => (
-                           <div key={k} className="grid grid-cols-3 items-center group">
-                              <span className="col-span-2 text-base md:text-lg font-black text-slate-700 uppercase tracking-widest">{k.replace('term', 'Term ')} Fee</span>
-                              <span className="text-right text-lg md:text-xl font-black text-slate-900">₹{v.toLocaleString()}</span>
-                           </div>
-                        ))}
-                     </div>
-
-                     <div className="pt-10 md:pt-16 mt-12 md:mt-20 border-t-8 border-slate-900 flex justify-between items-center">
-                        <p className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-widest">Total Amount</p>
-                        <p className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter">₹{selectedInvoice.amount.toLocaleString()}</p>
-                     </div>
-                  </div>
-
-                  <div className="pt-20 md:pt-32 text-center">
-                     <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest leading-loose max-w-sm mx-auto">
-                        This is an official document from Junior Odyssey International School. 
-                     </p>
-                  </div>
-               </div>
+            {/* Receipt Header */}
+            <div className="flex justify-between items-center p-6 md:p-10 print:hidden" style={{ background: '#F8FAFC', borderBottom: '1px solid #F0F4F8' }}>
+              <h4 className="font-black text-[10px] uppercase tracking-widest" style={{ color: '#1A2340' }}>Official Receipt</h4>
+              <div className="flex gap-2 md:gap-3">
+                <button
+                  onClick={() => window.print()}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
+                  style={{ background: '#EEF8FE', color: '#3BB5F0', border: '1.5px solid #99D8F8' }}
+                >
+                  <Printer className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setSelectedInvoice(null)}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
+                  style={{ background: '#FFF0F5', color: '#FF4B8B', border: '1.5px solid #FFB3CE' }}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-         </div>
+
+            <div className="p-10 md:p-16 space-y-10 overflow-y-auto no-scrollbar print:p-12">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div>
+                  <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" className="h-14 md:h-20 w-auto mb-5" />
+                  <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight leading-none" style={{ color: '#1A2340' }}>Junior Odyssey</h1>
+                  <p className="text-[10px] font-black uppercase tracking-widest mt-2" style={{ color: '#3BB5F0' }}>Payment Confirmation</p>
+                </div>
+                <div className="text-left md:text-right w-full md:w-auto">
+                  <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-5 leading-none" style={{ color: '#4BC83A' }}>PAID</h2>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Bill ID</p>
+                    <p className="text-sm font-black uppercase" style={{ color: '#1A2340' }}>{selectedInvoice.id}</p>
+                  </div>
+                  <div className="space-y-1 mt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Date Paid</p>
+                    <p className="text-sm font-black" style={{ color: '#1A2340' }}>
+                      {selectedInvoice.paidAt ? new Date(selectedInvoice.paidAt).toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8" style={{ borderTop: '2px solid #F0F4F8', borderBottom: '2px solid #F0F4F8' }}>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Student Details</p>
+                  <p className="text-2xl font-black uppercase leading-none" style={{ color: '#1A2340' }}>{selectedInvoice.studentName}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#9AA5B4' }}>ID: {selectedInvoice.studentId}</p>
+                </div>
+                <div className="space-y-2 text-left md:text-right">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Paid Via</p>
+                  <p className="text-2xl font-black uppercase leading-none" style={{ color: '#4BC83A' }}>{selectedInvoice.paymentMethod || 'CASH'}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#9AA5B4' }}>Status: Fully Settled</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-3 text-[10px] font-black uppercase tracking-widest pb-5" style={{ color: '#9AA5B4', borderBottom: `3px solid #1A2340` }}>
+                  <span className="col-span-2">Item Description</span>
+                  <span className="text-right">Amount (₹)</span>
+                </div>
+                <div className="space-y-5">
+                  {selectedInvoice.breakdown && (Object.entries(selectedInvoice.breakdown) as [string, number][]).map(([k, v]) => (
+                    <div key={k} className="grid grid-cols-3 items-center">
+                      <span className="col-span-2 text-base font-black uppercase tracking-widest" style={{ color: '#4A5568' }}>{k.replace('term', 'Term ')} Fee</span>
+                      <span className="text-right text-lg font-black" style={{ color: '#1A2340' }}>₹{v.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-8 mt-8 flex justify-between items-center" style={{ borderTop: `4px solid #1A2340` }}>
+                  <p className="text-xl font-black uppercase tracking-widest" style={{ color: '#1A2340' }}>Total Amount</p>
+                  <p className="text-4xl md:text-5xl font-black tracking-tighter" style={{ color: '#1A2340' }}>₹{selectedInvoice.amount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="pt-12 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm mx-auto" style={{ color: '#9AA5B4' }}>
+                  This is an official document from Junior Odyssey International School.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };
