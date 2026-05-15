@@ -454,13 +454,17 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
               <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #F0F4F8' }}>
                 <tr>
                   <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Student</th>
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-center" style={{ color: '#9AA5B4' }}>Unpaid Bills</th>
+                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-center" style={{ color: '#9AA5B4' }}>Billing History</th>
                   <th className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-right" style={{ color: '#9AA5B4' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map(s => {
-                  const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
+                  const studentInvoices = invoices.filter(i => i.studentId === s.id).sort((a, b) => {
+                    if (a.status !== 'Paid' && b.status === 'Paid') return -1;
+                    if (a.status === 'Paid' && b.status !== 'Paid') return 1;
+                    return b.id.localeCompare(a.id);
+                  });
                   const pc = PROGRAM_COLORS[s.program] ?? PROGRAM_COLORS['Little Seeds'];
                   return (
                     <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors" style={{ borderBottom: '1px solid #F0F4F8' }}>
@@ -479,44 +483,53 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                         </div>
                       </td>
                       <td className="px-10 py-7 text-center">
-                        {pendingInvoices.length > 0 ? (
-                          <div className="space-y-2">
-                            {pendingInvoices.map(inv => (
-                              <div
-                                key={inv.id}
-                                className="flex items-center justify-between p-3 rounded-2xl"
-                                style={{ background: '#FFF0F5', border: '1px solid #FFB3CE' }}
-                              >
-                                <div className="text-left">
-                                  <span className="text-[9px] font-bold uppercase block leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</span>
-                                  <span className="text-sm font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</span>
+                        {studentInvoices.length > 0 ? (
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            {studentInvoices.map(inv => {
+                              const isPaid = inv.status === 'Paid';
+                              return (
+                                <div
+                                  key={inv.id}
+                                  className="flex items-center justify-between p-3 rounded-2xl"
+                                  style={{ background: isPaid ? '#F0FBF0' : '#FFF0F5', border: `1px solid ${isPaid ? '#A8E8A2' : '#FFB3CE'}` }}
+                                >
+                                  <div className="text-left">
+                                    <span className="text-[9px] font-bold uppercase block leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</span>
+                                    <span className="text-sm font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => setSelectedInvoice(inv)}
+                                      className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all text-[#3BB5F0]"
+                                      style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
+                                      title={isPaid ? "View Receipt" : "View Invoice"}
+                                    >
+                                      <Receipt className="w-3.5 h-3.5" />
+                                    </button>
+                                    {!isPaid ? (
+                                      <button
+                                        onClick={() => processPayment(inv, 'Cash')}
+                                        className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
+                                        style={{ background: '#4BC83A', boxShadow: '0 2px 8px #4BC83A30' }}
+                                      >
+                                        <Coins className="w-3.5 h-3.5" /> Collect
+                                      </button>
+                                    ) : (
+                                      <span className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1" style={{ color: '#217A15' }}>
+                                        <CheckCircle className="w-3.5 h-3.5" /> Paid
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => setSelectedInvoice(inv)}
-                                    className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all text-[#3BB5F0]"
-                                    style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
-                                    title="View Invoice"
-                                  >
-                                    <Receipt className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => processPayment(inv, 'Cash')}
-                                    className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
-                                    style={{ background: '#4BC83A', boxShadow: '0 2px 8px #4BC83A30' }}
-                                  >
-                                    <Coins className="w-3.5 h-3.5" /> Collect
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <span
                             className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full"
-                            style={{ background: '#F0FBF0', color: '#217A15' }}
+                            style={{ background: '#F8FAFC', color: '#9AA5B4' }}
                           >
-                            All Paid
+                            No Bills Yet
                           </span>
                         )}
                       </td>
@@ -541,7 +554,11 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
             {filteredStudents.length === 0 ? (
               <div className="p-12 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9AA5B4' }}>No students found</div>
             ) : filteredStudents.map(s => {
-              const pendingInvoices = invoices.filter(i => i.studentId === s.id && i.status !== 'Paid');
+              const studentInvoices = invoices.filter(i => i.studentId === s.id).sort((a, b) => {
+                if (a.status !== 'Paid' && b.status === 'Paid') return -1;
+                if (a.status === 'Paid' && b.status !== 'Paid') return 1;
+                return b.id.localeCompare(a.id);
+              });
               const pc = PROGRAM_COLORS[s.program] ?? PROGRAM_COLORS['Little Seeds'];
               return (
                 <div key={s.id} className="p-5 space-y-5" style={{ borderBottom: '1px solid #F0F4F8' }}>
@@ -560,23 +577,27 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                     </button>
                   </div>
 
-                  {pendingInvoices.length > 0 ? (
+                  {studentInvoices.length > 0 ? (
                     <div className="space-y-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Pending Payments</p>
-                      {pendingInvoices.map(inv => (
-                        <div key={inv.id} className="p-4 rounded-2xl flex items-center justify-between" style={{ background: '#FFF0F5', border: '1px solid #FFB3CE' }}>
-                          <div className="flex-1">
-                            <p className="text-[9px] font-bold uppercase leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</p>
-                            <p className="text-lg font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
-                          </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setSelectedInvoice(inv)}
-                                  className="p-2.5 rounded-xl text-[#3BB5F0] active:scale-95 transition-all"
-                                  style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
-                                >
-                                  <Receipt className="w-4 h-4" />
-                                </button>
+                      <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Billing History</p>
+                      {studentInvoices.map(inv => {
+                        const isPaid = inv.status === 'Paid';
+                        return (
+                          <div key={inv.id} className="p-4 rounded-2xl flex items-center justify-between" style={{ background: isPaid ? '#F0FBF0' : '#FFF0F5', border: `1px solid ${isPaid ? '#A8E8A2' : '#FFB3CE'}` }}>
+                            <div className="flex-1">
+                              <p className="text-[9px] font-bold uppercase leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</p>
+                              <p className="text-lg font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setSelectedInvoice(inv)}
+                                className="p-2.5 rounded-xl text-[#3BB5F0] active:scale-95 transition-all"
+                                style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
+                                title={isPaid ? "View Receipt" : "View Invoice"}
+                              >
+                                <Receipt className="w-4 h-4" />
+                              </button>
+                              {!isPaid ? (
                                 <button
                                   onClick={() => processPayment(inv, 'Cash')}
                                   className="p-2.5 rounded-xl text-white active:scale-95 transition-all"
@@ -584,14 +605,20 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                                 >
                                   <Coins className="w-4 h-4" />
                                 </button>
-                              </div>
-                        </div>
-                      ))}
+                              ) : (
+                                <div className="p-2.5 rounded-xl text-[#217A15] flex items-center justify-center">
+                                  <CheckCircle className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: '#F0FBF0', border: '1px solid #A8E8A2' }}>
-                      <ShieldCheck className="w-4 h-4" style={{ color: '#4BC83A' }} />
-                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#217A15' }}>Account Clear</span>
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: '#F8FAFC', border: '1px solid #F0F4F8' }}>
+                      <FileText className="w-4 h-4" style={{ color: '#9AA5B4' }} />
+                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>No Bills Yet</span>
                     </div>
                   )}
                 </div>
