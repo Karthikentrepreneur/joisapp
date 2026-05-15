@@ -352,7 +352,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
         <style>{`
           @media print {
             body { background-color: white !important; -webkit-print-color-adjust: exact; }
-            #parent-fees-view, main { overflow: visible !important; }
+            #parent-fees-view, #admin-fees-view, main { overflow: visible !important; }
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
             #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none !important; border: none !important; border-radius: 0 !important; }
@@ -505,7 +505,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   // ─── Admin / Staff View ───────────────────────────────────────────────────
 
   return (
-    <div className="w-full min-h-full pb-20" style={{ background: '#F8FAFC', animation: 'fadeUp .4s ease' }}>
+    <div id="admin-fees-view" className="w-full min-h-full pb-20" style={{ background: '#F8FAFC', animation: 'fadeUp .4s ease' }}>
 
       {/* Page Header */}
       <div className="bg-white px-6 md:px-8 py-6 md:py-8" style={{ borderBottom: '1.5px solid #F0F4F8' }}>
@@ -1258,6 +1258,8 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
           </div>
         </div>
       )}
+
+      {renderReceiptModal()}
 
       <style>{`
         @keyframes fadeUp {
