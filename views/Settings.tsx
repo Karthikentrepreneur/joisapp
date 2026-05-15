@@ -1,37 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, View } from '../types';
 import { Shield, Save, CheckCircle2, Lock, PenTool, Upload } from 'lucide-react';
-import { mockStaff } from '../data/mockData';
+import { db } from '../services/persistence';
+import { ToastType } from '../components/Toast';
 
 interface SettingsProps {
   role: UserRole;
   permissions: Record<UserRole, View[]>;
   setPermissions: React.Dispatch<React.SetStateAction<Record<UserRole, View[]>>>;
+  currentUser?: any;
+  showToast?: (title: string, type: ToastType, description?: string) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermissions }) => {
+export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermissions, currentUser, showToast }) => {
   const views = Object.values(View).filter(v => v !== View.SETTINGS); 
-  const roles = [UserRole.TEACHER, UserRole.PARENT, UserRole.TRANSPORT]; 
+  const roles = [UserRole.ADMIN, UserRole.FOUNDER, UserRole.TEACHER, UserRole.PARENT, UserRole.TRANSPORT]; 
 
-  const getStaffForRole = () => {
-    if (role === UserRole.TEACHER) return mockStaff.find(s => s.role === 'Teacher');
-    if (role === UserRole.ADMIN) return mockStaff.find(s => s.role === 'Admin');
-    if (role === UserRole.TRANSPORT) return mockStaff.find(s => s.role === 'Driver');
-    return undefined;
-  };
-
-  const [currentStaff, setCurrentStaff] = useState(getStaffForRole());
-  const [signaturePreview, setSignaturePreview] = useState<string | undefined>(currentStaff?.signature);
+  const [signaturePreview, setSignaturePreview] = useState<string | undefined>(currentUser?.signature);
 
   useEffect(() => {
-    const staff = getStaffForRole();
-    setCurrentStaff(staff);
-    setSignaturePreview(staff?.signature);
-  }, [role]);
+    setSignaturePreview(currentUser?.signature);
+  }, [currentUser]);
 
   const togglePermission = (role: UserRole, view: View) => {
     setPermissions(prev => {
-      const currentRolePermissions = prev[role];
+      const currentRolePermissions = prev[role] || [];
       const hasPermission = currentRolePermissions.includes(view);
       
       let newRolePermissions;
@@ -97,7 +90,7 @@ export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermis
                     Upload your signature for official school documents.
                  </p>
               </div>
-              {signaturePreview && signaturePreview !== currentStaff?.signature && (
+                {signaturePreview && signaturePreview !== currentUser?.signature && (
                  <button 
                     onClick={saveSignature}
                     className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-700 transition-colors flex items-center gap-2"
@@ -165,7 +158,7 @@ export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermis
                                {view}
                             </td>
                             {roles.map(role => {
-                               const isEnabled = permissions[role].includes(view);
+                              const isEnabled = (permissions[role] || []).includes(view);
                                return (
                                   <td key={`${role}-${view}`} className="p-4 text-center">
                                      <button 
