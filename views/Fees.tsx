@@ -881,6 +881,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
 
             {/* PDF Content */}
             <div
+              id="printable-receipt"
               ref={receiptRef}
               className="w-full max-w-3xl bg-white rounded-3xl overflow-hidden shadow-2xl relative"
             >
@@ -890,7 +891,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                   {/* LOGO */}
                   <div>
                     <div className="flex items-center gap-3">
-                      <div className="text-4xl md:text-5xl font-black text-pink-500">JOIS</div>
+                      <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" alt="JOIS Logo" className="w-16 md:w-20 h-auto object-contain" />
                       <div>
                         <h1 className="text-xl md:text-3xl font-extrabold text-[#003B7A] uppercase leading-none">
                           Junior Odyssey
@@ -1068,8 +1069,8 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
               {/* FOOTER */}
               <div className="px-6 md:px-10 mt-10 md:mt-14 pb-8 md:pb-10">
                 <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-6 md:gap-0">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] md:border-[6px] border-[#003B7A] flex items-center justify-center text-[#003B7A] font-black text-2xl md:text-3xl shrink-0">
-                    JOIS
+                  <div className="w-24 h-24 md:w-32 md:h-32 shrink-0">
+                    <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" alt="JOIS Logo" className="w-full h-full object-contain" />
                   </div>
 
                   <div className="text-center px-4">
@@ -1108,6 +1109,28 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @media print {
+          body {
+            background-color: white !important;
+          }
+          body * {
+            visibility: hidden;
+          }
+          #printable-receipt, #printable-receipt * {
+            visibility: visible;
+          }
+          #printable-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+          }
         }
       `}</style>
     </div>
