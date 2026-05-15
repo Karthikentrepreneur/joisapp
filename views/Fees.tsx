@@ -227,7 +227,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     const unpaidBalance = myInvoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0);
 
     return (
-      <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 overflow-y-auto no-scrollbar pb-32" style={{ animation: 'fadeUp .4s ease' }}>
+      <div id="parent-fees-view" className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 overflow-y-auto no-scrollbar pb-32" style={{ animation: 'fadeUp .4s ease' }}>
 
         {/* Header */}
         <div
@@ -864,7 +864,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
         >
           <div className="w-full max-w-4xl relative mt-4 md:mt-10 mb-20 flex flex-col items-center">
             {/* Controls */}
-            <div className="flex justify-between items-center w-full max-w-3xl mb-4 px-2">
+            <div className="flex justify-between items-center w-full max-w-3xl mb-4 px-2 print:hidden">
               <button
                 onClick={() => setSelectedInvoice(null)}
                 className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all bg-white text-gray-600 shadow-sm"
@@ -1113,6 +1113,9 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
         @media print {
           body {
             background-color: white !important;
+          }
+          #parent-fees-view {
+            overflow: visible !important;
           }
           body * {
             visibility: hidden;
