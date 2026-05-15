@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, role, permissions
     { view: View.ACADEMICS, label: 'Academic', icon: GraduationCap },
     { view: View.ATTENDANCE, label: 'Attendance', icon: CalendarCheck },
     { view: View.LEAVE, label: 'Leave Management', icon: CalendarDays },
-    { view: View.FEES, label: 'Finance', icon: CreditCard },
+    { view: View.FEES, label: role === UserRole.PARENT ? 'Fees' : 'Finance', icon: CreditCard },
     { view: View.TRANSPORT, label: 'Bus Tracking', icon: Bus },
     { view: View.SAFETY, label: 'Cameras', icon: ShieldCheck },
     { view: View.COMMUNICATION, label: 'Messages', icon: MessageSquare },
