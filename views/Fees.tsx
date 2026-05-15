@@ -255,8 +255,8 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
             <div className="relative z-10">
             {/* HEADER */}
             <div className="flex justify-between items-start border-b-2 border-[#003B7A] pb-6">
-              <div className="flex items-center gap-4">
-                <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" alt="JOIS Logo" className="w-20 h-auto object-contain" />
+              <div className="flex items-center gap-6">
+                <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" alt="JOIS Logo" className="w-32 md:w-48 h-auto object-contain" />
                 <div>
                   <h1 className="text-2xl font-black text-[#003B7A] uppercase tracking-wide leading-none">Junior Odyssey</h1>
                   <p className="text-sm font-bold text-[#003B7A] tracking-widest uppercase mt-1">International School</p>
