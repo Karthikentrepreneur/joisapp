@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { db } from '../services/persistence';
 import { UserRole, ProgramType, Invoice, Student, FeeBreakdown } from '../types';
 import {
@@ -25,6 +27,9 @@ import {
   Filter,
   ChevronRight,
   Wallet,
+  CalendarDays,
+  FileText,
+  User,
 } from 'lucide-react';
 import { CURRENT_USER_ID } from '../data/mockData';
 import { ToastType } from '../components/Toast';
@@ -109,6 +114,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const [selectedComponents, setSelectedComponents] = useState<Set<keyof FeeBreakdown>>(new Set());
   const [syncing, setSyncing]                     = useState(false);
   const [selectedInvoice, setSelectedInvoice]     = useState<Invoice | null>(null);
+  const receiptRef                                = useRef<HTMLDivElement>(null);
 
   const isAdmin  = role === UserRole.ADMIN || role === UserRole.FOUNDER;
   const isParent = role === UserRole.PARENT;
@@ -209,6 +215,18 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     }
   };
 
+  const downloadPDF = async () => {
+    const input = receiptRef.current;
+    if (!input) return;
+    const canvas = await html2canvas(input, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Invoice_${selectedInvoice?.id}.pdf`);
+  };
+
   // ─── Parent View ──────────────────────────────────────────────────────────
 
   if (isParent) {
@@ -305,13 +323,23 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                     <p className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
                   </div>
                   {!isPaid ? (
-                    <button
-                      onClick={() => processPayment(inv, 'Online')}
-                      className="px-6 md:px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
-                      style={{ background: '#3BB5F0', boxShadow: '0 4px 14px #3BB5F030' }}
-                    >
-                      <CreditCard className="w-4 h-4" /> Pay Now
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="px-4 md:px-5 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center text-[#FF4B8B]"
+                        style={{ background: '#FFF0F5', border: '1.5px solid #FFB3CE' }}
+                        title="View Invoice"
+                      >
+                        <Receipt className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => processPayment(inv, 'Online')}
+                        className="px-6 md:px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
+                        style={{ background: '#3BB5F0', boxShadow: '0 4px 14px #3BB5F030' }}
+                      >
+                        <CreditCard className="w-4 h-4" /> Pay Now
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => setSelectedInvoice(inv)}
@@ -463,13 +491,23 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                                   <span className="text-[9px] font-bold uppercase block leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</span>
                                   <span className="text-sm font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</span>
                                 </div>
-                                <button
-                                  onClick={() => processPayment(inv, 'Cash')}
-                                  className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
-                                  style={{ background: '#4BC83A', boxShadow: '0 2px 8px #4BC83A30' }}
-                                >
-                                  <Coins className="w-3.5 h-3.5" /> Collect Cash
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => setSelectedInvoice(inv)}
+                                    className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all text-[#3BB5F0]"
+                                    style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
+                                    title="View Invoice"
+                                  >
+                                    <Receipt className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => processPayment(inv, 'Cash')}
+                                    className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2 text-white"
+                                    style={{ background: '#4BC83A', boxShadow: '0 2px 8px #4BC83A30' }}
+                                  >
+                                    <Coins className="w-3.5 h-3.5" /> Collect
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -531,13 +569,22 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                             <p className="text-[9px] font-bold uppercase leading-none mb-1" style={{ color: '#9AA5B4' }}>{inv.type}</p>
                             <p className="text-lg font-black" style={{ color: '#1A2340' }}>₹{inv.amount.toLocaleString()}</p>
                           </div>
-                          <button
-                            onClick={() => processPayment(inv, 'Cash')}
-                            className="p-2.5 rounded-xl text-white active:scale-95 transition-all"
-                            style={{ background: '#4BC83A' }}
-                          >
-                            <Coins className="w-4 h-4" />
-                          </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setSelectedInvoice(inv)}
+                                  className="p-2.5 rounded-xl text-[#3BB5F0] active:scale-95 transition-all"
+                                  style={{ background: '#EEF8FE', border: '1px solid #99D8F8' }}
+                                >
+                                  <Receipt className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => processPayment(inv, 'Cash')}
+                                  className="p-2.5 rounded-xl text-white active:scale-95 transition-all"
+                                  style={{ background: '#4BC83A' }}
+                                >
+                                  <Coins className="w-4 h-4" />
+                                </button>
+                              </div>
                         </div>
                       ))}
                     </div>
@@ -795,90 +842,245 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
       {/* ── Receipt Modal ── */}
       {selectedInvoice && (
         <div
-          className="fixed inset-0 z-[250] flex items-center justify-center p-2 md:p-4 print:p-0 print:bg-white print:fixed print:inset-0"
-          style={{ background: 'rgba(15,30,60,0.92)', backdropFilter: 'blur(16px)', animation: 'fadeUp .25s ease' }}
+          className="fixed inset-0 z-[250] flex justify-center p-2 md:p-4"
+          style={{ background: 'rgba(15,30,60,0.92)', backdropFilter: 'blur(16px)', animation: 'fadeUp .25s ease', overflowY: 'auto' }}
         >
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col print:rounded-none print:shadow-none print:max-w-none print:h-screen" style={{ border: '1.5px solid #F0F4F8' }}>
-
-            {/* Receipt Header */}
-            <div className="flex justify-between items-center p-6 md:p-10 print:hidden" style={{ background: '#F8FAFC', borderBottom: '1px solid #F0F4F8' }}>
-              <h4 className="font-black text-[10px] uppercase tracking-widest" style={{ color: '#1A2340' }}>Official Receipt</h4>
-              <div className="flex gap-2 md:gap-3">
-                <button
-                  onClick={() => window.print()}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
-                  style={{ background: '#EEF8FE', color: '#3BB5F0', border: '1.5px solid #99D8F8' }}
-                >
-                  <Printer className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setSelectedInvoice(null)}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
-                  style={{ background: '#FFF0F5', color: '#FF4B8B', border: '1.5px solid #FFB3CE' }}
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div className="w-full max-w-4xl relative mt-4 md:mt-10 mb-20 flex flex-col items-center">
+            {/* Controls */}
+            <div className="flex justify-between items-center w-full max-w-3xl mb-4 px-2">
+              <button
+                onClick={() => setSelectedInvoice(null)}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all bg-white text-gray-600 shadow-sm"
+              >
+                <X className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
+              <button
+                onClick={downloadPDF}
+                className="bg-[#003B7A] hover:bg-[#002c5c] text-white px-6 py-3 rounded-xl font-bold text-sm md:text-base shadow-lg transition-colors flex items-center gap-2"
+              >
+                <Printer className="w-4 h-4" /> Download PDF
+              </button>
             </div>
 
-            <div className="p-10 md:p-16 space-y-10 overflow-y-auto no-scrollbar print:p-12">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                <div>
-                  <img src="https://www.joischools.com/assets/jois-logo-BUnvOotz.png" className="h-14 md:h-20 w-auto mb-5" />
-                  <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight leading-none" style={{ color: '#1A2340' }}>Junior Odyssey</h1>
-                  <p className="text-[10px] font-black uppercase tracking-widest mt-2" style={{ color: '#3BB5F0' }}>Payment Confirmation</p>
-                </div>
-                <div className="text-left md:text-right w-full md:w-auto">
-                  <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-5 leading-none" style={{ color: '#4BC83A' }}>PAID</h2>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Bill ID</p>
-                    <p className="text-sm font-black uppercase" style={{ color: '#1A2340' }}>{selectedInvoice.id}</p>
+            {/* PDF Content */}
+            <div
+              ref={receiptRef}
+              className="w-full max-w-3xl bg-white rounded-3xl overflow-hidden shadow-2xl relative"
+            >
+              {/* HEADER */}
+              <div className="px-6 md:px-10 pt-8 relative">
+                <div className="flex justify-between items-start">
+                  {/* LOGO */}
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-4xl md:text-5xl font-black text-pink-500">JOIS</div>
+                      <div>
+                        <h1 className="text-xl md:text-3xl font-extrabold text-[#003B7A] uppercase leading-none">
+                          Junior Odyssey
+                        </h1>
+                        <p className="text-sm md:text-lg font-bold text-[#003B7A] uppercase">
+                          International School
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1 mt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Date Paid</p>
-                    <p className="text-sm font-black" style={{ color: '#1A2340' }}>
-                      {selectedInvoice.paidAt ? new Date(selectedInvoice.paidAt).toLocaleDateString() : '—'}
+                  {/* DECORATION */}
+                  <div className="hidden md:grid grid-cols-3 gap-3 text-3xl">
+                    <span className="text-yellow-500">*</span>
+                    <span className="text-pink-500">+</span>
+                    <span className="text-blue-500">○</span>
+                    <span className="text-green-500">~</span>
+                    <span className="text-orange-500">*</span>
+                    <span className="text-blue-700">3</span>
+                  </div>
+                </div>
+
+                {/* TITLE */}
+                <div className="text-center mt-8 md:mt-10">
+                  <h2 className="text-4xl md:text-6xl font-extrabold text-[#003B7A] uppercase">
+                    {selectedInvoice.status === 'Paid' ? 'Payment Receipt' : 'Fee Invoice'}
+                  </h2>
+                  <div className="flex items-center justify-center gap-5 mt-4 md:mt-5">
+                    <div className="w-16 md:w-24 h-[3px] bg-[#003B7A]"></div>
+                    <div className="text-pink-500 text-xl md:text-2xl">*</div>
+                    <div className="w-16 md:w-24 h-[3px] bg-[#003B7A]"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TOP BOX */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-6 md:px-10 mt-8 md:mt-10">
+                <div className="border-2 border-[#dbe6f3] rounded-[24px] p-4 md:p-5 flex items-center gap-4 md:gap-5">
+                  <div className="bg-[#003B7A] text-white p-3 md:p-4 rounded-full shrink-0">
+                    <FileText className="w-6 h-6 md:w-7 md:h-7" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-gray-500 font-semibold text-xs md:text-sm">{selectedInvoice.status === 'Paid' ? 'Receipt No.' : 'Invoice No.'}</p>
+                    <h3 className="text-[#003B7A] font-extrabold text-lg md:text-xl truncate">
+                      {selectedInvoice.id}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="border-2 border-[#dbe6f3] rounded-[24px] p-4 md:p-5 flex items-center gap-4 md:gap-5">
+                  <div className="bg-[#003B7A] text-white p-3 md:p-4 rounded-full shrink-0">
+                    <CalendarDays className="w-6 h-6 md:w-7 md:h-7" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-gray-500 font-semibold text-xs md:text-sm">Date</p>
+                    <h3 className="text-[#003B7A] font-extrabold text-lg md:text-xl truncate">
+                      {selectedInvoice.status === 'Paid' ? new Date(selectedInvoice.paidAt!).toLocaleDateString() : new Date(selectedInvoice.dueDate).toLocaleDateString()}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* STUDENT DETAILS */}
+              <div className="px-6 md:px-10 mt-8 md:mt-10">
+                <div className="border-2 border-[#dbe6f3] rounded-[30px] overflow-hidden">
+                  <div className="bg-[#003B7A] text-white inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-br-2xl">
+                    <User className="w-5 h-5" />
+                    <span className="font-bold uppercase text-base md:text-lg">
+                      {selectedInvoice.status === 'Paid' ? 'Received From' : 'Billed To'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 p-6 md:p-8">
+                    <div className="space-y-5 md:space-y-7">
+                      <div className="border-b border-gray-200 pb-2 md:pb-3">
+                        <p className="text-gray-500 text-xs md:text-sm font-semibold">Student Name</p>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-1">{selectedInvoice.studentName}</h3>
+                      </div>
+                      <div className="border-b border-gray-200 pb-2 md:pb-3">
+                        <p className="text-gray-500 text-xs md:text-sm font-semibold">Student ID</p>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-1">{selectedInvoice.studentId}</h3>
+                      </div>
+                    </div>
+                    <div className="space-y-5 md:space-y-7">
+                      <div className="border-b border-gray-200 pb-2 md:pb-3">
+                        <p className="text-gray-500 text-xs md:text-sm font-semibold">Payment For</p>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-1">{selectedInvoice.type}</h3>
+                      </div>
+                      <div className="border-b border-gray-200 pb-2 md:pb-3">
+                        <p className="text-gray-500 text-xs md:text-sm font-semibold">Status</p>
+                        <h3 className="text-xl md:text-2xl font-bold mt-1" style={{ color: selectedInvoice.status === 'Paid' ? '#4BC83A' : '#FF4B8B' }}>
+                          {selectedInvoice.status.toUpperCase()}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TABLE */}
+              <div className="px-6 md:px-10 mt-8 md:mt-10">
+                <div className="border-2 border-[#dbe6f3] rounded-[30px] overflow-hidden">
+                  <div className="bg-[#003B7A] text-white inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-br-2xl">
+                    <FileText className="w-5 h-5" />
+                    <span className="font-bold uppercase text-base md:text-lg">
+                      Fee Details
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto w-full mt-4 md:mt-5">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-[#003B7A] text-white">
+                          <th className="py-3 md:py-5 text-left px-4 md:px-6 text-sm md:text-xl">Fee Category</th>
+                          <th className="py-3 md:py-5 text-right px-4 md:px-6 text-sm md:text-xl whitespace-nowrap">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInvoice.breakdown && (Object.entries(selectedInvoice.breakdown) as [string, number][]).map(([k, v]) => (
+                          <tr key={k} className="border-b border-gray-100">
+                            <td className="py-4 md:py-6 px-4 md:px-6 text-base md:text-lg capitalize">
+                              {k.replace('term', 'Term ')} Fee
+                            </td>
+                            <td className="py-4 md:py-6 px-4 md:px-6 text-right text-base md:text-lg font-medium">
+                              {v.toLocaleString()}/-
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="h-4 md:h-8 border-b"></tr>
+                        <tr className="bg-[#edf4fb]">
+                          <td className="py-4 md:py-6 px-4 md:px-6 text-xl md:text-3xl font-extrabold text-[#003B7A]">
+                            TOTAL
+                          </td>
+                          <td className="py-4 md:py-6 px-4 md:px-6 text-right text-xl md:text-3xl font-extrabold text-[#003B7A]">
+                            {selectedInvoice.amount.toLocaleString()}/-
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* PAYMENT BOX */}
+              <div className="px-6 md:px-10 mt-8 md:mt-10">
+                <div 
+                  className="border-2 rounded-[30px] p-6 md:p-8 flex flex-col md:flex-row justify-between gap-6 md:gap-10"
+                  style={{ borderColor: selectedInvoice.status === 'Paid' ? '#86efac' : '#fca5a5' }}
+                >
+                  <div className="flex gap-4 md:gap-5">
+                    <div className={selectedInvoice.status === 'Paid' ? "text-green-500" : "text-red-400"}>
+                      {selectedInvoice.status === 'Paid' ? <ShieldCheck className="w-12 h-12 md:w-[70px] md:h-[70px]" /> : <AlertCircle className="w-12 h-12 md:w-[70px] md:h-[70px]" />}
+                    </div>
+                    <div>
+                      <p className="text-[#003B7A] uppercase font-bold text-sm md:text-lg">
+                        {selectedInvoice.status === 'Paid' ? 'Received Total Payment Of' : 'Total Amount Due'}
+                      </p>
+                      <h2 className={`text-4xl md:text-6xl font-black mt-1 md:mt-2 ${selectedInvoice.status === 'Paid' ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹ {selectedInvoice.amount.toLocaleString()}/-
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 md:space-y-5 text-base md:text-xl">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <CreditCard className="text-[#003B7A] w-5 h-5 md:w-6 md:h-6 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-bold text-sm md:text-base">Payment Mode</span>
+                        <p className="text-sm md:text-base truncate">{selectedInvoice.paymentMethod || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div className="px-6 md:px-10 mt-10 md:mt-14 pb-8 md:pb-10">
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-6 md:gap-0">
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] md:border-[6px] border-[#003B7A] flex items-center justify-center text-[#003B7A] font-black text-2xl md:text-3xl shrink-0">
+                    JOIS
+                  </div>
+
+                  <div className="text-center px-4">
+                    <p className="text-[#003B7A] text-lg md:text-2xl italic">
+                      Thank you for your trust in JOIS.
+                    </p>
+                  </div>
+
+                  <div className="text-center md:text-right">
+                    <div className="text-3xl md:text-5xl italic text-[#003B7A]">Authorized</div>
+                    <div className="w-48 md:w-72 h-[2px] bg-[#003B7A] mt-2 md:mt-3 mx-auto md:mx-0"></div>
+                    <h3 className="text-[#003B7A] font-extrabold text-lg md:text-2xl mt-2">
+                      Authorized Signature
+                    </h3>
+                    <p className="text-[#003B7A] text-xs md:text-lg">
+                      For Junior Odyssey International School
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8" style={{ borderTop: '2px solid #F0F4F8', borderBottom: '2px solid #F0F4F8' }}>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Student Details</p>
-                  <p className="text-2xl font-black uppercase leading-none" style={{ color: '#1A2340' }}>{selectedInvoice.studentName}</p>
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#9AA5B4' }}>ID: {selectedInvoice.studentId}</p>
+              {/* BOTTOM BAR */}
+              <div className="bg-[#003B7A] text-white py-4 md:py-5 px-6 md:px-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 text-xs md:text-sm text-center md:text-left">
+                  <div>📞 +91 9940455580</div>
+                  <div className="md:col-span-2">📍 1/13, MR Radha st, Pudupakkam OMR, Near Sipcot Siruseri</div>
+                  <div>🌐 www.joischools.com</div>
                 </div>
-                <div className="space-y-2 text-left md:text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9AA5B4' }}>Paid Via</p>
-                  <p className="text-2xl font-black uppercase leading-none" style={{ color: '#4BC83A' }}>{selectedInvoice.paymentMethod || 'CASH'}</p>
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#9AA5B4' }}>Status: Fully Settled</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 text-[10px] font-black uppercase tracking-widest pb-5" style={{ color: '#9AA5B4', borderBottom: `3px solid #1A2340` }}>
-                  <span className="col-span-2">Item Description</span>
-                  <span className="text-right">Amount (₹)</span>
-                </div>
-                <div className="space-y-5">
-                  {selectedInvoice.breakdown && (Object.entries(selectedInvoice.breakdown) as [string, number][]).map(([k, v]) => (
-                    <div key={k} className="grid grid-cols-3 items-center">
-                      <span className="col-span-2 text-base font-black uppercase tracking-widest" style={{ color: '#4A5568' }}>{k.replace('term', 'Term ')} Fee</span>
-                      <span className="text-right text-lg font-black" style={{ color: '#1A2340' }}>₹{v.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-8 mt-8 flex justify-between items-center" style={{ borderTop: `4px solid #1A2340` }}>
-                  <p className="text-xl font-black uppercase tracking-widest" style={{ color: '#1A2340' }}>Total Amount</p>
-                  <p className="text-4xl md:text-5xl font-black tracking-tighter" style={{ color: '#1A2340' }}>₹{selectedInvoice.amount.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="pt-12 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm mx-auto" style={{ color: '#9AA5B4' }}>
-                  This is an official document from Junior Odyssey International School.
-                </p>
               </div>
             </div>
           </div>
