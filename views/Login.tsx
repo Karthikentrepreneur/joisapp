@@ -41,9 +41,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       ]);
 
       // Check Staff
-      const teacher = (staff || []).find(s => s && s.phone && s.phone.replace(/\s+/g, '') === cleanPhone && s.password === password);
-      if (teacher) {
-        onLogin(teacher, UserRole.TEACHER);
+      const staffMember = (staff || []).find(s => s && s.phone && s.phone.replace(/\s+/g, '') === cleanPhone && s.password === password);
+      if (staffMember) {
+        let assignedRole = UserRole.TEACHER;
+        if (staffMember.role === 'Admin' || staffMember.role === 'Principal') {
+          assignedRole = UserRole.ADMIN;
+        } else if (staffMember.role === 'Driver') {
+          assignedRole = UserRole.TRANSPORT;
+        }
+        
+        onLogin(staffMember, assignedRole);
         return;
       }
 
