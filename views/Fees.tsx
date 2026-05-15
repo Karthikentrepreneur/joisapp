@@ -125,7 +125,9 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast, currentUser }) => {
       const [invs, stds, staffList] = await Promise.all([db.getAll('invoices'), db.getAll('students'), db.getAll('staff')]);
       setInvoices(invs || []);
       setStudents(stds || []);
-      const adminStaff = (staffList || []).find((s: any) => (s.role === 'Admin' || s.role === 'Founder') && s.signature);
+      const adminStaff = (staffList || []).find((s: any) => 
+        (s.role === 'Admin' || s.role === 'Founder' || s.role === 'Principal') && s.signature
+      );
       if (adminStaff) setAdminSignature(adminStaff.signature);
     } catch (err) {
       console.error('Finance fetch error:', err);

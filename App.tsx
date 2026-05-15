@@ -98,6 +98,10 @@ function App() {
     showToast(`Switched to ${newRole} View`, 'info');
   };
 
+  const handleUserUpdate = (updates: any) => {
+    setUser((prev: any) => ({ ...prev, ...updates }));
+  };
+
   const navigateToStudents = (program: 'All' | ProgramType) => {
     setSharedFilter(program);
     setCurrentView(View.STUDENTS);
@@ -118,7 +122,7 @@ function App() {
       case View.ATTENDANCE: return <Attendance {...commonProps} />;
       case View.LEAVE: return <Leave {...commonProps} />;
       case View.COMMUNICATION: return <Communication role={role} currentUser={user} showToast={showToast} />;
-      case View.SETTINGS: return <Settings {...commonProps} permissions={permissions} setPermissions={setPermissions} />;
+      case View.SETTINGS: return <Settings {...commonProps} permissions={permissions} setPermissions={setPermissions} onUpdateUser={handleUserUpdate} />;
       default: return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
     }
   };

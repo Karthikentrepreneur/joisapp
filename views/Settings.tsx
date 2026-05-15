@@ -10,9 +10,10 @@ interface SettingsProps {
   setPermissions: React.Dispatch<React.SetStateAction<Record<UserRole, View[]>>>;
   currentUser?: any;
   showToast?: (title: string, type: ToastType, description?: string) => void;
+  onUpdateUser?: (updates: any) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermissions, currentUser, showToast }) => {
+export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermissions, currentUser, showToast, onUpdateUser }) => {
   const views = Object.values(View).filter(v => v !== View.SETTINGS); 
   const roles = [UserRole.ADMIN, UserRole.FOUNDER, UserRole.TEACHER, UserRole.PARENT, UserRole.TRANSPORT]; 
 
@@ -65,6 +66,10 @@ export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermis
           const parsed = JSON.parse(savedSession);
           parsed.user.signature = signaturePreview;
           localStorage.setItem('JOIS_AUTH_SESSION', JSON.stringify(parsed));
+        }
+        
+        if (onUpdateUser) {
+          onUpdateUser({ signature: signaturePreview });
         }
         
         if (showToast) showToast("Signature Saved", "success", "Your signature has been updated.");
