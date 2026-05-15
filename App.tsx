@@ -117,7 +117,7 @@ function App() {
       case View.FEES: return <Fees {...commonProps} />;
       case View.ATTENDANCE: return <Attendance {...commonProps} />;
       case View.LEAVE: return <Leave {...commonProps} />;
-      case View.COMMUNICATION: return <Communication {...commonProps} />;
+      case View.COMMUNICATION: return <Communication role={role} currentUser={user} showToast={showToast} />;
       case View.SETTINGS: return <Settings {...commonProps} permissions={permissions} setPermissions={setPermissions} />;
       default: return <Dashboard {...commonProps} onNavigate={setCurrentView} onFilterNavigate={navigateToStudents} />;
     }

@@ -52,13 +52,24 @@ export const Settings: React.FC<SettingsProps> = ({ role, permissions, setPermis
     }
   };
 
-  const saveSignature = () => {
-    if (signaturePreview && currentStaff) {
-      const staffIndex = mockStaff.findIndex(s => s.id === currentStaff.id);
-      if (staffIndex !== -1) {
-        mockStaff[staffIndex].signature = signaturePreview;
-        setCurrentStaff({ ...mockStaff[staffIndex] });
-        alert("Signature saved successfully.");
+  const saveSignature = async () => {
+    if (signaturePreview && currentUser) {
+      try {
+        if (currentUser.id) {
+          const table = role === UserRole.PARENT ? 'students' : 'staff';
+          await db.update(table, currentUser.id, { signature: signaturePreview });
+        }
+        
+        const savedSession = localStorage.getItem('JOIS_AUTH_SESSION');
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          parsed.user.signature = signaturePreview;
+          localStorage.setItem('JOIS_AUTH_SESSION', JSON.stringify(parsed));
+        }
+        
+        if (showToast) showToast("Signature Saved", "success", "Your signature has been updated.");
+      } catch (e) {
+        if (showToast) showToast("Error", "error", "Failed to save signature.");
       }
     }
   };
