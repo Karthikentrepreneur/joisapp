@@ -43,6 +43,7 @@ import { ToastType } from '../components/Toast';
 interface FeesProps {
   role?: UserRole;
   showToast?: (title: string, type: ToastType, description?: string) => void;
+  currentUser?: any;
 }
 
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
@@ -98,7 +99,7 @@ const SummaryStat = ({ icon: Icon, label, value, accentColor, lightColor }: any)
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
+export const Fees: React.FC<FeesProps> = ({ role, showToast, currentUser }) => {
   const [invoices, setInvoices]                   = useState<Invoice[]>([]);
   const [students, setStudents]                   = useState<Student[]>([]);
   const [matrix, setMatrix]                       = useState<FeeMatrix>(DEFAULT_FEE_MATRIX);
@@ -113,6 +114,7 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const [syncing, setSyncing]                     = useState(false);
   const [selectedInvoice, setSelectedInvoice]     = useState<Invoice | null>(null);
   const receiptRef                                = useRef<HTMLDivElement>(null);
+  const [adminSignature, setAdminSignature]       = useState<string | null>(null);
 
   const isAdmin  = role === UserRole.ADMIN || role === UserRole.FOUNDER;
   const isParent = role === UserRole.PARENT;
@@ -120,9 +122,11 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
   const loadData = useCallback(async () => {
     setSyncing(true); // Added to show the loading spinner during refresh
     try {
-      const [invs, stds] = await Promise.all([db.getAll('invoices'), db.getAll('students')]);
+      const [invs, stds, staffList] = await Promise.all([db.getAll('invoices'), db.getAll('students'), db.getAll('staff')]);
       setInvoices(invs || []);
       setStudents(stds || []);
+      const adminStaff = (staffList || []).find((s: any) => (s.role === 'Admin' || s.role === 'Founder') && s.signature);
+      if (adminStaff) setAdminSignature(adminStaff.signature);
     } catch (err) {
       console.error('Finance fetch error:', err);
     } finally {
@@ -340,8 +344,12 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
                 <p>Thank you for your trust in Junior Odyssey International School.</p>
                 <p className="mt-1">For any queries, contact: admin@joischools.com | +91 9940455580</p>
               </div>
-              <div className="text-center">
-                <div className="text-3xl italic text-[#003B7A] mb-2 font-serif opacity-80">Authorized</div>
+              <div className="text-center flex flex-col items-center">
+                {adminSignature || ((role === UserRole.ADMIN || role === UserRole.FOUNDER) ? currentUser?.signature : null) ? (
+                  <img src={adminSignature || currentUser?.signature} alt="Authorized Signature" className="h-16 object-contain mb-2 mix-blend-multiply" />
+                ) : (
+                  <div className="text-3xl italic text-[#003B7A] mb-2 font-serif opacity-80">Authorized</div>
+                )}
                 <div className="w-48 h-[1.5px] bg-gray-400 mx-auto"></div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2">Authorized Signatory</p>
               </div>
