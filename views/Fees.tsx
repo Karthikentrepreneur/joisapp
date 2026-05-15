@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { db } from '../services/persistence';
 import { UserRole, ProgramType, Invoice, Student, FeeBreakdown } from '../types';
 import {
@@ -215,16 +213,8 @@ export const Fees: React.FC<FeesProps> = ({ role, showToast }) => {
     }
   };
 
-  const downloadPDF = async () => {
-    const input = receiptRef.current;
-    if (!input) return;
-    const canvas = await html2canvas(input, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Invoice_${selectedInvoice?.id}.pdf`);
+  const downloadPDF = () => {
+    window.print();
   };
 
   // ─── Parent View ──────────────────────────────────────────────────────────
