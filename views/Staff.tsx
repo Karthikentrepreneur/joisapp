@@ -41,7 +41,6 @@ import { ToastType } from '../components/Toast';
 const PROGRAMS: ProgramType[] = ['Little Seeds', 'Curiosity Cubs', 'Odyssey Owls', 'Future Makers'];
 const ROLES = ['Teacher', 'Admin', 'Driver', 'Clerk', 'Principal'];
 const MARITAL_STATUS = ['Married', 'Unmarried'];
-const GENDERS = ['Male', 'Female', 'Other'];
 
 interface StaffProps {
   role?: UserRole;
@@ -162,7 +161,7 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
   const initialFormData: any = {
     firstName: '', middleName: '', lastName: '', phone: '', aadhaarNumber: '', email: '',
     dateOfJoining: new Date().toISOString().split('T')[0],
-    classAssigned: 'Little Seeds', maritalStatus: 'Unmarried', gender: 'Female', status: 'Active', role: 'Teacher', 
+    classAssigned: 'Little Seeds', maritalStatus: 'Unmarried', status: 'Active', role: 'Teacher', 
     image: '', emergencyContact: { firstName: '', lastName: '', relationship: '', phone: '' },
     password: generatePassword() // Auto-generate on creation
   };
@@ -460,7 +459,6 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                    <DetailItem label="Marital Status" value={selectedStaff.maritalStatus} icon={Heart} />
                    <DetailItem label="Basic Salary" value={`₹${selectedStaff.salaryDetails?.basic?.toLocaleString() || '—'}`} icon={Wallet} />
-                   <DetailItem label="Gender" value={(selectedStaff as any).gender} icon={User} />
                    <DetailItem label="Net Pay" value={`₹${selectedStaff.salaryDetails?.net?.toLocaleString() || '—'}`} icon={Wallet} />
                 </div>
               </section>
@@ -565,7 +563,6 @@ export const Staff: React.FC<StaffProps> = ({ role, showToast }) => {
                     <Input label="Email Address" type="email" required value={formData.email} onChange={(v: string) => setFormData({...formData, email: v})} />
                     <Input label="Aadhaar Number" required value={formData.aadhaarNumber} onChange={(v: string) => setFormData({...formData, aadhaarNumber: v})} />
                     <Input label="Marital Status" options={MARITAL_STATUS} value={formData.maritalStatus} onChange={(v: string) => setFormData({...formData, maritalStatus: v as any})} />
-                    <Input label="Gender" options={GENDERS} value={formData.gender} onChange={(v: string) => setFormData({...formData, gender: v})} />
                   </div>
                </section>
 
